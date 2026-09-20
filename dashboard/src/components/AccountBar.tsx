@@ -1,5 +1,6 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { journalApi, type Account, type AccountInput, type Kind, type Platform } from "../lib/journalApi";
+import Icon from "./Icon";
 import { useJournal } from "../state/JournalContext";
 
 export const KIND_LABEL: Record<Kind, string> = { manual: "ترید دستی", robot: "ربات", backtest: "بک‌تست" };
@@ -43,9 +44,9 @@ export default function AccountBar() {
             </span>
           </button>
         ))}
-        <button className="acct add" onClick={() => setDialog({ mode: "new" })}>＋ حساب جدید</button>
+        <button className="acct add" onClick={() => setDialog({ mode: "new" })}><Icon name="plus" size={16} />حساب جدید</button>
       </div>
-      {active && <button className="btn" onClick={() => setDialog({ mode: "edit", account: active })} title="ویرایش یا حذف حساب">⚙ تنظیم حساب</button>}
+      {active && <button className="btn" onClick={() => setDialog({ mode: "edit", account: active })} title="ویرایش یا حذف حساب"><Icon name="sliders" size={16} />تنظیم حساب</button>}
       {dialog && (
         <AccountDialog
           account={dialog.mode === "edit" ? dialog.account : null}

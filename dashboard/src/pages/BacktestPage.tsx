@@ -1,6 +1,7 @@
 ﻿import { useMemo, useState } from "react";
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import Kpis from "../components/Kpis";
+import PageHeader from "../components/PageHeader";
 import { equityCurve, summarize } from "../lib/analytics";
 import { STRATEGIES, DEFAULT_SIM, asJournalTrades, runBacktest, type BacktestResult, type SimConfig } from "../lib/backtest";
 import { TIMEFRAMES, aggregate, fmtDateTime } from "../lib/data";
@@ -59,10 +60,7 @@ export default function BacktestPage() {
 
   return (
     <div className="page wide">
-      <header className="page-head">
-        <h2>بک‌تست</h2>
-        <p className="muted">یک استراتژی را روی کندل‌های موجود اجرا کنید. هر اجرا می‌تواند مثل یک حساب جدا ذخیره شود و همان ژورنال و آنالیز را داشته باشد.</p>
-      </header>
+      <PageHeader title="بک‌تست" subtitle="یک استراتژی را روی کندل‌های موجود اجرا کنید. هر اجرا می‌تواند مثل یک حساب جدا ذخیره شود و همان ژورنال و آنالیز را داشته باشد." />
 
       <div className="two-col">
         <section className="card">

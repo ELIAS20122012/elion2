@@ -5,6 +5,8 @@ import DrawingProps from "../components/DrawingProps";
 import IndicatorsBar from "../components/IndicatorsBar";
 import TradesTable from "../components/TradesTable";
 import TradingViewWidget from "../components/TradingViewWidget";
+import Icon from "../components/Icon";
+import { TIMEFRAMES } from "../lib/data";
 import { RULES, STATUS_LABEL } from "../lib/rules";
 import { SPEEDS } from "../lib/useReplay";
 import { SYMBOL, useApp } from "../state/AppContext";
@@ -20,12 +22,21 @@ export default function ChartPage() {
   return (
     <div className={`chart-page ${dock ? "" : "no-dock"}`}>
       <section className="card chart-card">
-        <div className="viewtabs" role="tablist">
-          <button role="tab" aria-selected={view === "bot"} className={view === "bot" ? "on" : ""} onClick={() => setView("bot")}>چارت ربات (داده‌ی MT5)</button>
-          <button role="tab" aria-selected={view === "tv"} className={view === "tv" ? "on" : ""} onClick={() => setView("tv")}>TradingView</button>
-          {view === "tv" && <span className="muted small">قیمت از TradingView است (OANDA)، نه بروکر شما · رسم‌ها ذخیره نمی‌شوند</span>}
+        <div className="chart-head">
+          <div className="viewtabs" role="tablist">
+            <button role="tab" aria-selected={view === "bot"} className={view === "bot" ? "on" : ""} onClick={() => setView("bot")}>چارت ربات (داده‌ی MT5)</button>
+            <button role="tab" aria-selected={view === "tv"} className={view === "tv" ? "on" : ""} onClick={() => setView("tv")}>TradingView</button>
+            {view === "tv" && <span className="muted small">قیمت از TradingView است (OANDA)، نه بروکر شما · رسم‌ها ذخیره نمی‌شوند</span>}
+          </div>
+          {view === "bot" && (
+            <div className="seg" role="group" aria-label="تایم‌فریم">
+              {TIMEFRAMES.map((t) => (
+                <button key={t.sec} className={s.tfSec === t.sec ? "on" : ""} onClick={() => s.setTfSec(t.sec)}>{t.label}</button>
+              ))}
+            </div>
+          )}
           <button className="dock-toggle" onClick={() => setDock((d) => !d)} title={dock ? "بستن پنل کناری" : "باز کردن پنل کناری"} aria-label="پنل کناری">
-            {dock ? "⟩" : "⟨"}
+            <Icon name={dock ? "chevron-right" : "chevron-left"} size={16} />
           </button>
         </div>
 
@@ -103,10 +114,11 @@ export default function ChartPage() {
         ) : (
           <div className="replay">
             <button className="btn primary" onClick={replay.toggle} aria-label={replay.playing ? "توقف" : "پخش"}>
-              {replay.done ? "↺ از اول" : replay.playing ? "⏸ توقف" : "▶ پخش"}
+              <Icon name={replay.done ? "reset" : replay.playing ? "pause" : "play"} size={16} />
+              {replay.done ? "از اول" : replay.playing ? "توقف" : "پخش"}
             </button>
-            <button className="btn" onClick={replay.stepCandle} disabled={replay.done}>کندل بعدی ⏭</button>
-            <button className="btn" onClick={replay.reset}>↺</button>
+            <button className="btn" onClick={replay.stepCandle} disabled={replay.done}><Icon name="step" size={16} />کندل بعدی</button>
+            <button className="btn icon" onClick={replay.reset} aria-label="از اول" title="از اول"><Icon name="reset" size={16} /></button>
             <div className="speeds" dir="ltr">
               {SPEEDS.map((v) => (
                 <button key={v} className={replay.speed === v ? "on" : ""} onClick={() => replay.setSpeed(v)}>{v}x</button>

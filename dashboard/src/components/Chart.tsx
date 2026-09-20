@@ -20,6 +20,7 @@ import { fmtPrice } from "../lib/data";
 import { TOOLS, TimeMap, uid, type DPoint, type Drawing, type ToolId } from "../lib/drawings";
 import { INDICATOR_BY_ID, type IndicatorInstance, type IndicatorOutput } from "../lib/indicators";
 import { DrawingsPrimitive } from "./DrawingsPrimitive";
+import Icon from "./Icon";
 
 const C = {
   text: "#8a93a6",
@@ -432,7 +433,7 @@ export default function Chart(props: Props) {
           </>
         )}
       </div>
-      <button className="fit" onClick={() => chartRef.current?.timeScale().scrollToRealTime()} title="برگشت به آخرین کندل" aria-label="برگشت به آخرین کندل">⤢</button>
+      <button className="fit" onClick={() => chartRef.current?.timeScale().scrollToRealTime()} title="برگشت به آخرین کندل" aria-label="برگشت به آخرین کندل"><Icon name="fit" size={16} /></button>
       <div ref={host} className={`chart ${tool !== "cursor" ? "drawing" : ""}`} dir="ltr" />
       {menu && (
         <ul className="ctx" style={{ left: menu.x, top: menu.y }} dir="rtl" onPointerDown={(e) => e.stopPropagation()}>

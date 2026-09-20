@@ -1,13 +1,11 @@
+import PageHeader from "../components/PageHeader";
 import { useApp } from "../state/AppContext";
 
 export default function SettingsPage() {
   const { drawings, setDrawings, indicators, setIndicators, magnet, setMagnet, showVolume, setShowVolume } = useApp();
   return (
     <div className="page">
-      <header className="page-head">
-        <h2>تنظیمات</h2>
-        <p className="muted">ترجیحات چارت و داده‌های ذخیره‌شده در همین مرورگر.</p>
-      </header>
+      <PageHeader title="تنظیمات" subtitle="ترجیحات چارت و داده‌های ذخیره‌شده در همین مرورگر." />
 
       <section className="card settings">
         <h3>چارت</h3>

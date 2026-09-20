@@ -1,6 +1,7 @@
 import { TOOLS, type Drawing } from "../lib/drawings";
+import Icon from "./Icon";
 
-const COLORS = ["#e0b354", "#4da3ff", "#26a69a", "#ef5350", "#c084fc", "#f8fafc"];
+const COLORS = ["#e6b95a", "#4da3ff", "#26a69a", "#ef5350", "#c084fc", "#f8fafc"];
 const WIDTHS = [1, 2, 3, 4];
 
 interface Props {
@@ -32,8 +33,8 @@ export default function DrawingProps({ drawing: d, onChange, onDuplicate, onDele
       {d.type === "text" && (
         <button className="btn" onClick={() => { const t = window.prompt("متن:", d.text ?? ""); if (t) onChange({ text: t }); }}>ویرایش متن</button>
       )}
-      <button className="btn" onClick={onDuplicate} title="تکثیر">⧉</button>
-      <button className="btn danger" onClick={onDelete} title="حذف (Delete)">🗑</button>
+      <button className="btn icon" onClick={onDuplicate} title="تکثیر" aria-label="تکثیر"><Icon name="copy" size={16} /></button>
+      <button className="btn icon danger" onClick={onDelete} title="حذف (Delete)" aria-label="حذف"><Icon name="trash" size={16} /></button>
     </div>
   );
 }

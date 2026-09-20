@@ -2,7 +2,10 @@ import { useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import AccountBar, { BackendGate, KIND_LABEL } from "../components/AccountBar";
 import Kpis from "../components/Kpis";
+import Icon from "../components/Icon";
 import { DetectedBanner, LiveBar } from "../components/LiveBar";
+import PageHeader from "../components/PageHeader";
+import { useToast } from "../components/Toast";
 import TradeDrawer from "../components/TradeDrawer";
 import { durationSec, fmtDuration, isClosed, money, net, summarize } from "../lib/analytics";
 import { fmtDateTime, fmtPrice } from "../lib/data";
@@ -14,10 +17,7 @@ const VALID_LABEL = { yes: "معتبر", no: "نامعتبر", unsure: "؟" } as
 export default function JournalPage() {
   return (
     <div className="page wide">
-      <header className="page-head">
-        <h2>ژورنال</h2>
-        <p className="muted">معاملات هر حساب جدا ثبت می‌شود. حساب را انتخاب کنید یا حساب جدید اضافه کنید.</p>
-      </header>
+      <PageHeader title="ژورنال" subtitle="معاملات هر حساب جدا و خودکار ثبت می‌شود. حساب را انتخاب کنید یا حساب جدید اضافه کنید." />
       <BackendGate>
         <AccountBar />
         <Body />
@@ -29,7 +29,7 @@ export default function JournalPage() {
 function Body() {
   const { accounts, active, trades, refreshTrades, refreshAccounts } = useJournal();
   const [open, setOpen] = useState<JTrade | null>(null);
-  const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const toast = useToast();
   const [busy, setBusy] = useState(false);
   const [dir, setDir] = useState<"all" | "buy" | "sell">("all");
   const [res, setRes] = useState<"all" | "win" | "loss" | "open">("all");
@@ -61,12 +61,11 @@ function Body() {
 
   const run = async (fn: () => Promise<string>) => {
     setBusy(true);
-    setMsg(null);
     try {
-      setMsg({ ok: true, text: await fn() });
+      toast.ok(await fn());
       await Promise.all([refreshTrades(), refreshAccounts()]);
     } catch (e) {
-      setMsg({ ok: false, text: (e as Error).message });
+      toast.err((e as Error).message);
     }
     setBusy(false);
   };
@@ -84,26 +83,18 @@ function Body() {
     <>
       <DetectedBanner />
       <LiveBar />
-      <div className="card toolbar-card">
-        <div className="tb-info">
-          <b>{active.name}</b>
-          <span className="muted small">
-            {KIND_LABEL[active.kind]} · {active.platform.toUpperCase()}
-            {active.login ? ` · ${active.login}` : ""}
-            {active.is_live ? " · واقعی" : ""}
-          </span>
-        </div>
-        <div className="tb-actions">
-          {active.platform === "mt5" && <button className="btn" onClick={sync} disabled={busy}>⟳ همگام‌سازی همین حالا</button>}
-          <button className="btn" onClick={() => fileRef.current?.click()} disabled={busy} title="فقط برای معاملات قدیمی‌تر از زمان نصب اندیکاتور لازم است">⤒ وارد کردن فایل قدیمی</button>
-          <input ref={fileRef} type="file" accept=".htm,.html,.csv,.txt" hidden onChange={(e) => { const f = e.target.files?.[0]; if (f) importFile(f); e.target.value = ""; }} />
-        </div>
-        <p className="muted small hint">
+      <div className="toolbar-row">
+        <p className="muted small">
           {active.platform === "mt4"
             ? "ثبت خودکار است (اندیکاتور JournalBridge). فایل Statement فقط برای معاملات قدیمی‌تر از نصب اندیکاتور لازم است."
             : "ثبت خودکار است و هر ۱۰ ثانیه از ترمینال MT5 به‌روز می‌شود."}
+          <span> · {KIND_LABEL[active.kind]}{active.login ? ` · ${active.login}` : ""}</span>
         </p>
-        {msg && <p className={msg.ok ? "ok" : "err"}>{msg.text}</p>}
+        <div className="tb-actions">
+          {active.platform === "mt5" && <button className="btn" onClick={sync} disabled={busy}><Icon name="refresh" size={16} />همگام‌سازی همین حالا</button>}
+          <button className="btn" onClick={() => fileRef.current?.click()} disabled={busy} title="فقط برای معاملات قدیمی‌تر از زمان نصب اندیکاتور لازم است"><Icon name="upload" size={16} />وارد کردن فایل قدیمی</button>
+          <input ref={fileRef} type="file" accept=".htm,.html,.csv,.txt" hidden onChange={(e) => { const f = e.target.files?.[0]; if (f) importFile(f); e.target.value = ""; }} />
+        </div>
       </div>
 
       <Kpis s={summary} />

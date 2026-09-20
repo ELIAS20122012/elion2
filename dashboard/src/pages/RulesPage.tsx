@@ -1,13 +1,11 @@
+import PageHeader from "../components/PageHeader";
 import { RULES, STATUS_LABEL } from "../lib/rules";
 
 export default function RulesPage() {
   const done = RULES.filter((r) => r.status === "approved").length;
   return (
     <div className="page">
-      <header className="page-head">
-        <h2>قوانین سیستم</h2>
-        <p className="muted">قوانین به ترتیب آموزش. هر قانون بعد از رسم روی چارت و تأیید شما «تأیید شده» می‌شود و بعد سراغ قانون بعدی می‌رویم.</p>
-      </header>
+      <PageHeader title="قوانین سیستم" subtitle="قوانین به ترتیب آموزش. هر قانون بعد از رسم روی چارت و تأیید شما «تأیید شده» می‌شود و بعد سراغ قانون بعدی می‌رویم." />
 
       <div className="card progress-card">
         <div className="progress-top">

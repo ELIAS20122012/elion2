@@ -15,17 +15,17 @@ export interface Drawing {
 }
 
 export const TOOLS: { id: ToolId; label: string; icon: string; points: number }[] = [
-  { id: "cursor", label: "نشانگر / انتخاب", icon: "➤", points: 0 },
-  { id: "trend", label: "خط روند", icon: "╱", points: 2 },
-  { id: "ray", label: "نیم‌خط", icon: "↗", points: 2 },
-  { id: "hline", label: "خط افقی", icon: "─", points: 1 },
-  { id: "hray", label: "نیم‌خط افقی", icon: "⟶", points: 1 },
-  { id: "channel", label: "کانال موازی (۳ نقطه)", icon: "▱", points: 3 },
-  { id: "vline", label: "خط عمودی", icon: "│", points: 1 },
-  { id: "rect", label: "مستطیل", icon: "▭", points: 2 },
-  { id: "fib", label: "فیبوناچی اصلاحی", icon: "Fib", points: 2 },
-  { id: "measure", label: "اندازه‌گیر", icon: "⇕", points: 2 },
-  { id: "text", label: "متن", icon: "T", points: 1 },
+  { id: "cursor", label: "نشانگر / انتخاب", icon: "cursor", points: 0 },
+  { id: "trend", label: "خط روند", icon: "trend", points: 2 },
+  { id: "ray", label: "نیم‌خط", icon: "ray", points: 2 },
+  { id: "hline", label: "خط افقی", icon: "hline", points: 1 },
+  { id: "hray", label: "نیم‌خط افقی", icon: "hray", points: 1 },
+  { id: "channel", label: "کانال موازی (۳ نقطه)", icon: "channel", points: 3 },
+  { id: "vline", label: "خط عمودی", icon: "vline", points: 1 },
+  { id: "rect", label: "مستطیل", icon: "rect", points: 2 },
+  { id: "fib", label: "فیبوناچی اصلاحی", icon: "fib", points: 2 },
+  { id: "measure", label: "اندازه‌گیر", icon: "measure", points: 2 },
+  { id: "text", label: "متن", icon: "text", points: 1 },
 ];
 
 export const FIB_LEVELS = [0, 0.236, 0.382, 0.5, 0.618, 0.786, 1];

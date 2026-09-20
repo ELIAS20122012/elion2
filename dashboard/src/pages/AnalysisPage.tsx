@@ -2,6 +2,7 @@
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import AccountBar, { BackendGate } from "../components/AccountBar";
 import Kpis from "../components/Kpis";
+import PageHeader from "../components/PageHeader";
 import { byDay, byDuration, byHour, byTag, byWeekday, equityCurve, excursions, isClosed, money, summarize, type Bucket } from "../lib/analytics";
 import { fmtDateTime } from "../lib/data";
 import type { JTrade } from "../lib/journalApi";
@@ -14,10 +15,7 @@ const TIP = { contentStyle: { background: "#161b26", border: "1px solid rgba(255
 export default function AnalysisPage() {
   return (
     <div className="page wide">
-      <header className="page-head">
-        <h2>آنالیز</h2>
-        <p className="muted">آمار و الگوهای رفتاری هر حساب، جدا از حساب‌های دیگر. اعداد فقط توصیف داده‌اند، نه قانون.</p>
-      </header>
+      <PageHeader title="آنالیز" subtitle="آمار و الگوهای رفتاری هر حساب، جدا از حساب‌های دیگر. اعداد فقط توصیف داده‌اند، نه قانون." />
       <BackendGate>
         <AccountBar />
         <Body />

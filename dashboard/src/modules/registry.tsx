@@ -4,6 +4,7 @@ import AnalysisPage from "../pages/AnalysisPage";
 import BacktestPage from "../pages/BacktestPage";
 import ChartPage from "../pages/ChartPage";
 import JournalPage from "../pages/JournalPage";
+import OverviewPage from "../pages/OverviewPage";
 import RulesPage from "../pages/RulesPage";
 import SettingsPage from "../pages/SettingsPage";
 
@@ -13,20 +14,29 @@ export interface ModuleDef {
   title: string;
   icon: string;
   element: ReactElement;
-  /** shown at the bottom of the sidebar */
+  /** sidebar section; modules without one (or with footer) sit at the bottom */
+  group?: "market" | "trading" | "system";
   footer?: boolean;
 }
 
+export const GROUPS: { id: NonNullable<ModuleDef["group"]>; label: string }[] = [
+  { id: "market", label: "بازار" },
+  { id: "trading", label: "معاملات" },
+  { id: "system", label: "سیستم" },
+];
+
 /**
  * Every section of the dashboard lives here.
- * To add a new one: create `src/pages/MyPage.tsx`, then add one entry below — the sidebar and the route appear automatically.
+ * To add a new one: create `src/pages/MyPage.tsx`, then add one entry below — the sidebar section, the route and
+ * the page title in the top bar all come from this list.
  */
 export const MODULES: ModuleDef[] = [
-  { id: "chart", path: "/", title: "چارت", icon: "chart", element: <ChartPage /> },
-  { id: "journal", path: "/journal", title: "ژورنال", icon: "notebook", element: <JournalPage /> },
-  { id: "analysis", path: "/analysis", title: "آنالیز", icon: "analysis", element: <AnalysisPage /> },
-  { id: "backtest", path: "/backtest", title: "بک‌تست", icon: "flask", element: <BacktestPage /> },
-  { id: "rules", path: "/rules", title: "قوانین", icon: "book", element: <RulesPage /> },
-  { id: "account", path: "/account", title: "اتصال MT", icon: "plug", element: <AccountPage /> },
+  { id: "overview", path: "/", title: "نمای کلی", icon: "home", group: "market", element: <OverviewPage /> },
+  { id: "chart", path: "/chart", title: "چارت", icon: "chart", group: "market", element: <ChartPage /> },
+  { id: "journal", path: "/journal", title: "ژورنال", icon: "notebook", group: "trading", element: <JournalPage /> },
+  { id: "analysis", path: "/analysis", title: "آنالیز", icon: "analysis", group: "trading", element: <AnalysisPage /> },
+  { id: "backtest", path: "/backtest", title: "بک‌تست", icon: "flask", group: "trading", element: <BacktestPage /> },
+  { id: "rules", path: "/rules", title: "قوانین", icon: "book", group: "system", element: <RulesPage /> },
+  { id: "account", path: "/account", title: "اتصال MT", icon: "plug", group: "system", element: <AccountPage /> },
   { id: "settings", path: "/settings", title: "تنظیمات", icon: "sliders", element: <SettingsPage />, footer: true },
 ];

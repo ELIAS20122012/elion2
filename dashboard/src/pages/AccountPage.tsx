@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import PageHeader from "../components/PageHeader";
 import { journalApi, type BridgeInfo } from "../lib/journalApi";
 import { SYMBOL, useApp } from "../state/AppContext";
 import { useJournal } from "../state/JournalContext";
@@ -18,10 +19,7 @@ export default function AccountPage() {
   ];
   return (
     <div className="page">
-      <header className="page-head">
-        <h2>اتصال به MetaTrader</h2>
-        <p className="muted">دو اتصال جدا و هر دو فقط‌خواندنی: قیمت زنده‌ی چارت از MT5، و ثبت خودکار معاملات ژورنال از MT4 یا MT5.</p>
-      </header>
+      <PageHeader title="اتصال به MetaTrader" subtitle="دو اتصال جدا و هر دو فقط‌خواندنی: قیمت زنده‌ی چارت از MT5، و ثبت خودکار معاملات ژورنال از MT4 یا MT5." />
 
       <Mt5Guide />
       <Mt4Guide />

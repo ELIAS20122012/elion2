@@ -1,0 +1,57 @@
+/* Design tokens: the only place colours, type and spacing are defined. */
+:root {
+  /* surfaces (darkest -> lightest) */
+  --bg: #080b11;
+  --surface-1: #0e121a;   /* cards */
+  --surface-2: #141a24;   /* inputs, raised */
+  --surface-3: #1b2230;   /* hover */
+  --overlay: rgba(4, 6, 10, 0.68);
+
+  /* lines */
+  --line: rgba(255, 255, 255, 0.07);
+  --line-strong: rgba(255, 255, 255, 0.15);
+
+  /* text */
+  --text: #e9ecf2;
+  --text-2: #aab3c4;
+  --muted: #7c879b;
+
+  /* brand + semantics (up/down match the chart candles) */
+  --gold: #e6b95a;
+  --gold-soft: rgba(230, 185, 90, 0.13);
+  --gold-line: rgba(230, 185, 90, 0.45);
+  --up: #26a69a;
+  --up-soft: rgba(38, 166, 154, 0.14);
+  --down: #ef5350;
+  --down-soft: rgba(239, 83, 80, 0.13);
+  --info: #6aa9ff;
+  --info-soft: rgba(106, 169, 255, 0.13);
+  --violet: #b794f6;
+  --violet-soft: rgba(183, 148, 246, 0.14);
+
+  /* type */
+  --font-fa: Vazirmatn, "Segoe UI", Tahoma, sans-serif;
+  --font-num: Inter, "Segoe UI", sans-serif;
+  --fs-xs: 11.5px;
+  --fs-sm: 12.5px;
+  --fs-md: 14px;
+  --fs-lg: 16px;
+  --fs-xl: 20px;
+  --fs-2xl: 28px;
+
+  /* space + shape */
+  --sp-1: 4px; --sp-2: 8px; --sp-3: 12px; --sp-4: 16px; --sp-5: 24px; --sp-6: 32px;
+  --r-sm: 6px; --r-md: 10px; --r-lg: 14px; --r-pill: 999px;
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.35);
+  --shadow-2: 0 12px 32px rgba(0, 0, 0, 0.5);
+
+  /* motion */
+  --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+  --t-fast: 0.12s;
+  --t-med: 0.2s;
+
+  /* layout */
+  --sidebar-w: 248px;
+  --sidebar-w-collapsed: 72px;
+  --topbar-h: 60px;
+}

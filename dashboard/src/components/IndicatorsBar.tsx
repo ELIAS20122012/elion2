@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { INDICATORS, INDICATOR_BY_ID, defaultParams, instanceLabel, type IndicatorInstance } from "../lib/indicators";
 import { uid } from "../lib/drawings";
+import Icon from "./Icon";
 
 interface Props {
   items: IndicatorInstance[];
@@ -19,13 +20,13 @@ export default function IndicatorsBar({ items, onChange, volume, hasVolume, onVo
 
   return (
     <div className="indbar">
-      <button className="btn" onClick={() => setOpen(true)}>ƒx اندیکاتورها</button>
-      <button className={`btn ${volume && hasVolume ? "active" : ""}`} onClick={onVolume} disabled={!hasVolume} title={hasVolume ? "حجم تیک MT5" : "حجم فقط در حالت زنده MT5 هست"}>حجم</button>
+      <button className="btn" onClick={() => setOpen(true)}><Icon name="fx" size={16} />اندیکاتورها</button>
+      <button className={`btn ${volume && hasVolume ? "active" : ""}`} onClick={onVolume} disabled={!hasVolume} title={hasVolume ? "حجم تیک MT5" : "حجم فقط در حالت زنده MT5 هست"}><Icon name="volume" size={16} />حجم</button>
       {items.map((i) => (
         <div key={i.uid} className={`ichip ${i.visible ? "" : "hidden"}`} dir="ltr">
-          <button onClick={() => patch(i.uid, (x) => ({ ...x, visible: !x.visible }))} title={i.visible ? "پنهان" : "نمایش"} aria-label="نمایش/پنهان">{i.visible ? "👁" : "⌀"}</button>
+          <button onClick={() => patch(i.uid, (x) => ({ ...x, visible: !x.visible }))} title={i.visible ? "پنهان" : "نمایش"} aria-label="نمایش/پنهان"><Icon name="eye" size={14} /></button>
           <span className="name" onClick={() => setEditing(editing === i.uid ? null : i.uid)} title="تنظیمات">{instanceLabel(i)}</span>
-          <button onClick={() => patch(i.uid, () => null)} title="حذف" aria-label="حذف">×</button>
+          <button onClick={() => patch(i.uid, () => null)} title="حذف" aria-label="حذف"><Icon name="x" size={14} /></button>
           {editing === i.uid && (
             <div className="pop" dir="rtl">
               {INDICATOR_BY_ID[i.id].params.map((p) => (
