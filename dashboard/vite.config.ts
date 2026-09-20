@@ -12,6 +12,7 @@ export default defineConfig({
   plugins: [react()],
   server: {
     port: 5173,
+    host: "127.0.0.1", // IPv4 loopback: what Tailscale Serve connects to; still not reachable from the LAN
     allowedHosts: ["localhost", ".ts.net"], // .ts.net = Tailscale MagicDNS names
     proxy: {
       "/api": { target: "http://127.0.0.1:8000", rewrite: (p) => p.replace(/^\/api/, "") },
