@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { detectRegularBearish, MACD_DEFAULT } from "../lib/detectors/divergence";
+import { detectDivergences, MACD_DEFAULT } from "../lib/detectors/divergence";
 import { uid } from "../lib/drawings";
 import { useDivParams } from "../lib/prefs";
 import Chart from "../components/Chart";
@@ -48,22 +48,25 @@ export default function ChartPage() {
   const divOn = !!s.layers.divergence;
   // only CLOSED candles: the forming candle would make a result flip while it is still moving
   const closedBars = useMemo(() => s.bars.slice(0, -1), [s.bars.length, s.bars[0]?.time, s.tfSec]); // eslint-disable-line react-hooks/exhaustive-deps
-  const divs = useMemo(() => (divOn ? detectRegularBearish(closedBars, divP) : []), [divOn, closedBars, divP]);
+  const analysis = useMemo(() => (divOn ? detectDivergences(closedBars, divP) : null), [divOn, closedBars, divP]);
+  const divs = useMemo(() => analysis?.divergences ?? [], [analysis]);
   const divOverlay = useMemo<Overlay>(() => {
-    const orange = "#ff9d3d";
     const lines: OverlayLine[] = [];
     const markers: OverlayMarker[] = [];
     for (const d of divs) {
+      const hi = d.side === "high";
+      const color = hi ? "#ff9d3d" : "#2ee6a6"; // orange = highs (uptrend), green = lows (downtrend)
       const A = closedBars[d.a.i];
       const B = closedBars[d.b.i];
       const ma = closedBars[d.a.mi];
       const mb = closedBars[d.b.mi];
-      const id = `div-${d.a.i}-${d.b.i}`;
-      lines.push({ id: `${id}-price`, pane: "price", color: orange, width: 2, points: [{ time: A.time, value: d.a.price }, { time: B.time, value: d.b.price }] });
+      const id = `div-${d.side}-${d.a.i}-${d.b.i}`;
+      lines.push({ id: `${id}-price`, pane: "price", color, width: 2, points: [{ time: A.time, value: d.a.price }, { time: B.time, value: d.b.price }] });
       const [t1, t2] = ma.time < mb.time ? [ma.time, mb.time] : [A.time, B.time]; // times must be strictly increasing
-      lines.push({ id: `${id}-macd`, pane: "macd", color: orange, width: 2, points: [{ time: t1, value: d.a.macd }, { time: t2, value: d.b.macd }] });
-      markers.push({ time: A.time, position: "aboveBar", shape: "circle", color: orange });
-      markers.push({ time: B.time, position: "aboveBar", shape: "arrowDown", color: orange, text: "دایورجنس" });
+      lines.push({ id: `${id}-macd`, pane: "macd", color, width: 2, points: [{ time: t1, value: d.a.macd }, { time: t2, value: d.b.macd }] });
+      const position = hi ? "aboveBar" : "belowBar";
+      markers.push({ time: A.time, position, shape: "circle", color });
+      markers.push({ time: B.time, position, shape: hi ? "arrowDown" : "arrowUp", color, text: hi ? "دایورجنس سقف" : "دایورجنس کف" });
     }
     return { lines, markers };
   }, [divs, closedBars]);
@@ -262,7 +265,10 @@ export default function ChartPage() {
             )}
             {divOn && (
               <div className="rule-detail">
-                <p className="found"><b>{divs.length}</b> دایورجنس روی همین نمودار پیدا شد</p>
+                <p className="found">
+                  <b>{divs.length}</b> دایورجنس روی همین نمودار پیدا شد
+                  <small className="muted"> — سقف (نارنجی): {divs.filter((d) => d.side === "high").length} · کف (سبز): {divs.filter((d) => d.side === "low").length}</small>
+                </p>
                 {divs.length > 0 ? (
                   <div className="stepper">
                     <button className="btn sm" onClick={() => goto(divCursor + 1)} aria-label="قدیمی‌تر">قدیمی‌تر</button>
@@ -275,18 +281,28 @@ export default function ChartPage() {
                 )}
                 <ul className="basis">
                   <li><span className="src you">از شما</span>مکدی پیش‌فرض MT5 ({MACD_DEFAULT.fast}, {MACD_DEFAULT.slow}, {MACD_DEFAULT.signal})</li>
-                  <li><span className="src you">از شما</span>قیمت: دو سقف، دومی بالاتر</li>
-                  <li><span className="src you">از شما</span>مکدی: دو سقف، دومی پایین‌تر</li>
+                  <li><span className="src you">از شما</span>سقف (روند صعودی): قیمت دو سقف، دومی بالاتر · مکدی دو سقف، دومی پایین‌تر</li>
+                  <li><span className="src you">از شما</span>کف (روند نزولی): قیمت دو کف، دومی پایین‌تر · مکدی دو کف، دومی بالاتر</li>
+                  <li><span className="src you">از شما</span>هر سقف/کف قیمت باید یک سقف/کف مکدی هم کنارش داشته باشد (تناسب)</li>
                 </ul>
                 <div className="assume">
                   <span className="src guess">فرض من — اصلاح کنید</span>
-                  <label>«سقف» یعنی قله‌ای که از این تعداد کندل هر طرف بالاتر باشد
+                  <label className="check">
+                    <input type="checkbox" checked={divP.high} onChange={(e) => setDivP({ ...divP, high: e.target.checked })} /> سقف‌ها (نارنجی)
+                  </label>
+                  <label className="check">
+                    <input type="checkbox" checked={divP.low} onChange={(e) => setDivP({ ...divP, low: e.target.checked })} /> کف‌ها (سبز)
+                  </label>
+                  <label>مکدی «سقف/کف» دارد یعنی حداکثر این تعداد کندل با سقف/کف قیمت فاصله داشته باشد
+                    <input type="number" min={0} max={20} value={divP.tol} dir="ltr" onChange={(e) => setDivP({ ...divP, tol: Math.max(0, Number(e.target.value) || 0) })} />
+                  </label>
+                  <label>«سقف» یعنی قله‌ای که از این تعداد کندل هر طرف بالاتر باشد (کف: برعکس)
                     <input type="number" min={1} max={10} value={divP.n} dir="ltr" onChange={(e) => setDivP({ ...divP, n: Math.max(1, Number(e.target.value) || 1) })} />
                   </label>
                   <label>دو سقف حداکثر چند کندل از هم فاصله داشته باشند
                     <input type="number" min={3} max={1000} value={divP.maxGap} dir="ltr" onChange={(e) => setDivP({ ...divP, maxGap: Math.max(3, Number(e.target.value) || 3) })} />
                   </label>
-                  <small className="muted">مقدار مکدی در هر سقف = بالاترین مقدارش در همان چند کندل. فقط کندل‌های بسته حساب می‌شوند تا نتیجه بعداً عوض نشود.</small>
+                  <small className="muted">سقف مکدی = نقطه‌ای که از کندل قبل و بعدش بالاتر است (کف: برعکس). فقط کندل‌های بسته حساب می‌شوند تا نتیجه بعداً عوض نشود.</small>
                 </div>
               </div>
             )}

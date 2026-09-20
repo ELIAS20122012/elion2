@@ -51,7 +51,10 @@ const K_DIV = "rt.rule.divergence";
 export function getDivParams(): DivParams {
   try {
     const o = JSON.parse(localStorage.getItem(K_DIV) ?? "null");
-    if (o && Number.isFinite(o.n) && o.n >= 1 && Number.isFinite(o.maxGap) && o.maxGap >= 3) return { n: Math.round(o.n), maxGap: Math.round(o.maxGap) };
+    if (o && Number.isFinite(o.n) && o.n >= 1 && Number.isFinite(o.maxGap) && o.maxGap >= 3) {
+      const tol = Number.isFinite(o.tol) && o.tol >= 0 ? Math.round(o.tol) : DEFAULT_DIV.tol;
+      return { n: Math.round(o.n), tol, maxGap: Math.round(o.maxGap), high: o.high !== false, low: o.low !== false };
+    }
   } catch {
     /* fall back to the defaults */
   }
@@ -90,7 +93,7 @@ export function useDivParams(): [DivParams, (p: DivParams) => void] {
   // getDivParams returns a fresh object each call; compare by content so React does not loop
   const [v, setV] = useState<DivParams>(getDivParams);
   useEffect(() => {
-    const on = () => setV((cur) => { const n = getDivParams(); return n.n === cur.n && n.maxGap === cur.maxGap ? cur : n; });
+    const on = () => setV((cur) => { const n = getDivParams(); return JSON.stringify(n) === JSON.stringify(cur) ? cur : n; });
     window.addEventListener("rt-prefs", on);
     return () => window.removeEventListener("rt-prefs", on);
   }, []);
