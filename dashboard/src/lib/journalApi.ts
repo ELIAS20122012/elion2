@@ -1,4 +1,5 @@
-export const API_BASE = "http://localhost:8000";
+/** Same-origin: the dev/preview server forwards /api to the journal server (see vite.config.ts). */
+export const API_BASE = "/api";
 
 export type Platform = "mt4" | "mt5" | "other";
 export type Kind = "manual" | "robot" | "backtest";

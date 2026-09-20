@@ -17,6 +17,7 @@ export default function HelpPage() {
     { id: "quickstart", title: "شروع سریع", icon: "play", body: <Quickstart /> },
     { id: "mt5", title: "حساب MT5 (دمو و لایو)", icon: "wallet", body: <Mt5 /> },
     { id: "mt4", title: "حساب MT4 (اختیاری)", icon: "plug", body: <Mt4 /> },
+    { id: "remote", title: "دیدن از بیرون (Tailscale)", icon: "activity", body: <Remote /> },
     { id: "concepts", title: "ژورنال، آنالیز و بک‌تست", icon: "notebook", body: <Concepts /> },
     { id: "trouble", title: "عیب‌یابی", icon: "refresh", body: <Trouble /> },
     { id: "safety", title: "ایمنی و پشتیبان‌گیری", icon: "server", body: <Safety /> },
@@ -125,6 +126,23 @@ function Mt4() {
         <li>به صفحه‌ی «ژورنال» بروید؛ حساب MT4 خودش شناسایی می‌شود و با یک کلیک اضافه می‌کنید.</li>
       </ol>
       <div className="notice"><b>مهم:</b> MT4 باید باز و روی همان حساب وارد باشد. اگر بسته باشد، معاملات همان زمان بعداً از تاریخچه‌ی MT4 (تا ۹۰ روز اخیر) ثبت می‌شوند، ولی بیشترین سود و ضرر شناورشان نه.</div>
+    </>
+  );
+}
+
+function Remote() {
+  return (
+    <>
+      <p className="muted">داشبورد روی لپ‌تاپ اجرا می‌شود. برای دیدنش از گوشی یا کامپیوتر دیگر (حتی بیرون از خانه) از <b dir="ltr">Tailscale</b> استفاده می‌کنیم: یک شبکه‌ی خصوصی و رایگان فقط بین دستگاه‌های خودتان. هیچ‌چیز روی اینترنت عمومی باز نمی‌شود.</p>
+      <ol className="steps big">
+        <li>روی <b>لپ‌تاپ</b>، Tailscale را نصب کنید (نصب‌کننده در پوشه‌ی Downloads است: <span dir="ltr">tailscale-setup-latest.exe</span>) و با یک حساب (Google، Microsoft یا Apple) وارد شوید.</li>
+        <li>روی <b>دستگاهی که می‌خواهید از آن ببینید</b> (گوشی یا کامپیوتر)، برنامه‌ی Tailscale را نصب کنید و <b>با همان حساب</b> وارد شوید.</li>
+        <li>در سایت <span dir="ltr">login.tailscale.com/admin/dns</span> دو گزینه‌ی <b dir="ltr">MagicDNS</b> و <b dir="ltr">HTTPS Certificates</b> را روشن کنید (یک‌بار).</li>
+        <li>روی لپ‌تاپ در PowerShell این دستور را اجرا کنید (یک‌بار؛ بعد از خاموش/روشن شدن هم می‌ماند):<div className="pathbox"><code dir="ltr">tailscale serve --bg 5173</code></div></li>
+        <li>از دستگاه دیگر آدرس <span dir="ltr">https://‹نام-لپ‌تاپ›.‹نام-شبکه›.ts.net</span> را باز کنید. آدرس دقیق را دستور بالا چاپ می‌کند.</li>
+      </ol>
+      <div className="notice"><b>شرط‌ها:</b> لپ‌تاپ باید روشن و بیدار باشد، <b dir="ltr">start-live.bat</b> اجرا شده باشد و MT5 باز باشد. اگر لپ‌تاپ به خواب برود، داشبورد از بیرون باز نمی‌شود (در تنظیمات Power، خواب را روی «هرگز» بگذارید).</div>
+      <div className="notice"><b>امنیت:</b> فقط دستگاه‌هایی که با حساب Tailscale شما وارد شده‌اند می‌توانند وصل شوند. داشبورد رمز جدا ندارد و از راه دور همه‌ی امکانات (از جمله حذف حساب یا معامله‌ی ژورنال) را دارد؛ پس دستگاه‌های شبکه‌ی Tailscale خود را محدود نگه دارید و آدرس را با دیگران به اشتراک نگذارید.</div>
     </>
   );
 }

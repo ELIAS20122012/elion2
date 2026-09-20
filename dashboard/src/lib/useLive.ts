@@ -14,8 +14,11 @@ export interface AccountInfo {
 
 export type LiveStatus = "off" | "connecting" | "live" | "down";
 
+/** Same-origin WebSocket: the server forwards /live to the local MT5 bridge (see vite.config.ts). */
+const defaultWsUrl = () => `${location.protocol === "https:" ? "wss" : "ws"}://${location.host}/live`;
+
 /** Live M1 candles from the local MT5 bridge (backend/mt5_bridge.py). Only connects while `enabled`. */
-export function useLive(enabled: boolean, url = "ws://localhost:8765") {
+export function useLive(enabled: boolean, url: string = defaultWsUrl()) {
   const [candles, setCandles] = useState<Candle[]>([]);
   const [account, setAccount] = useState<AccountInfo | null>(null);
   const [status, setStatus] = useState<LiveStatus>("off");
