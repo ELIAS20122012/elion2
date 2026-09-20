@@ -91,13 +91,14 @@ export default function OverviewPage() {
   else if (pr.tradesToday === pr.cap) alerts.push({ level: "warn", text: `به سقف ${pr.cap} معامله‌ی امروز رسیده‌اید` });
   if (pr.peakToday > 0 && pr.givebackToday / pr.peakToday >= 0.5) alerts.push({ level: "warn", text: `نیمی از بهترین سود امروز پس داده شده (${pr.givebackToday.toFixed(2)}$)` });
   if (pr.lossStreak >= 2) alerts.push({ level: "warn", text: `${pr.lossStreak} باخت پیاپی` });
-  if (nextRule) alerts.push({ level: "info", text: `قانون بعدی برای آموزش: ${nextRule.title}` });
+  if (RULES.length === 0) alerts.push({ level: "info", text: "هنوز قانونی تعریف نشده؛ آموزش از صفر شروع می‌شود" });
+  else if (nextRule) alerts.push({ level: "info", text: `قانون بعدی برای آموزش: ${nextRule.title}` });
   if (!alerts.some((a) => a.level === "critical" || a.level === "warn")) alerts.unshift({ level: "ok", text: "همه‌چیز عادی است" });
 
   /* ---- hub ---- */
   const nodes: HubNode[] = [
     { id: "data", title: "داده", sub: live.status === "live" ? (marketOpen ? "زنده" : "متصل، بازار ساکن") : "قطع", icon: "activity", state: live.status === "live" ? "on" : "off", to: "/chart" },
-    { id: "rules", title: "قوانین", sub: `${done} از ${RULES.length} تأیید`, icon: "book", state: done ? "on" : "soon", to: "/rules" },
+    { id: "rules", title: "قوانین", sub: RULES.length ? `${done} از ${RULES.length} تأیید` : "هنوز تعریف نشده", icon: "book", state: done ? "on" : "soon", to: "/rules" },
     { id: "risk", title: "ریسک", sub: LEVEL_LABEL[pr.level], icon: "shield", state: pr.level === "high" ? "off" : "on" },
     { id: "journal", title: "ژورنال", sub: `${connected} از ${real.length} حساب زنده`, icon: "notebook", state: real.length && connected === real.length ? "on" : "off", to: "/journal" },
     { id: "backtest", title: "بک‌تست", sub: `${backtests.length} اجرا`, icon: "flask", state: "on", to: "/backtest" },

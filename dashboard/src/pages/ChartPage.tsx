@@ -9,7 +9,7 @@ import Icon from "../components/Icon";
 import { TIMEFRAMES, type Trade } from "../lib/data";
 import { useJournal } from "../state/JournalContext";
 import { useAllAccounts } from "../state/useAllAccounts";
-import { RULES, STATUS_LABEL } from "../lib/rules";
+import { LAYERS, RULES, STATUS_LABEL } from "../lib/rules";
 import { SPEEDS } from "../lib/useReplay";
 import { SYMBOL, useApp } from "../state/AppContext";
 
@@ -165,34 +165,50 @@ export default function ChartPage() {
       {dock && (
         <aside className="side">
           <section className="card">
-            <h3>لایه‌های قوانین</h3>
-            <p className="muted small">هر قانون بعد از آموزش و تأیید شما روشن می‌شود.</p>
+            <h3>لایه‌ها</h3>
             <ul className="rules">
-              {RULES.map((r) => (
-                <li key={r.id} className={r.ready ? "" : "locked"}>
+              {LAYERS.map((l) => (
+                <li key={l.id}>
                   <div>
-                    <b>{r.title}</b>
-                    <small>{r.hint}</small>
+                    <b>{l.title}</b>
+                    <small>{l.hint}</small>
                   </div>
-                  {r.ready ? (
-                    <label className="switch">
-                      <input type="checkbox" checked={!!s.layers[r.id]} onChange={(e) => s.setLayers({ ...s.layers, [r.id]: e.target.checked })} />
-                      <span />
-                    </label>
-                  ) : (
-                    <span className="tag">{STATUS_LABEL[r.status]}</span>
-                  )}
+                  <label className="switch">
+                    <input type="checkbox" checked={!!s.layers[l.id]} onChange={(e) => s.setLayers({ ...s.layers, [l.id]: e.target.checked })} />
+                    <span />
+                  </label>
                 </li>
               ))}
             </ul>
           </section>
 
           <section className="card">
-            <h3>وضعیت ستاپ لول</h3>
-            <div className="status-empty">
-              <span className="dot" /> موتور تشخیص هنوز فعال نیست
-            </div>
-            <p className="muted small">بعد از آموزش قوانین، اینجا مرحله‌ی فعلی ستاپ و دلیل هر تصمیم نمایش داده می‌شود.</p>
+            <h3>قوانین</h3>
+            {RULES.length === 0 ? (
+              <>
+                <div className="status-empty"><span className="dot" /> هنوز قانونی تعریف نشده</div>
+                <p className="muted small">هر قانون را که برایم توضیح دهید، همین‌جا با وضعیتش اضافه می‌شود و روی چارت کشیده می‌شود.</p>
+              </>
+            ) : (
+              <ul className="rules">
+                {RULES.map((r) => (
+                  <li key={r.id} className={r.ready ? "" : "locked"}>
+                    <div>
+                      <b>{r.title}</b>
+                      <small>{r.hint}</small>
+                    </div>
+                    {r.ready ? (
+                      <label className="switch">
+                        <input type="checkbox" checked={!!s.layers[r.id]} onChange={(e) => s.setLayers({ ...s.layers, [r.id]: e.target.checked })} />
+                        <span />
+                      </label>
+                    ) : (
+                      <span className="tag">{STATUS_LABEL[r.status]}</span>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            )}
           </section>
 
           <section className="card stats">

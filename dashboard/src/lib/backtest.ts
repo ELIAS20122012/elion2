@@ -22,14 +22,6 @@ export interface Strategy {
  */
 export const STRATEGIES: Strategy[] = [
   {
-    id: "level",
-    name: "ستاپ لول (قوانین الیاس)",
-    description: "بعد از آموزش و تأیید قوانین (فرکتال، خط روند، MACD، دایورجنس، ساختار لول) اینجا فعال می‌شود.",
-    ready: false,
-    params: [],
-    signals: () => [],
-  },
-  {
     id: "ema-cross",
     name: "تقاطع EMA — نمونه‌ی فنی",
     description: "فقط برای آزمودن خط لوله‌ی بک‌تست. این قانون شما نیست و نتیجه‌اش هیچ ارزش معاملاتی ندارد.",
