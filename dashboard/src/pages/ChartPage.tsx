@@ -68,6 +68,21 @@ export default function ChartPage() {
     return { lines, markers };
   }, [divs, closedBars]);
 
+  // step through what the rule found, newest first
+  const [divCursor, setDivCursor] = useState(0);
+  const [focus, setFocus] = useState<{ time: number; nonce: number } | null>(null);
+  const newest = useMemo(() => [...divs].reverse(), [divs]);
+  const goto = (k: number) => {
+    if (newest.length === 0) return;
+    const i = ((k % newest.length) + newest.length) % newest.length;
+    setDivCursor(i);
+    setFocus({ time: closedBars[newest[i].b.i].time, nonce: Date.now() });
+  };
+  // when the layer is switched on (or the timeframe changes) show the newest one straight away
+  useEffect(() => {
+    if (divOn && newest.length) goto(0);
+  }, [divOn, s.tfSec, newest.length === 0]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // the rule compares against the MT5 MACD, so make sure that pane exists while the layer is on
   useEffect(() => {
     if (divOn && !s.indicators.some((i) => i.id === "macd")) {
@@ -153,6 +168,7 @@ export default function ChartPage() {
               trades={chartTrades}
               showTrades={!!s.layers.trades}
               overlay={divOverlay}
+              focus={focus}
               indicators={s.indicators}
               drawings={s.drawings}
               tool={s.tool}
@@ -247,6 +263,16 @@ export default function ChartPage() {
             {divOn && (
               <div className="rule-detail">
                 <p className="found"><b>{divs.length}</b> دایورجنس روی همین نمودار پیدا شد</p>
+                {divs.length > 0 ? (
+                  <div className="stepper">
+                    <button className="btn sm" onClick={() => goto(divCursor + 1)} aria-label="قدیمی‌تر">قدیمی‌تر</button>
+                    <span dir="ltr">{divCursor + 1} / {divs.length}</span>
+                    <button className="btn sm" onClick={() => goto(divCursor - 1)} aria-label="جدیدتر">جدیدتر</button>
+                    <button className="btn sm primary" onClick={() => goto(0)}>آخرین</button>
+                  </div>
+                ) : (
+                  <p className="muted small">روی این تایم‌فریم چیزی پیدا نشد. تایم‌فریم دیگری را امتحان کنید (M1، M5، M15).</p>
+                )}
                 <ul className="basis">
                   <li><span className="src you">از شما</span>مکدی پیش‌فرض MT5 ({MACD_DEFAULT.fast}, {MACD_DEFAULT.slow}, {MACD_DEFAULT.signal})</li>
                   <li><span className="src you">از شما</span>قیمت: دو سقف، دومی بالاتر</li>

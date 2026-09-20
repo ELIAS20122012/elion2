@@ -51,6 +51,8 @@ interface Props {
   onDuplicate: (id: string) => void;
   onClearDrawings: () => void;
   showVolume: boolean;
+  /** scroll the chart so this time is in view; a new `nonce` triggers it again for the same time */
+  focus?: { time: number; nonce: number } | null;
 }
 
 interface Drag { id: string; kind: "point" | "body"; idx: number; startLogical: number; startPrice: number; orig: DPoint[] }
@@ -300,6 +302,17 @@ export default function Chart(props: Props) {
     }
     prev.current = { len: candles.length, first: candles[0].time, tf: tfSec };
   }, [candles, tfSec]);
+
+  /* ---- jump to a moment (used to step through what a rule found) ---- */
+  const focusNonce = props.focus?.nonce;
+  useEffect(() => {
+    const f = props.focus;
+    const chart = chartRef.current;
+    if (!f || !chart || candles.length === 0) return;
+    const at = map.timeToLogical(f.time);
+    chart.timeScale().setVisibleLogicalRange({ from: at - 70, to: at + 45 });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [focusNonce]);
 
   /* ---- volume (tick volume from MT5) ---- */
   const hasVolume = candles.length > 0 && candles[0].volume != null;

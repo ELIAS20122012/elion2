@@ -75,6 +75,7 @@
 .rule-detail { margin-top: var(--sp-3); padding-top: var(--sp-3); border-top: 1px solid var(--line); display: grid; gap: var(--sp-3); }
 .rule-detail .found { font-size: var(--fs-sm); color: var(--text-2); }
 .rule-detail .found b { color: var(--accent-2); font-family: var(--font-num); font-size: var(--fs-lg); }
+.stepper { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-2); font-family: var(--font-num); font-size: var(--fs-sm); }
 .rule-detail .basis { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; font-size: var(--fs-xs); color: var(--text-2); }
 .rule-detail .assume { display: grid; gap: var(--sp-2); padding: var(--sp-3); border: 1px dashed rgba(255, 157, 61, 0.45); border-radius: var(--r-md); background: rgba(255, 157, 61, 0.05); }
 .rule-detail .assume label { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); font-size: var(--fs-xs); color: var(--text-2); }

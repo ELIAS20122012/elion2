@@ -23,7 +23,21 @@ function useAppState() {
   const [trades, setTrades] = useState<Trade[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [tfSec, setTfSec] = useState<number>(60);
-  const [layers, setLayers] = useState<Record<string, boolean>>({ trades: true });
+  // chart layers survive a page reload; the rule being taught (divergence) is ON unless Elias turned it off
+  const [layers, setLayers] = useState<Record<string, boolean>>(() => {
+    try {
+      return { trades: true, divergence: true, ...JSON.parse(localStorage.getItem("rt.layers") ?? "{}") };
+    } catch {
+      return { trades: true, divergence: true };
+    }
+  });
+  useEffect(() => {
+    try {
+      localStorage.setItem("rt.layers", JSON.stringify(layers));
+    } catch {
+      /* not persisted */
+    }
+  }, [layers]);
   const [mode, setModeRaw] = useState<"live" | "replay">("live");
   const [indicators, setIndicators] = useState<IndicatorInstance[]>(loadIndicators);
   const [drawings, setDrawings] = useState<Drawing[]>(() => loadDrawings(SYMBOL));
