@@ -1,39 +1,14 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { KIND_LABEL } from "../components/AccountBar";
 import Icon from "../components/Icon";
 import PageHeader from "../components/PageHeader";
 import { equityCurve, isClosed, money, net, summarize } from "../lib/analytics";
 import { fmtPrice } from "../lib/data";
-import { journalApi, type Account, type JTrade, type LiveInfo } from "../lib/journalApi";
 import { RULES } from "../lib/rules";
 import { SYMBOL, useApp } from "../state/AppContext";
 import { useJournal } from "../state/JournalContext";
-
-interface Row { account: Account; trades: JTrade[]; live: LiveInfo | null }
-
-/** Trades + live state of every account, refreshed in the background (the overview shows all of them at once). */
-function useAllAccounts(accounts: Account[], enabled: boolean): Row[] {
-  const [rows, setRows] = useState<Row[]>([]);
-  useEffect(() => {
-    if (!enabled) return;
-    let dead = false;
-    const load = async () => {
-      const next = await Promise.all(
-        accounts.map(async (account) => ({
-          account,
-          trades: await journalApi.trades(account.id).catch(() => [] as JTrade[]),
-          live: account.kind === "backtest" ? null : await journalApi.live(account.id).catch(() => null),
-        })),
-      );
-      if (!dead) setRows(next);
-    };
-    load();
-    const id = setInterval(load, 8000);
-    return () => { dead = true; clearInterval(id); };
-  }, [accounts, enabled]);
-  return rows;
-}
+import { useAllAccounts } from "../state/useAllAccounts";
 
 function Sparkline({ values, up }: { values: number[]; up: boolean }) {
   if (values.length < 2) return <div className="spark" />;

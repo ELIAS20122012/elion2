@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import Chart from "../components/Chart";
 import DrawToolbar from "../components/DrawToolbar";
 import DrawingProps from "../components/DrawingProps";
@@ -6,7 +6,9 @@ import IndicatorsBar from "../components/IndicatorsBar";
 import TradesTable from "../components/TradesTable";
 import TradingViewWidget from "../components/TradingViewWidget";
 import Icon from "../components/Icon";
-import { TIMEFRAMES } from "../lib/data";
+import { TIMEFRAMES, type Trade } from "../lib/data";
+import { useJournal } from "../state/JournalContext";
+import { useAllAccounts } from "../state/useAllAccounts";
 import { RULES, STATUS_LABEL } from "../lib/rules";
 import { SPEEDS } from "../lib/useReplay";
 import { SYMBOL, useApp } from "../state/AppContext";
@@ -18,6 +20,36 @@ export default function ChartPage() {
   const [view, setView] = useState<"bot" | "tv">("bot");
   const [dock, setDock] = useState(true);
   const { live, replay, mode, source, selected } = s;
+
+  // In live mode the chart shows the REAL positions of every connected account (refreshed every few seconds).
+  // In replay mode it keeps the recorded trades that belong to the recorded candles.
+  const j = useJournal();
+  const rows = useAllAccounts(j.accounts, j.status === "ok" && mode === "live", 4000);
+  const chartTrades = useMemo<Trade[]>(
+    () =>
+      mode === "live"
+        ? rows
+            .filter((r) => r.account.kind !== "backtest")
+            .flatMap((r) => r.trades)
+            .filter((t) => t.symbol.toUpperCase().startsWith("XAU"))
+            .map((t) => ({
+              ticket: t.ticket, symbol: t.symbol, direction: t.direction, volume: t.volume,
+              open_time: t.open_time, open_price: t.open_price, close_time: t.close_time, close_price: t.close_price,
+              stop_loss: t.sl, take_profit: t.tp, profit: +(t.profit + t.commission + t.swap).toFixed(2), status: t.close_time ? "closed" : "open",
+            }))
+        : s.trades,
+    [mode, rows, s.trades],
+  );
+  // stats and table follow the same source as the markers on the chart
+  const tableTrades = useMemo(
+    () => (mode === "live" ? [...chartTrades].sort((a, b) => b.open_time - a.open_time).slice(0, 30) : s.visibleTrades),
+    [mode, chartTrades, s.visibleTrades],
+  );
+  const stats = useMemo(() => {
+    const pool = mode === "live" ? chartTrades : s.visibleTrades;
+    const closed = pool.filter((t) => t.close_time && t.close_time <= (s.last?.time ?? Number.MAX_SAFE_INTEGER));
+    return { closed: closed.length, wins: closed.filter((t) => (t.profit ?? 0) > 0).length, net: closed.reduce((a, t) => a + (t.profit ?? 0), 0) };
+  }, [mode, chartTrades, s.visibleTrades, s.last?.time]);
 
   return (
     <div className={`chart-page ${dock ? "" : "no-dock"}`}>
@@ -83,7 +115,7 @@ export default function ChartPage() {
             <Chart
               candles={s.bars}
               tfSec={s.tfSec}
-              trades={s.trades}
+              trades={chartTrades}
               showTrades={!!s.layers.trades}
               overlay={s.overlay}
               indicators={s.indicators}
@@ -166,17 +198,17 @@ export default function ChartPage() {
           <section className="card stats">
             <h3>آمار معاملات</h3>
             <div className="grid">
-              <div><span>معاملات بسته</span><b>{s.closed.length}</b></div>
-              <div><span>نرخ برد</span><b>{s.closed.length ? Math.round((s.wins / s.closed.length) * 100) : 0}%</b></div>
-              <div><span>سود/زیان</span><b className={s.net >= 0 ? "up" : "down"} dir="ltr">{s.net >= 0 ? "+" : ""}{s.net.toFixed(2)}$</b></div>
+              <div><span>معاملات بسته</span><b>{stats.closed}</b></div>
+              <div><span>نرخ برد</span><b>{stats.closed ? Math.round((stats.wins / stats.closed) * 100) : 0}%</b></div>
+              <div><span>سود/زیان</span><b className={stats.net >= 0 ? "up" : "down"} dir="ltr">{stats.net >= 0 ? "+" : ""}{stats.net.toFixed(2)}$</b></div>
             </div>
           </section>
         </aside>
       )}
 
       <section className="card trades">
-        <h3>معاملات <small className="muted">({s.visibleTrades.length})</small></h3>
-        <TradesTable trades={s.visibleTrades} lastTime={s.last?.time ?? 0} />
+        <h3>{mode === "live" ? "معاملات واقعی (آخرین ۳۰ تا)" : "معاملات ضبط‌شده"} <small className="muted">({tableTrades.length})</small></h3>
+        <TradesTable trades={tableTrades} lastTime={s.last?.time ?? Number.MAX_SAFE_INTEGER} />
       </section>
     </div>
   );

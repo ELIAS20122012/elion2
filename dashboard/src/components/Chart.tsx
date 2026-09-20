@@ -398,7 +398,10 @@ export default function Chart(props: Props) {
     const last = candles[candles.length - 1]?.time ?? 0;
     for (const t of trades) {
       if (t.open_time > last || !(t.close_time == null || t.close_time > last)) continue;
-      priceLines.current.push(series.createPriceLine({ price: t.open_price, color: C.gold, lineStyle: LineStyle.Dashed, lineWidth: 1, title: `#${t.ticket.slice(-4)}` }));
+      const tag = `#${t.ticket.slice(-4)}`;
+      priceLines.current.push(series.createPriceLine({ price: t.open_price, color: C.gold, lineStyle: LineStyle.Dashed, lineWidth: 1, title: `${t.direction === "buy" ? "BUY" : "SELL"} ${tag}` }));
+      if (t.stop_loss) priceLines.current.push(series.createPriceLine({ price: t.stop_loss, color: C.down, lineStyle: LineStyle.Dotted, lineWidth: 1, title: `SL ${tag}` }));
+      if (t.take_profit) priceLines.current.push(series.createPriceLine({ price: t.take_profit, color: C.up, lineStyle: LineStyle.Dotted, lineWidth: 1, title: `TP ${tag}` }));
     }
   }, [candles, trades, showTrades]);
 
