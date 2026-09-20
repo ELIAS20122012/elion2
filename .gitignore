@@ -1,0 +1,16 @@
+**/.env
+__pycache__/
+*.pyc
+.venv/
+node_modules/
+dist/
+build/
+*.log
+.DS_Store
+*.tsbuildinfo
+.pytest_cache/
+
+# personal trading data: never committed (backup.bat copies them privately to OneDrive)
+*.db
+*.db-wal
+*.db-shm
