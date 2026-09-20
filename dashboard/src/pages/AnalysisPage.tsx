@@ -1,4 +1,5 @@
-﻿import { useMemo, useState } from "react";
+﻿import { useMemo } from "react";
+import { useMaxPerDay } from "../lib/prefs";
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import AccountBar, { BackendGate } from "../components/AccountBar";
 import Kpis from "../components/Kpis";
@@ -26,7 +27,7 @@ export default function AnalysisPage() {
 
 function Body() {
   const { accounts, active, trades } = useJournal();
-  const [maxPerDay, setMaxPerDay] = useState(3);
+  const [maxPerDay, setMaxPerDay] = useMaxPerDay();
   const closed = useMemo(() => trades.filter(isClosed), [trades]);
   const s = useMemo(() => summarize(trades), [trades]);
   const curve = useMemo(() => equityCurve(trades, active?.initial_balance ?? 0), [trades, active?.initial_balance]);

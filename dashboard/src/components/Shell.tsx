@@ -92,7 +92,7 @@ export default function Shell() {
             </div>
             {mode === "live" ? (
               <>
-                {live.account && (
+                {live.account?.login && (
                   <span className={`chip ${live.account.demo ? "demo" : "real"}`} dir="ltr">
                     {live.account.demo ? "DEMO" : "REAL"} · {live.account.login}
                   </span>

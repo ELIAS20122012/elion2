@@ -32,7 +32,7 @@ export const GROUPS: { id: NonNullable<ModuleDef["group"]>; label: string }[] = 
  * the page title in the top bar all come from this list.
  */
 export const MODULES: ModuleDef[] = [
-  { id: "overview", path: "/", title: "نمای کلی", icon: "home", group: "market", element: <OverviewPage /> },
+  { id: "overview", path: "/", title: "مرکز فرماندهی", icon: "home", group: "market", element: <OverviewPage /> },
   { id: "chart", path: "/chart", title: "چارت", icon: "chart", group: "market", element: <ChartPage /> },
   { id: "journal", path: "/journal", title: "ژورنال", icon: "notebook", group: "trading", element: <JournalPage /> },
   { id: "analysis", path: "/analysis", title: "آنالیز", icon: "analysis", group: "trading", element: <AnalysisPage /> },

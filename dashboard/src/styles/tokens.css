@@ -50,8 +50,38 @@
   --t-fast: 0.12s;
   --t-med: 0.2s;
 
+  --accent-2: #f59e0b;
+  --glow: none;
+
   /* layout */
   --sidebar-w: 248px;
   --sidebar-w-collapsed: 72px;
   --topbar-h: 60px;
+}
+
+/* Neon theme: deep navy with electric-blue glow (the Finova-style look). Same tokens, different values. */
+:root[data-theme="neon"] {
+  --bg: #040814;
+  --surface-1: #08112a;
+  --surface-2: #0d1a3a;
+  --surface-3: #142450;
+  --overlay: rgba(2, 5, 16, 0.74);
+  --line: rgba(72, 140, 255, 0.16);
+  --line-strong: rgba(90, 165, 255, 0.36);
+  --text: #eaf2ff;
+  --text-2: #a8bde6;
+  --muted: #7088b5;
+  --gold: #35c0ff;                       /* the accent colour is electric blue in this theme */
+  --gold-soft: rgba(53, 192, 255, 0.14);
+  --gold-line: rgba(53, 192, 255, 0.5);
+  --accent-2: #ff9d3d;
+  --up: #2ee6a6;
+  --up-soft: rgba(46, 230, 166, 0.14);
+  --down: #ff5c7a;
+  --down-soft: rgba(255, 92, 122, 0.14);
+  --info: #7aa8ff;
+  --info-soft: rgba(122, 168, 255, 0.14);
+  --violet: #b18cff;
+  --glow: 0 0 28px rgba(53, 150, 255, 0.16);
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.5);
 }

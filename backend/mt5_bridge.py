@@ -11,6 +11,8 @@ import json
 import sys
 
 import MetaTrader5 as mt5
+import time
+
 from websockets.asyncio.server import serve
 
 SYMBOL = sys.argv[1] if len(sys.argv) > 1 else "XAUUSD"
@@ -47,9 +49,46 @@ def history_msg():
     return {"type": "history", "symbol": SYMBOL, "candles": [candle(r) for r in (rates if rates is not None else [])]}
 
 
+def link_ok() -> bool:
+    return mt5.terminal_info() is not None and mt5.account_info() is not None
+
+
+def reconnect() -> bool:
+    """MT5 was restarted (or its session went stale): drop the old session and attach to the running terminal again."""
+    mt5.shutdown()
+    ok = mt5.initialize(path=TERMINAL_PATH) if TERMINAL_PATH else mt5.initialize()
+    if ok:
+        mt5.symbol_select(SYMBOL, True)
+    return ok and link_ok()
+
+
+_next_try = 0.0
+
+
+def ensure_link() -> bool:
+    """True when MT5 answers. Otherwise try to reattach, at most once every 3 seconds."""
+    global _next_try
+    if link_ok():
+        return True
+    if time.time() < _next_try:
+        return False
+    _next_try = time.time() + 3
+    print("MT5 link lost - reconnecting...", flush=True)
+    ok = reconnect()
+    print("MT5 reconnected" if ok else "MT5 still unavailable", flush=True)
+    return ok
+
+
+async def broadcast(msg: dict):
+    text = json.dumps(msg)
+    for ws in list(clients):
+        asyncio.create_task(ws.send(text))
+
+
 async def handler(ws):
     clients.add(ws)
     try:
+        ensure_link()
         await ws.send(json.dumps(account_msg()))
         await ws.send(json.dumps(history_msg()))
         await ws.wait_closed()
@@ -65,13 +104,16 @@ async def poll():
         if not clients:
             continue
         rates = mt5.copy_rates_from_pos(SYMBOL, mt5.TIMEFRAME_M1, 0, 1)
-        if rates is not None and len(rates):
-            c = candle(rates[0])
-            if c != last:
-                last = c
-                msg = json.dumps({"type": "candle", "candle": c})
-                for ws in list(clients):
-                    asyncio.create_task(ws.send(msg))
+        if rates is None or not len(rates):
+            if ensure_link():  # reattached: give every client a fresh history and account
+                last = None
+                await broadcast(account_msg())
+                await broadcast(history_msg())
+            continue
+        c = candle(rates[0])
+        if c != last:
+            last = c
+            await broadcast({"type": "candle", "candle": c})
         ticks += 1
         if ticks % 20 == 0:  # ~ every 5 s
             msg = json.dumps(account_msg())

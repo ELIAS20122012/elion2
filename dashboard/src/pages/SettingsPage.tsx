@@ -1,11 +1,33 @@
 import PageHeader from "../components/PageHeader";
+import { useMaxPerDay, useTheme } from "../lib/prefs";
 import { useApp } from "../state/AppContext";
 
 export default function SettingsPage() {
+  const [theme, setTheme] = useTheme();
+  const [cap, setCap] = useMaxPerDay();
   const { drawings, setDrawings, indicators, setIndicators, magnet, setMagnet, showVolume, setShowVolume } = useApp();
   return (
     <div className="page">
       <PageHeader title="تنظیمات" subtitle="ترجیحات چارت و داده‌های ذخیره‌شده در همین مرورگر." />
+
+      <section className="card settings">
+        <h3>ظاهر</h3>
+        <div className="row">
+          <div><b>تم</b><small>نئونی (آبی، مثل مرکز فرماندهی) یا کلاسیک (طلایی)</small></div>
+          <div className="seg" role="group" aria-label="تم">
+            <button className={theme === "neon" ? "on" : ""} onClick={() => setTheme("neon")}>نئونی</button>
+            <button className={theme === "classic" ? "on" : ""} onClick={() => setTheme("classic")}>کلاسیک</button>
+          </div>
+        </div>
+      </section>
+
+      <section className="card settings">
+        <h3>ریسک روز</h3>
+        <label className="row">
+          <div><b>سقف معامله در روز</b><small>در «فشار روز»، هشدارها و آنالیز استفاده می‌شود. الان طبق آزمایش خودتان: ۳</small></div>
+          <input type="number" min={1} value={cap} onChange={(e) => setCap(Number(e.target.value))} dir="ltr" style={{ width: 80 }} />
+        </label>
+      </section>
 
       <section className="card settings">
         <h3>چارت</h3>

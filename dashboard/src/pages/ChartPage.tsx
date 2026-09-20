@@ -139,7 +139,7 @@ export default function ChartPage() {
         {view !== "bot" ? null : mode === "live" ? (
           <div className="replay">
             <span className="muted">
-              {live.account ? `${live.account.server} · ${live.account.symbol} · موجودی ${live.account.balance?.toFixed(2)}$` : "—"}
+              {live.account?.login ? `${live.account.server} · ${live.account.symbol} · موجودی ${live.account.balance != null ? `${live.account.balance.toFixed(2)}$` : "—"}` : "—"}
             </span>
             <span className="muted" style={{ marginInlineStart: "auto" }}>فقط خواندنی — هیچ سفارشی ارسال نمی‌شود</span>
           </div>
