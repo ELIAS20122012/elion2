@@ -155,10 +155,24 @@ def live_status(platform: str, login: str | None) -> dict:
     return {"source": None, "connected": False}
 
 
-def sync_mt5_once() -> None:
-    """Refresh every MT5 account whose login matches the terminal that is currently logged in."""
+_sync_running = threading.Lock()
+
+
+def sync_mt5_once(wait: bool = False) -> None:
+    """Refresh every MT5 account whose login matches the terminal that is currently logged in.
+
+    Passes never overlap. The periodic loop skips a busy pass (`wait=False`); a newly added account waits its turn."""
     from . import mt5sync
 
+    if not _sync_running.acquire(blocking=wait):
+        return
+    try:
+        _sync_all(mt5sync)
+    finally:
+        _sync_running.release()
+
+
+def _sync_all(mt5sync) -> None:
     with db.db() as con:
         accounts = con.execute("SELECT id, login, terminal_path FROM accounts WHERE platform='mt5' AND login IS NOT NULL AND kind != 'backtest'").fetchall()
         for a in accounts:

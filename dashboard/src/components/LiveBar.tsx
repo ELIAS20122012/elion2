@@ -57,11 +57,12 @@ export function LiveBar() {
   const isMt4 = active.platform === "mt4";
   const ok = live.connected;
   const fl = live.floating ?? 0;
+  const firstSync = !ok && !isMt4 && live.last_seen_ago == null; // MT5 account just added: first sync not finished yet
 
   return (
     <div className={`livebar ${ok ? "on" : "off"}`}>
       <span className="live-dot" />
-      <b>{ok ? "زنده" : isMt4 ? "منتظر اندیکاتور MT4" : "MT5 وصل نیست"}</b>
+      <b>{ok ? "زنده" : isMt4 ? "منتظر اندیکاتور MT4" : firstSync ? "در حال اتصال به MT5…" : "MT5 وصل نیست"}</b>
       {ok ? (
         <>
           <span className="muted small">هر معامله‌ای که باز و بسته کنید خودکار ثبت می‌شود</span>
@@ -71,7 +72,9 @@ export function LiveBar() {
         </>
       ) : (
         <span className="muted small">
-          {isMt4 ? <>در MT4 اندیکاتور JournalBridge را روی یک چارت بگذارید. <Link to="/account">راهنمای نصب</Link></> : live.error ?? "ترمینال MT5 باز و لاگین باشد."}
+          {isMt4
+            ? <>در MT4 اندیکاتور JournalBridge را روی یک چارت بگذارید. <Link to="/account">راهنمای نصب</Link></>
+            : firstSync ? "چند ثانیه صبر کنید…" : live.error ?? "ترمینال MT5 باز و لاگین باشد."}
         </span>
       )}
     </div>

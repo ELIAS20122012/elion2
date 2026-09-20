@@ -5,16 +5,21 @@ logged in at once and the journal reads each one.
 """
 import glob
 import os
+import threading
 from datetime import datetime, timezone
 
 import MetaTrader5 as mt5
+
+# The MetaTrader5 package keeps one global connection per process and is not thread-safe: two threads calling
+# initialize()/shutdown() at once can crash the whole interpreter. Every MT5 call in this process goes through this lock.
+MT5_LOCK = threading.RLock()
 
 
 class SyncError(Exception):
     pass
 
 
-def find_terminals() -> list[dict]:
+def find_terminals() -> list[dict]:  # filesystem only; does not touch MT5
     """MT5 installs on this PC: standard install folders plus the folders MetaTrader recorded in its data directories."""
     found: dict[str, dict] = {}
 
@@ -37,6 +42,11 @@ def find_terminals() -> list[dict]:
 
 def fetch(expected_login: str | None, days: int = 365, terminal_path: str | None = None) -> tuple[list[dict], dict]:
     """Returns (trades, account_info). Closed positions come from deals, open ones from positions_get."""
+    with MT5_LOCK:
+        return _fetch(expected_login, days, terminal_path)
+
+
+def _fetch(expected_login: str | None, days: int, terminal_path: str | None) -> tuple[list[dict], dict]:
     ok = mt5.initialize(path=terminal_path) if terminal_path else mt5.initialize()
     if not ok:
         raise SyncError(f"اتصال به MT5 ممکن نشد ({mt5.last_error()}). ترمینال MT5 باز و لاگین باشد" + (f" ({terminal_path})." if terminal_path else "."))

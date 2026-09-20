@@ -113,7 +113,10 @@ def create_account(a: AccountIn):
             (a.name.strip(), a.platform, a.kind, a.broker, (a.login or "").strip() or None, a.currency, int(a.is_live), a.initial_balance, a.note, db.now(),
              (a.terminal_path or "").strip() or None),
         )
-        return _account_dict(con, _account(con, cur.lastrowid))
+        created = _account_dict(con, _account(con, cur.lastrowid))
+    if a.platform == "mt5" and a.kind != "backtest":  # don't make the user wait for the next 10 s cycle
+        threading.Thread(target=bridge.sync_mt5_once, kwargs={"wait": True}, name="journal-first-sync", daemon=True).start()
+    return created
 
 
 @app.patch("/accounts/{account_id}")
