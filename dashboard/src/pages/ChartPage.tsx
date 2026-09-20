@@ -1,4 +1,7 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { detectRegularBearish, MACD_DEFAULT } from "../lib/detectors/divergence";
+import { uid } from "../lib/drawings";
+import { useDivParams } from "../lib/prefs";
 import Chart from "../components/Chart";
 import DrawToolbar from "../components/DrawToolbar";
 import DrawingProps from "../components/DrawingProps";
@@ -6,7 +9,7 @@ import IndicatorsBar from "../components/IndicatorsBar";
 import TradesTable from "../components/TradesTable";
 import TradingViewWidget from "../components/TradingViewWidget";
 import Icon from "../components/Icon";
-import { TIMEFRAMES, type Trade } from "../lib/data";
+import { TIMEFRAMES, type Overlay, type OverlayLine, type OverlayMarker, type Trade } from "../lib/data";
 import { useJournal } from "../state/JournalContext";
 import { useAllAccounts } from "../state/useAllAccounts";
 import { LAYERS, RULES, STATUS_LABEL } from "../lib/rules";
@@ -40,6 +43,38 @@ export default function ChartPage() {
         : s.trades,
     [mode, rows, s.trades],
   );
+  /* ---- rule: regular divergence on the highs (drawn only while its layer is on) ---- */
+  const [divP, setDivP] = useDivParams();
+  const divOn = !!s.layers.divergence;
+  // only CLOSED candles: the forming candle would make a result flip while it is still moving
+  const closedBars = useMemo(() => s.bars.slice(0, -1), [s.bars.length, s.bars[0]?.time, s.tfSec]); // eslint-disable-line react-hooks/exhaustive-deps
+  const divs = useMemo(() => (divOn ? detectRegularBearish(closedBars, divP) : []), [divOn, closedBars, divP]);
+  const divOverlay = useMemo<Overlay>(() => {
+    const orange = "#ff9d3d";
+    const lines: OverlayLine[] = [];
+    const markers: OverlayMarker[] = [];
+    for (const d of divs) {
+      const A = closedBars[d.a.i];
+      const B = closedBars[d.b.i];
+      const ma = closedBars[d.a.mi];
+      const mb = closedBars[d.b.mi];
+      const id = `div-${d.a.i}-${d.b.i}`;
+      lines.push({ id: `${id}-price`, pane: "price", color: orange, width: 2, points: [{ time: A.time, value: d.a.price }, { time: B.time, value: d.b.price }] });
+      const [t1, t2] = ma.time < mb.time ? [ma.time, mb.time] : [A.time, B.time]; // times must be strictly increasing
+      lines.push({ id: `${id}-macd`, pane: "macd", color: orange, width: 2, points: [{ time: t1, value: d.a.macd }, { time: t2, value: d.b.macd }] });
+      markers.push({ time: A.time, position: "aboveBar", shape: "circle", color: orange });
+      markers.push({ time: B.time, position: "aboveBar", shape: "arrowDown", color: orange, text: "دایورجنس" });
+    }
+    return { lines, markers };
+  }, [divs, closedBars]);
+
+  // the rule compares against the MT5 MACD, so make sure that pane exists while the layer is on
+  useEffect(() => {
+    if (divOn && !s.indicators.some((i) => i.id === "macd")) {
+      s.setIndicators([...s.indicators, { uid: uid(), id: "macd", params: { fast: 12, slow: 26, sig: 9 }, visible: true }]);
+    }
+  }, [divOn, s.indicators]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // stats and table follow the same source as the markers on the chart
   const tableTrades = useMemo(
     () => (mode === "live" ? [...chartTrades].sort((a, b) => b.open_time - a.open_time).slice(0, 30) : s.visibleTrades),
@@ -117,7 +152,7 @@ export default function ChartPage() {
               tfSec={s.tfSec}
               trades={chartTrades}
               showTrades={!!s.layers.trades}
-              overlay={s.overlay}
+              overlay={divOverlay}
               indicators={s.indicators}
               drawings={s.drawings}
               tool={s.tool}
@@ -208,6 +243,26 @@ export default function ChartPage() {
                   </li>
                 ))}
               </ul>
+            )}
+            {divOn && (
+              <div className="rule-detail">
+                <p className="found"><b>{divs.length}</b> دایورجنس روی همین نمودار پیدا شد</p>
+                <ul className="basis">
+                  <li><span className="src you">از شما</span>مکدی پیش‌فرض MT5 ({MACD_DEFAULT.fast}, {MACD_DEFAULT.slow}, {MACD_DEFAULT.signal})</li>
+                  <li><span className="src you">از شما</span>قیمت: دو سقف، دومی بالاتر</li>
+                  <li><span className="src you">از شما</span>مکدی: دو سقف، دومی پایین‌تر</li>
+                </ul>
+                <div className="assume">
+                  <span className="src guess">فرض من — اصلاح کنید</span>
+                  <label>«سقف» یعنی قله‌ای که از این تعداد کندل هر طرف بالاتر باشد
+                    <input type="number" min={1} max={10} value={divP.n} dir="ltr" onChange={(e) => setDivP({ ...divP, n: Math.max(1, Number(e.target.value) || 1) })} />
+                  </label>
+                  <label>دو سقف حداکثر چند کندل از هم فاصله داشته باشند
+                    <input type="number" min={3} max={1000} value={divP.maxGap} dir="ltr" onChange={(e) => setDivP({ ...divP, maxGap: Math.max(3, Number(e.target.value) || 3) })} />
+                  </label>
+                  <small className="muted">مقدار مکدی در هر سقف = بالاترین مقدارش در همان چند کندل. فقط کندل‌های بسته حساب می‌شوند تا نتیجه بعداً عوض نشود.</small>
+                </div>
+              </div>
             )}
           </section>
 

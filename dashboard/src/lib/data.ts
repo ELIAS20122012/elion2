@@ -31,6 +31,8 @@ export interface OverlayLine {
   color: string;
   width?: number;
   dashed?: boolean;
+  /** where to draw it: on the candles (default) or inside the MACD pane */
+  pane?: "price" | "macd";
 }
 
 export interface OverlayMarker {

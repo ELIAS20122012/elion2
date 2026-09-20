@@ -67,6 +67,7 @@ export default function Chart(props: Props) {
   const primRef = useRef<DrawingsPrimitive | null>(null);
   const lineSeries = useRef<Map<string, ISeriesApi<"Line">>>(new Map());
   const built = useRef<Built[]>([]);
+  const paneOf = useRef<Record<string, number>>({}); // indicator uid -> pane index
   const prev = useRef<{ len: number; first: number; tf: number }>({ len: 0, first: 0, tf: 0 });
   const priceLines = useRef<ReturnType<ISeriesApi<"Candlestick">["createPriceLine"]>[]>([]);
   const [legend, setLegend] = useState<Candle | null>(null);
@@ -328,11 +329,16 @@ export default function Chart(props: Props) {
     if (!chart) return;
     for (const b of built.current) for (const s of b.series) chart.removeSeries(s);
     built.current = [];
+    // rule overlays live in panes whose numbers are about to change: drop them, the overlay effect redraws them
+    for (const s of lineSeries.current.values()) chart.removeSeries(s);
+    lineSeries.current.clear();
+    paneOf.current = {};
     let pane = 0;
     visible.forEach((inst, idx) => {
       const def = INDICATOR_BY_ID[inst.id];
       const out = def.compute(candles.length ? candles : [], inst.params, tfSec);
       const paneIndex = def.group === "pane" ? ++pane : 0;
+      paneOf.current[inst.uid] = paneIndex;
       const sers: ISeriesApi<SeriesType>[] = out.series.map((s) => {
         if (s.kind === "hist") return chart.addSeries(HistogramSeries, { color: s.color, priceLineVisible: false, lastValueVisible: false }, paneIndex);
         if (s.kind === "dots")
@@ -410,18 +416,23 @@ export default function Chart(props: Props) {
     const chart = chartRef.current;
     if (!chart) return;
     const m = lineSeries.current;
-    const keep = new Set(overlay.lines.map((l) => l.id));
+    const macdInst = visible.find((i) => i.id === "macd");
+    const macdPane = macdInst ? paneOf.current[macdInst.uid] : undefined;
+    // a line aimed at the MACD pane can only be drawn while a MACD pane exists
+    const wanted = overlay.lines.filter((l) => l.pane !== "macd" || macdPane !== undefined);
+    const keep = new Set(wanted.map((l) => l.id));
     for (const [id, s] of m) if (!keep.has(id)) (chart.removeSeries(s), m.delete(id));
-    for (const l of overlay.lines) {
+    for (const l of wanted) {
       let s = m.get(l.id);
       if (!s) {
-        s = chart.addSeries(LineSeries, { priceLineVisible: false, lastValueVisible: false, crosshairMarkerVisible: false });
+        s = chart.addSeries(LineSeries, { priceLineVisible: false, lastValueVisible: false, crosshairMarkerVisible: false }, l.pane === "macd" ? macdPane : 0);
         m.set(l.id, s);
       }
       s.applyOptions({ color: l.color, lineWidth: (l.width ?? 2) as 1 | 2 | 3 | 4, lineStyle: l.dashed ? LineStyle.Dashed : LineStyle.Solid });
       s.setData(l.points);
     }
-  }, [overlay.lines]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [overlay.lines, structureKey]);
 
   const shown = legend ?? candles[candles.length - 1];
   return (

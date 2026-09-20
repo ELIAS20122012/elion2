@@ -14,7 +14,15 @@ export interface Rule {
  * Rules are added here only as Elias defines them, in the order he teaches them, with status
  * "teaching" while being defined and "approved" once he confirms them on the chart.
  */
-export const RULES: Rule[] = [];
+export const RULES: Rule[] = [
+  {
+    id: "divergence",
+    title: "دایورجنس معمولی روی سقف‌ها",
+    hint: "قیمت دو سقف بالاتر، مکدی (پیش‌فرض MT5) دو سقف پایین‌تر",
+    status: "teaching",
+    ready: true,
+  },
+];
 
 /** Things the chart can show that are not setup rules. */
 export const LAYERS = [{ id: "trades", title: "معاملات", hint: "ورود و خروج و حد ضرر روی چارت" }];

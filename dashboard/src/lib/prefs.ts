@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { DEFAULT_DIV, type DivParams } from "./detectors/divergence";
 
 /* ---------- theme ---------- */
 export type Theme = "neon" | "classic";
@@ -44,6 +45,28 @@ export function setMaxPerDay(n: number): void {
   window.dispatchEvent(new Event("rt-prefs"));
 }
 
+/* ---------- divergence rule parameters (the two that are assumptions, so they can be changed) ---------- */
+const K_DIV = "rt.rule.divergence";
+
+export function getDivParams(): DivParams {
+  try {
+    const o = JSON.parse(localStorage.getItem(K_DIV) ?? "null");
+    if (o && Number.isFinite(o.n) && o.n >= 1 && Number.isFinite(o.maxGap) && o.maxGap >= 3) return { n: Math.round(o.n), maxGap: Math.round(o.maxGap) };
+  } catch {
+    /* fall back to the defaults */
+  }
+  return DEFAULT_DIV;
+}
+
+export function setDivParams(p: DivParams): void {
+  try {
+    localStorage.setItem(K_DIV, JSON.stringify(p));
+  } catch {
+    /* not persisted */
+  }
+  window.dispatchEvent(new Event("rt-prefs"));
+}
+
 /** Re-renders when a preference changes anywhere in the app. */
 function usePrefValue<T>(read: () => T): T {
   const [v, setV] = useState<T>(read);
@@ -61,4 +84,15 @@ export function useTheme(): [Theme, (t: Theme) => void] {
 
 export function useMaxPerDay(): [number, (n: number) => void] {
   return [usePrefValue(getMaxPerDay), setMaxPerDay];
+}
+
+export function useDivParams(): [DivParams, (p: DivParams) => void] {
+  // getDivParams returns a fresh object each call; compare by content so React does not loop
+  const [v, setV] = useState<DivParams>(getDivParams);
+  useEffect(() => {
+    const on = () => setV((cur) => { const n = getDivParams(); return n.n === cur.n && n.maxGap === cur.maxGap ? cur : n; });
+    window.addEventListener("rt-prefs", on);
+    return () => window.removeEventListener("rt-prefs", on);
+  }, []);
+  return [v, setDivParams];
 }
