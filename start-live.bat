@@ -1,10 +1,8 @@
 @echo off
-rem Starts everything: MT5 bridge (read-only live prices), journal server (local database) and the dashboard.
+rem Starts everything (bridge, journal server, dashboard) unless it is already running, then opens the dashboard.
 rem MT5 must be open and logged in for live prices / MT5 sync.
-rem The bridge and the journal server restart themselves within 3 seconds if they ever stop unexpectedly.
+rem Each service restarts itself within 3 seconds if it stops. A scheduled task also does this check at logon and every 5 minutes.
 cd /d "%~dp0"
-start "MT5 Bridge" cmd /k "backend\run-bridge.bat"
-start "Journal API" cmd /k "backend\run-journal.bat"
-start "Dashboard" cmd /k "cd dashboard && npm run dev"
-timeout /t 5 >nul
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0start-services.ps1"
+timeout /t 6 >nul
 start http://localhost:5173
