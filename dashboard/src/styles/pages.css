@@ -109,6 +109,27 @@
 .health > div:first-child { border-top: 0; }
 .health .l { display: flex; align-items: center; gap: 10px; color: var(--text-2); }
 
+/* ================= help ================= */
+.help { display: grid; grid-template-columns: 240px minmax(0, 1fr); gap: var(--sp-4); align-items: start; scroll-margin-top: 80px; }
+.toc { position: sticky; top: calc(var(--topbar-h) + var(--sp-4)); display: flex; flex-direction: column; gap: 2px; padding: var(--sp-2); background: var(--surface-1); border: 1px solid var(--line); border-radius: var(--r-lg); }
+.toc button { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: var(--r-md); color: var(--text-2); text-align: start; font-size: var(--fs-sm); transition: background var(--t-fast), color var(--t-fast); }
+.toc button:hover { background: var(--surface-2); color: var(--text); }
+.toc button.on { background: var(--gold-soft); color: var(--gold); font-weight: 600; }
+.help-body { padding: var(--sp-5); display: flex; flex-direction: column; gap: var(--sp-3); min-height: 320px; }
+.help-body > h3 { font-size: var(--fs-xl); margin-bottom: var(--sp-1); }
+.help-body h4 { margin: var(--sp-3) 0 0; color: var(--gold); font-size: var(--fs-md); }
+.help-body p { line-height: 1.9; }
+.glossary { margin: 0; display: grid; gap: var(--sp-1); }
+.glossary dt { font-weight: 700; margin-top: var(--sp-3); }
+.glossary dt:first-child { margin-top: 0; }
+.glossary dd { margin: 0; color: var(--text-2); line-height: 1.9; }
+.faq { display: grid; gap: var(--sp-2); }
+.faq details { background: var(--surface-2); border: 1px solid var(--line); border-radius: var(--r-md); padding: 0 var(--sp-4); }
+.faq summary { cursor: pointer; padding: 13px 0; font-weight: 600; font-size: var(--fs-sm); list-style-position: inside; }
+.faq details[open] { border-color: var(--gold-line); }
+.faq details p { padding: 0 0 var(--sp-3); }
+@media (max-width: 900px) { .help { grid-template-columns: minmax(0, 1fr); } .toc { position: static; flex-direction: row; overflow-x: auto; } .toc button { white-space: nowrap; } }
+
 /* ================= rules / account / settings ================= */
 .progress-top { display: flex; justify-content: space-between; margin-bottom: var(--sp-3); }
 .rule-cards { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--sp-2); }

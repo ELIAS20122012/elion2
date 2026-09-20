@@ -73,7 +73,7 @@ export function LiveBar() {
       ) : (
         <span className="muted small">
           {isMt4
-            ? <>در MT4 اندیکاتور JournalBridge را روی یک چارت بگذارید. <Link to="/account">راهنمای نصب</Link></>
+            ? <>در MT4 اندیکاتور JournalBridge را روی یک چارت بگذارید. <Link to="/help?topic=mt4">راهنمای نصب</Link></>
             : firstSync ? "چند ثانیه صبر کنید…" : live.error ?? "ترمینال MT5 باز و لاگین باشد."}
         </span>
       )}

@@ -155,7 +155,7 @@ function AccountDialog({ account, onClose, onSaved }: { account: Account | null;
         )}
         {!account && (
           <p className="muted small">
-            ثبت معاملات <b>MT5</b> خودکار است (هر ۱۰ ثانیه). برای <b>MT4</b> اندیکاتور JournalBridge را نصب کنید (راهنما در صفحه‌ی «اتصال MT»).
+            ثبت معاملات <b>MT5</b> خودکار است (هر ۱۰ ثانیه). برای <b>MT4</b> اندیکاتور JournalBridge را نصب کنید (راهنما در صفحه‌ی «راهنما»).
           </p>
         )}
         {err && <p className="err">{err}</p>}

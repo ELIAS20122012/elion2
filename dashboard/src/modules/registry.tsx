@@ -3,6 +3,7 @@ import AccountPage from "../pages/AccountPage";
 import AnalysisPage from "../pages/AnalysisPage";
 import BacktestPage from "../pages/BacktestPage";
 import ChartPage from "../pages/ChartPage";
+import HelpPage from "../pages/HelpPage";
 import JournalPage from "../pages/JournalPage";
 import OverviewPage from "../pages/OverviewPage";
 import RulesPage from "../pages/RulesPage";
@@ -37,6 +38,7 @@ export const MODULES: ModuleDef[] = [
   { id: "analysis", path: "/analysis", title: "آنالیز", icon: "analysis", group: "trading", element: <AnalysisPage /> },
   { id: "backtest", path: "/backtest", title: "بک‌تست", icon: "flask", group: "trading", element: <BacktestPage /> },
   { id: "rules", path: "/rules", title: "قوانین", icon: "book", group: "system", element: <RulesPage /> },
-  { id: "account", path: "/account", title: "اتصال MT", icon: "plug", group: "system", element: <AccountPage /> },
+  { id: "account", path: "/account", title: "اتصال", icon: "plug", group: "system", element: <AccountPage /> },
+  { id: "help", path: "/help", title: "راهنما", icon: "help", group: "system", element: <HelpPage /> },
   { id: "settings", path: "/settings", title: "تنظیمات", icon: "sliders", element: <SettingsPage />, footer: true },
 ];
