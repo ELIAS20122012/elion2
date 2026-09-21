@@ -192,3 +192,27 @@
 .d-info { display: flex; flex-direction: column; gap: 3px; flex: 1; min-width: 260px; }
 .d-form { display: flex; gap: var(--sp-3); align-items: center; flex-wrap: wrap; }
 .d-form input:not([type="checkbox"]) { width: 190px; }
+
+/* ---- chart on its own page ---- */
+.chart-page { display: block; }
+.chart-page .chart-card { min-height: calc(100vh - 150px); }
+.chart-page .chart-area { min-height: calc(100vh - 330px); }
+.chart-tools { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-3); padding: 6px var(--sp-4); border-bottom: 1px solid var(--border); }
+.chart-tools .stepper { display: flex; align-items: center; gap: 6px; }
+.chip-switch { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; background: var(--surface-2); cursor: pointer; font-size: var(--fs-xs); }
+.chip-switch input { accent-color: var(--accent, #4da3ff); }
+.shift { display: inline-flex; align-items: center; gap: 8px; margin-inline-start: auto; font-size: var(--fs-xs); color: var(--text-2); }
+.shift input[type=range] { width: 130px; }
+.shift b { min-width: 24px; text-align: center; color: var(--text-1, inherit); }
+
+/* ---- rules page: settings moved here ---- */
+.rule-settings { margin-top: var(--sp-4); display: flex; flex-direction: column; gap: var(--sp-3); }
+.rule-settings .rs-head { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); }
+.rule-card .switch { margin-inline-start: auto; }
+.found-list table { width: 100%; border-collapse: collapse; font-size: var(--fs-xs); }
+.found-list th, .found-list td { padding: 6px 8px; text-align: start; border-bottom: 1px solid var(--border); }
+.found-list td.hi { color: #ff9d3d; font-weight: 600; }
+.found-list td.lo { color: #2ee6a6; font-weight: 600; }.rule-settings .assume { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: var(--sp-3); align-items: start; }
+.rule-settings .assume > .src, .rule-settings .assume > small { grid-column: 1 / -1; }
+.rule-settings .assume label { display: flex; flex-direction: column; gap: 6px; }
+.rule-settings .assume label.check { flex-direction: row; align-items: center; }

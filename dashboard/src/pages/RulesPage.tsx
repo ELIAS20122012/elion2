@@ -1,8 +1,20 @@
+import { Link } from "react-router-dom";
 import PageHeader from "../components/PageHeader";
-import { RULES, STATUS_LABEL } from "../lib/rules";
+import { MACD_DEFAULT } from "../lib/detectors/divergence";
+import { LAYERS, RULES, STATUS_LABEL } from "../lib/rules";
+import { TIMEFRAMES } from "../lib/data";
+import { useApp } from "../state/AppContext";
+import { useDivergence } from "../state/useDivergence";
+
+const clock = (t: number) => new Date(t * 1000).toISOString().slice(5, 16).replace("T", " "); // broker (server) time, as on the MT5 axis
 
 export default function RulesPage() {
+  const s = useApp();
+  const { divP, setDivP, on, closedBars, divs, analysis } = useDivergence();
   const done = RULES.filter((r) => r.status === "approved").length;
+  const nHigh = divs.filter((d) => d.side === "high").length;
+  const tf = TIMEFRAMES.find((t) => t.sec === s.tfSec)?.label ?? "";
+
   return (
     <div className="page">
       <PageHeader title="قوانین سیستم" subtitle="قوانین به ترتیبی که شما توضیح می‌دهید اضافه می‌شوند. هر قانون بعد از رسم روی چارت و تأیید شما «تأیید شده» می‌شود." />
@@ -30,10 +42,109 @@ export default function RulesPage() {
                   <b>{r.title}</b>
                   <small>{r.hint}</small>
                 </div>
+                {r.ready && (
+                  <label className="switch" title="نمایش روی چارت">
+                    <input type="checkbox" checked={!!s.layers[r.id]} onChange={(e) => s.setLayers({ ...s.layers, [r.id]: e.target.checked })} />
+                    <span />
+                  </label>
+                )}
                 <span className={`status ${r.status}`}>{STATUS_LABEL[r.status]}</span>
               </li>
             ))}
           </ol>
+
+          <section className="card rule-settings">
+            <h3>لایه‌های چارت</h3>
+            <ul className="rules">
+              {LAYERS.map((l) => (
+                <li key={l.id}>
+                  <div><b>{l.title}</b><small>{l.hint}</small></div>
+                  <label className="switch">
+                    <input type="checkbox" checked={!!s.layers[l.id]} onChange={(e) => s.setLayers({ ...s.layers, [l.id]: e.target.checked })} />
+                    <span />
+                  </label>
+                </li>
+              ))}
+            </ul>
+          </section>
+
+          <section className="card rule-settings">
+            <div className="rs-head">
+              <h3>تنظیمات قانون ۱: دایورجنس معمولی</h3>
+              <Link className="btn sm primary" to="/chart">دیدن روی چارت ←</Link>
+            </div>
+            {!on ? (
+              <p className="muted">این قانون خاموش است. کلید سمت راست عنوان قانون را روشن کنید.</p>
+            ) : (
+              <>
+                <p className="found">
+                  <b>{divs.length}</b> دایورجنس روی تایم‌فریم {tf} پیدا شد
+                  <small className="muted"> — سقف (نارنجی): {nHigh} · کف (سبز): {divs.length - nHigh}</small>
+                </p>
+                {analysis && (
+                  <p className="muted small">
+                    سقف‌های قیمت: {analysis.counts.high.priceSwings} که {analysis.counts.high.matched} تای آن‌ها سقف مکدی هم کنارشان داشت ·
+                    کف‌های قیمت: {analysis.counts.low.priceSwings} که {analysis.counts.low.matched} تای آن‌ها کف مکدی داشت
+                  </p>
+                )}
+
+                <ul className="basis">
+                  <li><span className="src you">از شما</span>مکدی پیش‌فرض MT5 ({MACD_DEFAULT.fast}, {MACD_DEFAULT.slow}, {MACD_DEFAULT.signal})</li>
+                  <li><span className="src you">از شما</span>سقف (روند صعودی): قیمت دو سقف، دومی بالاتر · مکدی دو سقف، دومی پایین‌تر</li>
+                  <li><span className="src you">از شما</span>کف (روند نزولی): قیمت دو کف، دومی پایین‌تر · مکدی دو کف، دومی بالاتر</li>
+                  <li><span className="src you">از شما</span>دایورجنس وقتی شکل گرفته که بعد از سقف/کف دوم، مکدی با خط سیگنال کراس کند (کف: مکدی از پایین سیگنال را به بالا بشکند · سقف: برعکس)</li>
+                  <li><span className="src you">از شما</span>هر سقف/کف قیمت باید یک سقف/کف مکدی هم کنارش داشته باشد (تناسب)</li>
+                </ul>
+
+                <div className="assume">
+                  <span className="src guess">فرض من — اصلاح کنید</span>
+                  <label className="check">
+                    <input type="checkbox" checked={divP.high} onChange={(e) => setDivP({ ...divP, high: e.target.checked })} /> سقف‌ها (نارنجی)
+                  </label>
+                  <label className="check">
+                    <input type="checkbox" checked={divP.low} onChange={(e) => setDivP({ ...divP, low: e.target.checked })} /> کف‌ها (سبز)
+                  </label>
+                  <label>مکدی «سقف/کف» دارد یعنی حداکثر این تعداد کندل با سقف/کف قیمت فاصله داشته باشد
+                    <input type="number" min={0} max={20} value={divP.tol} dir="ltr" onChange={(e) => setDivP({ ...divP, tol: Math.max(0, Number(e.target.value) || 0) })} />
+                  </label>
+                  <label>کراس حداکثر چند کندل بعد از سقف/کف دوم مکدی رخ دهد
+                    <input type="number" min={1} max={50} value={divP.crossWithin} dir="ltr" onChange={(e) => setDivP({ ...divP, crossWithin: Math.max(1, Number(e.target.value) || 1) })} />
+                  </label>
+                  <label>مکدی دو کف/سقف اگر تا این درصد به هم نزدیک بود «هم‌سطح» حساب شود (۰ = فقط دقیقاً بالاتر/پایین‌تر)
+                    <input type="number" min={0} max={50} step={1} value={Math.round(divP.macdTol * 100)} dir="ltr" onChange={(e) => setDivP({ ...divP, macdTol: Math.max(0, Number(e.target.value) || 0) / 100 })} />
+                  </label>
+                  <label>«سقف» یعنی قله‌ای که از این تعداد کندل هر طرف بالاتر باشد (کف: برعکس)
+                    <input type="number" min={1} max={10} value={divP.n} dir="ltr" onChange={(e) => setDivP({ ...divP, n: Math.max(1, Number(e.target.value) || 1) })} />
+                  </label>
+                  <label>دو سقف حداکثر چند کندل از هم فاصله داشته باشند
+                    <input type="number" min={3} max={1000} value={divP.maxGap} dir="ltr" onChange={(e) => setDivP({ ...divP, maxGap: Math.max(3, Number(e.target.value) || 3) })} />
+                  </label>
+                  <small className="muted">سقف مکدی = نقطه‌ای که از کندل قبل و بعدش بالاتر است (کف: برعکس). فقط کندل‌های بسته حساب می‌شوند تا نتیجه بعداً عوض نشود.</small>
+                </div>
+
+                {divs.length > 0 && (
+                  <div className="found-list">
+                    <h4>آخرین موارد پیداشده ({tf}، ساعت سرور بروکر)</h4>
+                    <table>
+                      <thead><tr><th>نوع</th><th>نقطه‌ی اول</th><th>نقطه‌ی دوم</th><th>کراس</th><th>قیمت</th><th>مکدی</th></tr></thead>
+                      <tbody>
+                        {[...divs].reverse().slice(0, 25).map((d) => (
+                          <tr key={`${d.side}-${d.a.i}-${d.b.i}`}>
+                            <td className={d.side === "high" ? "hi" : "lo"}>{d.side === "high" ? "سقف" : "کف"}</td>
+                            <td dir="ltr">{clock(closedBars[d.a.i].time)}</td>
+                            <td dir="ltr">{clock(closedBars[d.b.i].time)}</td>
+                            <td dir="ltr">{clock(closedBars[d.cross].time)}</td>
+                            <td dir="ltr">{d.a.price.toFixed(2)} → {d.b.price.toFixed(2)}</td>
+                            <td dir="ltr">{d.a.macd.toFixed(2)} → {d.b.macd.toFixed(2)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </>
+            )}
+          </section>
         </>
       )}
     </div>

@@ -91,7 +91,33 @@ export function useMaxPerDay(): [number, (n: number) => void] {
   return [usePrefValue(getMaxPerDay), setMaxPerDay];
 }
 
-export function useDivParams(): [DivParams, (p: DivParams) => void] {
+/* ---------- chart shift: empty space to the right of the last candle (like "Shift end of the chart" in MT5) ---------- */
+const K_SHIFT = "rt.chart.shift";
+const DEFAULT_SHIFT = 12;
+
+export function getChartShift(): number {
+  try {
+    const n = Number(localStorage.getItem(K_SHIFT));
+    return localStorage.getItem(K_SHIFT) !== null && Number.isFinite(n) && n >= 0 ? Math.min(n, 150) : DEFAULT_SHIFT;
+  } catch {
+    return DEFAULT_SHIFT;
+  }
+}
+
+export function setChartShift(n: number): void {
+  try {
+    localStorage.setItem(K_SHIFT, String(Math.max(0, Math.min(150, Math.round(n)))));
+  } catch {
+    /* not persisted */
+  }
+  window.dispatchEvent(new Event("rt-prefs"));
+}
+
+export function useChartShift(): [number, (n: number) => void] {
+  return [usePrefValue(getChartShift), setChartShift];
+}
+
+export function useDivParams():[DivParams, (p: DivParams) => void] {
   // getDivParams returns a fresh object each call; compare by content so React does not loop
   const [v, setV] = useState<DivParams>(getDivParams);
   useEffect(() => {

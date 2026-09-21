@@ -1,28 +1,28 @@
 import { useEffect, useMemo, useState } from "react";
-import { detectDivergences, MACD_DEFAULT } from "../lib/detectors/divergence";
+import { Link } from "react-router-dom";
 import { uid } from "../lib/drawings";
-import { useDivParams } from "../lib/prefs";
+import { useChartShift } from "../lib/prefs";
 import Chart from "../components/Chart";
 import DrawToolbar from "../components/DrawToolbar";
 import DrawingProps from "../components/DrawingProps";
 import IndicatorsBar from "../components/IndicatorsBar";
-import TradesTable from "../components/TradesTable";
 import TradingViewWidget from "../components/TradingViewWidget";
 import Icon from "../components/Icon";
-import { TIMEFRAMES, type Overlay, type OverlayLine, type OverlayMarker, type Trade } from "../lib/data";
+import { TIMEFRAMES, type Trade } from "../lib/data";
 import { useJournal } from "../state/JournalContext";
 import { useAllAccounts } from "../state/useAllAccounts";
-import { LAYERS, RULES, STATUS_LABEL } from "../lib/rules";
+import { useDivergence } from "../state/useDivergence";
 import { SPEEDS } from "../lib/useReplay";
 import { SYMBOL, useApp } from "../state/AppContext";
 
 const TV_INTERVAL: Record<number, string> = { 60: "1", 300: "5", 900: "15", 1800: "30", 3600: "60", 14400: "240" };
 
+/** The chart on its own page. Rule settings live on the rules page; only quick switches and navigation stay here. */
 export default function ChartPage() {
   const s = useApp();
   const [view, setView] = useState<"bot" | "tv">("bot");
-  const [dock, setDock] = useState(true);
   const { live, replay, mode, source, selected } = s;
+  const [shift, setShift] = useChartShift();
 
   // In live mode the chart shows the REAL positions of every connected account (refreshed every few seconds).
   // In replay mode it keeps the recorded trades that belong to the recorded candles.
@@ -43,34 +43,9 @@ export default function ChartPage() {
         : s.trades,
     [mode, rows, s.trades],
   );
-  /* ---- rule: regular divergence on the highs (drawn only while its layer is on) ---- */
-  const [divP, setDivP] = useDivParams();
-  const divOn = !!s.layers.divergence;
-  // only CLOSED candles: the forming candle would make a result flip while it is still moving
-  const closedBars = useMemo(() => s.bars.slice(0, -1), [s.bars.length, s.bars[0]?.time, s.tfSec]); // eslint-disable-line react-hooks/exhaustive-deps
-  const analysis = useMemo(() => (divOn ? detectDivergences(closedBars, divP) : null), [divOn, closedBars, divP]);
-  const divs = useMemo(() => analysis?.divergences ?? [], [analysis]);
-  const divOverlay = useMemo<Overlay>(() => {
-    const lines: OverlayLine[] = [];
-    const markers: OverlayMarker[] = [];
-    for (const d of divs) {
-      const hi = d.side === "high";
-      const color = hi ? "#ff9d3d" : "#2ee6a6"; // orange = highs (uptrend), green = lows (downtrend)
-      const A = closedBars[d.a.i];
-      const B = closedBars[d.b.i];
-      const ma = closedBars[d.a.mi];
-      const mb = closedBars[d.b.mi];
-      const id = `div-${d.side}-${d.a.i}-${d.b.i}`;
-      lines.push({ id: `${id}-price`, pane: "price", color, width: 2, points: [{ time: A.time, value: d.a.price }, { time: B.time, value: d.b.price }] });
-      const [t1, t2] = ma.time < mb.time ? [ma.time, mb.time] : [A.time, B.time]; // times must be strictly increasing
-      lines.push({ id: `${id}-macd`, pane: "macd", color, width: 2, points: [{ time: t1, value: d.a.macd }, { time: t2, value: d.b.macd }] });
-      const position = hi ? "aboveBar" : "belowBar";
-      markers.push({ time: A.time, position, shape: "circle", color });
-      markers.push({ time: B.time, position, shape: hi ? "arrowDown" : "arrowUp", color, text: hi ? "دایورجنس سقف" : "دایورجنس کف" });
-      markers.push({ time: closedBars[d.cross].time, position: hi ? "aboveBar" : "belowBar", shape: "square", color, text: "کراس" }); // formed here
-    }
-    return { lines, markers };
-  }, [divs, closedBars]);
+
+  /* ---- rule 1: divergence (settings on the rules page) ---- */
+  const { on: divOn, closedBars, divs, overlay } = useDivergence();
 
   // step through what the rule found, newest first
   const [divCursor, setDivCursor] = useState(0);
@@ -94,19 +69,11 @@ export default function ChartPage() {
     }
   }, [divOn, s.indicators]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // stats and table follow the same source as the markers on the chart
-  const tableTrades = useMemo(
-    () => (mode === "live" ? [...chartTrades].sort((a, b) => b.open_time - a.open_time).slice(0, 30) : s.visibleTrades),
-    [mode, chartTrades, s.visibleTrades],
-  );
-  const stats = useMemo(() => {
-    const pool = mode === "live" ? chartTrades : s.visibleTrades;
-    const closed = pool.filter((t) => t.close_time && t.close_time <= (s.last?.time ?? Number.MAX_SAFE_INTEGER));
-    return { closed: closed.length, wins: closed.filter((t) => (t.profit ?? 0) > 0).length, net: closed.reduce((a, t) => a + (t.profit ?? 0), 0) };
-  }, [mode, chartTrades, s.visibleTrades, s.last?.time]);
+  const nHigh = divs.filter((d) => d.side === "high").length;
+  const nLow = divs.length - nHigh;
 
   return (
-    <div className={`chart-page ${dock ? "" : "no-dock"}`}>
+    <div className="chart-page">
       <section className="card chart-card">
         <div className="chart-head">
           <div className="viewtabs" role="tablist">
@@ -121,10 +88,41 @@ export default function ChartPage() {
               ))}
             </div>
           )}
-          <button className="dock-toggle" onClick={() => setDock((d) => !d)} title={dock ? "بستن پنل کناری" : "باز کردن پنل کناری"} aria-label="پنل کناری">
-            <Icon name={dock ? "chevron-right" : "chevron-left"} size={16} />
-          </button>
         </div>
+
+        {view === "bot" && (
+          <div className="chart-tools">
+            <label className="chip-switch" title="نمایش ورود و خروج معاملات روی چارت">
+              <input type="checkbox" checked={!!s.layers.trades} onChange={(e) => s.setLayers({ ...s.layers, trades: e.target.checked })} />
+              <span>معاملات</span>
+            </label>
+            <label className="chip-switch" title="نمایش دایورجنس‌ها روی چارت">
+              <input type="checkbox" checked={divOn} onChange={(e) => s.setLayers({ ...s.layers, divergence: e.target.checked })} />
+              <span>دایورجنس</span>
+            </label>
+            {divOn && (
+              <div className="stepper" aria-label="پیمایش دایورجنس‌ها">
+                {divs.length > 0 ? (
+                  <>
+                    <button className="btn sm" onClick={() => goto(divCursor + 1)} aria-label="قدیمی‌تر">قدیمی‌تر</button>
+                    <span dir="ltr">{divCursor + 1} / {divs.length}</span>
+                    <button className="btn sm" onClick={() => goto(divCursor - 1)} aria-label="جدیدتر">جدیدتر</button>
+                    <button className="btn sm primary" onClick={() => goto(0)}>آخرین</button>
+                    <span className="muted small">نارنجی (سقف) {nHigh} · سبز (کف) {nLow}</span>
+                  </>
+                ) : (
+                  <span className="muted small">روی این تایم‌فریم دایورجنسی پیدا نشد</span>
+                )}
+              </div>
+            )}
+            <label className="shift" title="فاصله‌ی خالی سمت راست آخرین کندل (مثل Shift end of chart در MT5)">
+              <span>شیفت انتهای چارت</span>
+              <input type="range" min={0} max={150} step={1} value={shift} dir="ltr" onChange={(e) => setShift(Number(e.target.value))} />
+              <b dir="ltr">{shift}</b>
+            </label>
+            <Link className="btn sm" to="/rules">تنظیمات قوانین ←</Link>
+          </div>
+        )}
 
         {view === "tv" && (
           <div className="chart-area tv">
@@ -171,8 +169,9 @@ export default function ChartPage() {
               tfSec={s.tfSec}
               trades={chartTrades}
               showTrades={!!s.layers.trades}
-              overlay={divOverlay}
+              overlay={overlay}
               focus={focus}
+              rightOffset={shift}
               indicators={s.indicators}
               drawings={s.drawings}
               tool={s.tool}
@@ -215,121 +214,6 @@ export default function ChartPage() {
             <span className="muted">داده‌ی ضبط‌شده · ۱۸ سپتامبر ۲۰۲۶</span>
           </div>
         )}
-      </section>
-
-      {dock && (
-        <aside className="side">
-          <section className="card">
-            <h3>لایه‌ها</h3>
-            <ul className="rules">
-              {LAYERS.map((l) => (
-                <li key={l.id}>
-                  <div>
-                    <b>{l.title}</b>
-                    <small>{l.hint}</small>
-                  </div>
-                  <label className="switch">
-                    <input type="checkbox" checked={!!s.layers[l.id]} onChange={(e) => s.setLayers({ ...s.layers, [l.id]: e.target.checked })} />
-                    <span />
-                  </label>
-                </li>
-              ))}
-            </ul>
-          </section>
-
-          <section className="card">
-            <h3>قوانین</h3>
-            {RULES.length === 0 ? (
-              <>
-                <div className="status-empty"><span className="dot" /> هنوز قانونی تعریف نشده</div>
-                <p className="muted small">هر قانون را که برایم توضیح دهید، همین‌جا با وضعیتش اضافه می‌شود و روی چارت کشیده می‌شود.</p>
-              </>
-            ) : (
-              <ul className="rules">
-                {RULES.map((r) => (
-                  <li key={r.id} className={r.ready ? "" : "locked"}>
-                    <div>
-                      <b>{r.title}</b>
-                      <small>{r.hint}</small>
-                    </div>
-                    {r.ready ? (
-                      <label className="switch">
-                        <input type="checkbox" checked={!!s.layers[r.id]} onChange={(e) => s.setLayers({ ...s.layers, [r.id]: e.target.checked })} />
-                        <span />
-                      </label>
-                    ) : (
-                      <span className="tag">{STATUS_LABEL[r.status]}</span>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            )}
-            {divOn && (
-              <div className="rule-detail">
-                <p className="found">
-                  <b>{divs.length}</b> دایورجنس روی همین نمودار پیدا شد
-                  <small className="muted"> — سقف (نارنجی): {divs.filter((d) => d.side === "high").length} · کف (سبز): {divs.filter((d) => d.side === "low").length}</small>
-                </p>
-                {divs.length > 0 ? (
-                  <div className="stepper">
-                    <button className="btn sm" onClick={() => goto(divCursor + 1)} aria-label="قدیمی‌تر">قدیمی‌تر</button>
-                    <span dir="ltr">{divCursor + 1} / {divs.length}</span>
-                    <button className="btn sm" onClick={() => goto(divCursor - 1)} aria-label="جدیدتر">جدیدتر</button>
-                    <button className="btn sm primary" onClick={() => goto(0)}>آخرین</button>
-                  </div>
-                ) : (
-                  <p className="muted small">روی این تایم‌فریم چیزی پیدا نشد. تایم‌فریم دیگری را امتحان کنید (M1، M5، M15).</p>
-                )}
-                <ul className="basis">
-                  <li><span className="src you">از شما</span>مکدی پیش‌فرض MT5 ({MACD_DEFAULT.fast}, {MACD_DEFAULT.slow}, {MACD_DEFAULT.signal})</li>
-                  <li><span className="src you">از شما</span>سقف (روند صعودی): قیمت دو سقف، دومی بالاتر · مکدی دو سقف، دومی پایین‌تر</li>
-                  <li><span className="src you">از شما</span>کف (روند نزولی): قیمت دو کف، دومی پایین‌تر · مکدی دو کف، دومی بالاتر</li>
-                  <li><span className="src you">از شما</span>دایورجنس وقتی شکل گرفته که بعد از سقف/کف دوم، مکدی با خط سیگنال کراس کند (کف: مکدی از پایین سیگنال را به بالا بشکند · سقف: برعکس)</li>
-                  <li><span className="src you">از شما</span>هر سقف/کف قیمت باید یک سقف/کف مکدی هم کنارش داشته باشد (تناسب)</li>
-                </ul>
-                <div className="assume">
-                  <span className="src guess">فرض من — اصلاح کنید</span>
-                  <label className="check">
-                    <input type="checkbox" checked={divP.high} onChange={(e) => setDivP({ ...divP, high: e.target.checked })} /> سقف‌ها (نارنجی)
-                  </label>
-                  <label className="check">
-                    <input type="checkbox" checked={divP.low} onChange={(e) => setDivP({ ...divP, low: e.target.checked })} /> کف‌ها (سبز)
-                  </label>
-                  <label>مکدی «سقف/کف» دارد یعنی حداکثر این تعداد کندل با سقف/کف قیمت فاصله داشته باشد
-                    <input type="number" min={0} max={20} value={divP.tol} dir="ltr" onChange={(e) => setDivP({ ...divP, tol: Math.max(0, Number(e.target.value) || 0) })} />
-                  </label>
-                  <label>کراس حداکثر چند کندل بعد از سقف/کف دوم مکدی رخ دهد
-                    <input type="number" min={1} max={50} value={divP.crossWithin} dir="ltr" onChange={(e) => setDivP({ ...divP, crossWithin: Math.max(1, Number(e.target.value) || 1) })} />
-                  </label>
-                  <label>مکدی دو کف/سقف اگر تا این درصد به هم نزدیک بود «هم‌سطح» حساب شود (۰ = فقط دقیقاً بالاتر/پایین‌تر)
-                    <input type="number" min={0} max={50} step={1} value={Math.round(divP.macdTol * 100)} dir="ltr" onChange={(e) => setDivP({ ...divP, macdTol: Math.max(0, Number(e.target.value) || 0) / 100 })} />
-                  </label>
-                  <label>«سقف» یعنی قله‌ای که از این تعداد کندل هر طرف بالاتر باشد (کف: برعکس)
-                    <input type="number" min={1} max={10} value={divP.n} dir="ltr" onChange={(e) => setDivP({ ...divP, n: Math.max(1, Number(e.target.value) || 1) })} />
-                  </label>
-                  <label>دو سقف حداکثر چند کندل از هم فاصله داشته باشند
-                    <input type="number" min={3} max={1000} value={divP.maxGap} dir="ltr" onChange={(e) => setDivP({ ...divP, maxGap: Math.max(3, Number(e.target.value) || 3) })} />
-                  </label>
-                  <small className="muted">سقف مکدی = نقطه‌ای که از کندل قبل و بعدش بالاتر است (کف: برعکس). فقط کندل‌های بسته حساب می‌شوند تا نتیجه بعداً عوض نشود.</small>
-                </div>
-              </div>
-            )}
-          </section>
-
-          <section className="card stats">
-            <h3>آمار معاملات</h3>
-            <div className="grid">
-              <div><span>معاملات بسته</span><b>{stats.closed}</b></div>
-              <div><span>نرخ برد</span><b>{stats.closed ? Math.round((stats.wins / stats.closed) * 100) : 0}%</b></div>
-              <div><span>سود/زیان</span><b className={stats.net >= 0 ? "up" : "down"} dir="ltr">{stats.net >= 0 ? "+" : ""}{stats.net.toFixed(2)}$</b></div>
-            </div>
-          </section>
-        </aside>
-      )}
-
-      <section className="card trades">
-        <h3>{mode === "live" ? "معاملات واقعی (آخرین ۳۰ تا)" : "معاملات ضبط‌شده"} <small className="muted">({tableTrades.length})</small></h3>
-        <TradesTable trades={tableTrades} lastTime={s.last?.time ?? Number.MAX_SAFE_INTEGER} />
       </section>
     </div>
   );

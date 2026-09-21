@@ -53,6 +53,8 @@ interface Props {
   showVolume: boolean;
   /** scroll the chart so this time is in view; a new `nonce` triggers it again for the same time */
   focus?: { time: number; nonce: number } | null;
+  /** empty candles to the right of the last one (MT5's "shift end of the chart") */
+  rightOffset?: number;
 }
 
 interface Drag { id: string; kind: "point" | "body"; idx: number; startLogical: number; startPrice: number; orig: DPoint[] }
@@ -104,7 +106,7 @@ export default function Chart(props: Props) {
       grid: { vertLines: { color: C.grid }, horzLines: { color: C.grid } },
       crosshair: { mode: CrosshairMode.Normal },
       rightPriceScale: { borderColor: C.border, scaleMargins: { top: 0.08, bottom: 0.08 } },
-      timeScale: { borderColor: C.border, timeVisible: true, secondsVisible: false, rightOffset: 8 },
+      timeScale: { borderColor: C.border, timeVisible: true, secondsVisible: false, rightOffset: props.rightOffset ?? 8 },
     });
     const series = chart.addSeries(CandlestickSeries, {
       upColor: C.up, downColor: C.down, wickUpColor: C.up, wickDownColor: C.down, borderVisible: false,
@@ -303,6 +305,14 @@ export default function Chart(props: Props) {
     prev.current = { len: candles.length, first: candles[0].time, tf: tfSec };
   }, [candles, tfSec]);
 
+  /* ---- shift end of the chart ---- */
+  useEffect(() => {
+    const chart = chartRef.current;
+    if (!chart || props.rightOffset == null) return;
+    chart.timeScale().applyOptions({ rightOffset: props.rightOffset });
+    chart.timeScale().scrollToRealTime();
+  }, [props.rightOffset]);
+
   /* ---- jump to a moment (used to step through what a rule found) ---- */
   const focusNonce = props.focus?.nonce;
   useEffect(() => {
@@ -340,10 +350,12 @@ export default function Chart(props: Props) {
   useEffect(() => {
     const chart = chartRef.current;
     if (!chart) return;
-    for (const b of built.current) for (const s of b.series) chart.removeSeries(s);
+    // a series that belongs to an older chart instance (after a hot reload) must not break the rebuild
+    const drop = (s: ISeriesApi<SeriesType>) => { try { chart.removeSeries(s); } catch { /* already gone */ } };
+    for (const b of built.current) for (const s of b.series) drop(s);
     built.current = [];
     // rule overlays live in panes whose numbers are about to change: drop them, the overlay effect redraws them
-    for (const s of lineSeries.current.values()) chart.removeSeries(s);
+    for (const s of lineSeries.current.values()) drop(s);
     lineSeries.current.clear();
     paneOf.current = {};
     let pane = 0;
@@ -434,7 +446,7 @@ export default function Chart(props: Props) {
     // a line aimed at the MACD pane can only be drawn while a MACD pane exists
     const wanted = overlay.lines.filter((l) => l.pane !== "macd" || macdPane !== undefined);
     const keep = new Set(wanted.map((l) => l.id));
-    for (const [id, s] of m) if (!keep.has(id)) (chart.removeSeries(s), m.delete(id));
+    for (const [id, s] of m) if (!keep.has(id)) { try { chart.removeSeries(s); } catch { /* already gone */ } m.delete(id); }
     for (const l of wanted) {
       let s = m.get(l.id);
       if (!s) {
