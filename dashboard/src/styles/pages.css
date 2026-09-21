@@ -226,3 +226,7 @@
 .mt5-bar .tb.on { color: var(--accent, #4da3ff); border-color: var(--accent, #4da3ff); background: rgba(77,163,255,.12); }
 .mt5-bar .viewtabs { margin-inline-start: 8px; }
 .mt5-bar .stepper { display: inline-flex; align-items: center; gap: 6px; }.mt5-bar .viewtabs { flex: 0 0 auto; width: auto; border: 0; padding: 0; }
+/* TradingView widget: fill the whole area (percent heights collapse inside the flex layout) */
+.chart-area.tv { position: relative; }
+.chart-area.tv .tvbox { position: absolute; inset: 0; width: 100% !important; height: 100% !important; }
+.chart-area.tv .tvbox iframe { width: 100% !important; height: 100% !important; }
