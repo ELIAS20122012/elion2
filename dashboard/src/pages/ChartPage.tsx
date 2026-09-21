@@ -301,6 +301,9 @@ export default function ChartPage() {
                   <label>کراس حداکثر چند کندل بعد از سقف/کف دوم مکدی رخ دهد
                     <input type="number" min={1} max={50} value={divP.crossWithin} dir="ltr" onChange={(e) => setDivP({ ...divP, crossWithin: Math.max(1, Number(e.target.value) || 1) })} />
                   </label>
+                  <label>مکدی دو کف/سقف اگر تا این درصد به هم نزدیک بود «هم‌سطح» حساب شود (۰ = فقط دقیقاً بالاتر/پایین‌تر)
+                    <input type="number" min={0} max={50} step={1} value={Math.round(divP.macdTol * 100)} dir="ltr" onChange={(e) => setDivP({ ...divP, macdTol: Math.max(0, Number(e.target.value) || 0) / 100 })} />
+                  </label>
                   <label>«سقف» یعنی قله‌ای که از این تعداد کندل هر طرف بالاتر باشد (کف: برعکس)
                     <input type="number" min={1} max={10} value={divP.n} dir="ltr" onChange={(e) => setDivP({ ...divP, n: Math.max(1, Number(e.target.value) || 1) })} />
                   </label>

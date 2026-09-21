@@ -54,7 +54,8 @@ export function getDivParams(): DivParams {
     if (o && Number.isFinite(o.n) && o.n >= 1 && Number.isFinite(o.maxGap) && o.maxGap >= 3) {
       const tol = Number.isFinite(o.tol) && o.tol >= 0 ? Math.round(o.tol) : DEFAULT_DIV.tol;
       const crossWithin = Number.isFinite(o.crossWithin) && o.crossWithin >= 1 ? Math.round(o.crossWithin) : DEFAULT_DIV.crossWithin;
-      return { n: Math.round(o.n), tol, maxGap: Math.round(o.maxGap), crossWithin, high: o.high !== false, low: o.low !== false };
+      const macdTol = Number.isFinite(o.macdTol) && o.macdTol >= 0 ? o.macdTol : DEFAULT_DIV.macdTol;
+      return { n: Math.round(o.n), tol, maxGap: Math.round(o.maxGap), crossWithin, macdTol, high: o.high !== false, low: o.low !== false };
     }
   } catch {
     /* fall back to the defaults */

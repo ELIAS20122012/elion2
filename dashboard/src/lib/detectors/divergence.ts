@@ -25,13 +25,15 @@ export interface DivParams {
   tol: number;
   /** ASSUMPTION: the two extremes must be at most this many candles apart. */
   maxGap: number;
+  /** ASSUMPTION: how close (as a fraction, 0.05 = 5%) the second MACD extreme may be to the first and still count as "not confirming". */
+  macdTol: number;
   /** ASSUMPTION: the signal/MACD cross must happen within this many candles after the second MACD extreme. */
   crossWithin: number;
   /** which directions to look for */
   high: boolean;
   low: boolean;
 }
-export const DEFAULT_DIV: DivParams = { n: 2, tol: 3, maxGap: 100, crossWithin: 10, high: true, low: true };
+export const DEFAULT_DIV: DivParams = { n: 2, tol: 3, maxGap: 100, crossWithin: 10, macdTol: 0.05, high: true, low: true };
 
 export type Side = "high" | "low";
 
@@ -110,7 +112,9 @@ function detectSide(c: Candle[], line: number[], hist: number[], p: DivParams, s
     for (const j of cands) {
       const A = pairs[j];
       if (B.pi - A.pi > p.maxGap) continue;
-      if (price[B.pi] > price[A.pi] && m[B.mi] < m[A.mi]) {
+      // ASSUMPTION: "MACD not confirming" also accepts a second MACD extreme that is about level with the first
+      // (within macdTol of it): both examples Elias drew on MT5 had nearly equal MACD extremes.
+      if (price[B.pi] > price[A.pi] && m[B.mi] < m[A.mi] + p.macdTol * Math.abs(m[A.mi])) {
         // From Elias: it only counts as formed when the signal line and the MACD cross after the second extreme.
         // Lows: MACD crosses up through the signal (hist - to +). Highs: crosses down (hist + to -).
         let cross = -1;

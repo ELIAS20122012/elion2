@@ -110,6 +110,17 @@ describe("the divergence only counts once the signal line and the MACD cross", (
   });
 });
 
+describe("MACD extremes that are about level", () => {
+  it("a wide tolerance accepts more than an exact one, never fewer, and a clearly stronger MACD is still rejected at 5%", () => {
+    const c = candles(twoRallies(1.0, 3.0, 12)); // second rally clearly stronger on the MACD
+    expect(detectDivergences(c, { ...highsOnly, macdTol: 0.05 }).divergences).toEqual([]);
+    const up = candles(twoRallies(2.5, 0.6, 35));
+    const exact = detectDivergences(up, { ...highsOnly, macdTol: 0 }).divergences.length;
+    const loose = detectDivergences(up, { ...highsOnly, macdTol: 0.3 }).divergences.length;
+    expect(loose).toBeGreaterThanOrEqual(exact);
+  });
+});
+
 describe("symmetry", () => {
   it("a mirrored chart gives exactly the mirrored answer (same candle indices)", () => {
     const c = candles(twoRallies(2.5, 0.6, 35));
@@ -145,8 +156,9 @@ describe("invariants on 4000 candles of a random walk (both sides)", () => {
         expect(s * line[w.mi]).toBeGreaterThan(s * line[w.mi - 1]); // a genuine local MACD extreme
         expect(s * line[w.mi]).toBeGreaterThan(s * line[w.mi + 1]);
       }
-      if (d.side === "high") { expect(d.b.price).toBeGreaterThan(d.a.price); expect(d.b.macd).toBeLessThan(d.a.macd); }
-      else { expect(d.b.price).toBeLessThan(d.a.price); expect(d.b.macd).toBeGreaterThan(d.a.macd); }
+      const slack = DEFAULT_DIV.macdTol * Math.abs(d.a.macd);
+      if (d.side === "high") { expect(d.b.price).toBeGreaterThan(d.a.price); expect(d.b.macd).toBeLessThan(d.a.macd + slack); }
+      else { expect(d.b.price).toBeLessThan(d.a.price); expect(d.b.macd).toBeGreaterThan(d.a.macd - slack); }
       expect(d.b.i - d.a.i).toBeLessThanOrEqual(DEFAULT_DIV.maxGap);
       expect(d.cross - d.b.mi).toBeLessThanOrEqual(DEFAULT_DIV.crossWithin);
       const sg = sma(line, 9);
