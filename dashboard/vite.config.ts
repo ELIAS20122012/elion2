@@ -13,7 +13,7 @@ export default defineConfig({
   server: {
     port: 5173,
     host: "127.0.0.1", // IPv4 loopback: what Tailscale Serve connects to; still not reachable from the LAN
-    allowedHosts: ["localhost", ".ts.net"], // .ts.net = Tailscale MagicDNS names
+    allowedHosts: ["localhost", ".ts.net", "trade.eliongroup.org"], // .ts.net = Tailscale MagicDNS names; the last one is the Cloudflare tunnel
     proxy: {
       "/api": { target: "http://127.0.0.1:8000", rewrite: (p) => p.replace(/^\/api/, "") },
       "/live": { target: "http://127.0.0.1:8765", ws: true, rewrite: (p) => p.replace(/^\/live/, "") },

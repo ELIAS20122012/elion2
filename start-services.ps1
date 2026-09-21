@@ -14,3 +14,5 @@ function Start-Runner($name, $path) {
 Start-Runner 'run-bridge.bat'    "$root\backend\run-bridge.bat"
 Start-Runner 'run-journal.bat'   "$root\backend\run-journal.bat"
 Start-Runner 'run-dashboard.bat' "$root\dashboard\run-dashboard.bat"
+# remote access from any browser (Cloudflare Tunnel + Access login); skipped if cloudflared is not installed
+if (Test-Path "$env:LOCALAPPDATA\Programs\cloudflared\cloudflared.exe") { Start-Runner 'run-tunnel.bat' "$root\run-tunnel.bat" }
