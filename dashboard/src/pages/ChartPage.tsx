@@ -47,7 +47,7 @@ export default function ChartPage() {
   );
 
   /* ---- rule 1: divergence (settings on the rules page) ---- */
-  const { on: divOn, closedBars, divs, overlay } = useDivergence();
+  const { on: divOn, closedBars, divs, overlay, divP, setDivP } = useDivergence();
 
   // step through what the rule found, newest first
   const [divCursor, setDivCursor] = useState(0);
@@ -113,6 +113,11 @@ export default function ChartPage() {
                 <input type="checkbox" checked={divOn} onChange={(e) => s.setLayers({ ...s.layers, divergence: e.target.checked })} />
                 <span>دایورجنس</span>
               </label>
+              {divOn && (
+                <button className="btn sm" onClick={() => setDivP({ ...divP, method: divP.method === "macd" ? "price" : "macd" })} title="روش تشخیص: B از روی مکدی (تمیز) · A از روی سوینگ قیمت (بیشتر و شلوغ‌تر)">
+                  روش {divP.method === "macd" ? "B" : "A"}
+                </button>
+              )}
               {divOn && (
                 <div className="stepper" aria-label="پیمایش دایورجنس‌ها">
                   {divs.length > 0 ? (

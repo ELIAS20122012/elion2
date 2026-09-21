@@ -29,11 +29,17 @@ export interface DivParams {
   macdTol: number;
   /** ASSUMPTION: the signal/MACD cross must happen within this many candles after the second MACD extreme. */
   crossWithin: number;
+  /**
+   * "price": anchor on price swings, MACD extreme must sit next to them (Elias's "correspondence").
+   * "macd": anchor on MACD extremes like the widely used MT5 reference indicator; the previous extreme skips the small wiggles by
+   *         looking for the previous SIGNAL-line extreme first. Price is read at the MACD extreme candles.
+   */
+  method: "price" | "macd";
   /** which directions to look for */
   high: boolean;
   low: boolean;
 }
-export const DEFAULT_DIV: DivParams = { n: 2, tol: 3, maxGap: 100, crossWithin: 10, macdTol: 0.05, high: true, low: true };
+export const DEFAULT_DIV: DivParams = { n: 2, tol: 3, maxGap: 100, crossWithin: 10, macdTol: 0.05, method: "price", high: true, low: true };
 
 export type Side = "high" | "low";
 
@@ -89,6 +95,55 @@ export function pairWithin(priceIdx: number[], macdIdx: number[], tol: number): 
   return out;
 }
 
+/** From Elias: the divergence counts as formed when the MACD crosses its signal line after the second extreme
+ *  (lows: MACD up through the signal, hist - to +; highs: down through it, hist + to -). Returns the cross candle or -1. */
+function findCross(hist: number[], side: Side, after: number, within: number): number {
+  for (let k = after + 1; k < hist.length && k <= after + within; k++) {
+    if (side === "high" ? hist[k - 1] > 0 && hist[k] <= 0 : hist[k - 1] < 0 && hist[k] >= 0) return k;
+  }
+  return -1;
+}
+
+/**
+ * Method "macd": port of the logic of the popular MT5 reference indicator (MACD_Divergence, mql5.com/en/code/1806), plus Elias's
+ * cross rule and a tolerance. A MACD extreme = higher than the 2 candles before and 1 after (lows: mirror). Its partner is the previous
+ * MACD extreme found by first locating the previous SIGNAL-line extreme (the smoothed line only turns at the big waves), then the
+ * MACD extreme at or before it: the small wiggles in between are skipped. Price is read on the candles of the two MACD extremes.
+ */
+function detectMacdAnchored(c: Candle[], line: number[], sig: number[], hist: number[], p: DivParams, side: Side): Divergence[] {
+  const sign = side === "high" ? 1 : -1;
+  const m = line.map((v) => sign * v);
+  const sg = sig.map((v) => sign * v);
+  const price = c.map((x) => (side === "high" ? x.high : -x.low));
+  const isExt = (a: number[], i: number, w: number, strict2: boolean) => {
+    for (let j = 1; j <= w; j++) {
+      const before = strict2 && j === 2 ? a[i] > a[i - j] : a[i] >= a[i - j];
+      const after = strict2 && j === 2 ? a[i] > a[i + j] : a[i] >= a[i + j];
+      if (!(before && after)) return false;
+    }
+    return true;
+  };
+  const previous = (shift: number): number => {
+    for (let i = shift - 5; i >= 2; i--) {
+      if (!isExt(sg, i, 2, false)) continue;
+      for (let j = i; j >= 2; j--) if (isExt(m, j, 2, true)) return j;
+    }
+    return -1;
+  };
+  const found: Divergence[] = [];
+  const mk = (i: number): Swing => ({ i, price: side === "high" ? c[i].high : c[i].low, mi: i, macd: line[i] });
+  for (let s = 40; s < c.length - 1; s++) { // one candle of confirmation is enough, so the newest candle but one can already be judged
+    // the extreme being judged: higher than 2 before and than the next candle (only one candle of confirmation, as in the reference)
+    if (!(m[s] >= m[s - 1] && m[s] > m[s - 2] && m[s] > m[s + 1])) continue;
+    const l = previous(s);
+    if (l < 0 || s - l > p.maxGap) continue;
+    if (!(price[s] > price[l] && m[s] < m[l] + p.macdTol * Math.abs(m[l]))) continue;
+    const cross = findCross(hist, side, s, p.crossWithin);
+    if (cross < 0) continue;
+    found.push({ side, a: mk(l), b: mk(s), cross, confirmedIndex: Math.max(s + 1, cross) });
+  }
+  return found;
+}
 function detectSide(c: Candle[], line: number[], hist: number[], p: DivParams, side: Side): { found: Divergence[]; priceSwings: number; matched: number } {
   // Work on a "highs" version of the data: for lows everything is mirrored (price and MACD negated), so one code path serves both.
   const sign = side === "high" ? 1 : -1;
@@ -117,10 +172,7 @@ function detectSide(c: Candle[], line: number[], hist: number[], p: DivParams, s
       if (price[B.pi] > price[A.pi] && m[B.mi] < m[A.mi] + p.macdTol * Math.abs(m[A.mi])) {
         // From Elias: it only counts as formed when the signal line and the MACD cross after the second extreme.
         // Lows: MACD crosses up through the signal (hist - to +). Highs: crosses down (hist + to -).
-        let cross = -1;
-        for (let k = B.mi + 1; k < line.length && k <= B.mi + p.crossWithin; k++) {
-          if (side === "high" ? hist[k - 1] > 0 && hist[k] <= 0 : hist[k - 1] < 0 && hist[k] >= 0) { cross = k; break; }
-        }
+        const cross = findCross(hist, side, B.mi, p.crossWithin);
         if (cross < 0) continue;
         found.push({ side, a: mk(A), b: mk(B), cross, confirmedIndex: Math.max(B.pi + p.n, cross) });
       }
@@ -139,6 +191,12 @@ export function detectDivergences(c: Candle[], p: DivParams = DEFAULT_DIV): Anal
 
   for (const side of ["high", "low"] as const) {
     if (!p[side]) continue;
+    if (p.method === "macd") {
+      const found = detectMacdAnchored(c, line, sig, hist, p, side);
+      res.divergences.push(...found);
+      res.counts[side] = { priceSwings: found.length, matched: found.length };
+      continue;
+    }
     const r = detectSide(c, line, hist, p, side);
     res.divergences.push(...r.found);
     res.counts[side] = { priceSwings: r.priceSwings, matched: r.matched };

@@ -179,6 +179,58 @@ describe("invariants on 4000 candles of a random walk (both sides)", () => {
   });
 });
 
+describe("method B: anchored on MACD extremes (reference-indicator style)", () => {
+  const B = { ...DEFAULT_DIV, method: "macd" as const };
+  let seed = 777;
+  const rnd = () => ((seed = (seed * 1664525 + 1013904223) >>> 0) / 2 ** 32) - 0.5;
+  const closes: number[] = [];
+  let px = 2000;
+  for (let i = 0; i < 4000; i++) closes.push((px += rnd() * 4 + Math.sin(i / 50)));
+  const c = candles(closes);
+  const line = macd(closes, 12, 26, 9).line;
+  const sg = sma(line, 9);
+  const found = detectDivergences(c, B).divergences;
+
+  it("finds divergences on both sides and fewer than method A (it skips the small wiggles)", () => {
+    expect(found.some((d) => d.side === "high")).toBe(true);
+    expect(found.some((d) => d.side === "low")).toBe(true);
+    expect(found.length).toBeLessThan(detectDivergences(c, DEFAULT_DIV).divergences.length);
+  });
+
+  it("every finding: price beyond, MACD not confirming (within tolerance), real MACD extremes, cross after", () => {
+    for (const d of found) {
+      const s = d.side === "high" ? 1 : -1;
+      expect(s * (d.b.price - d.a.price)).toBeGreaterThan(0);
+      expect(s * d.b.macd).toBeLessThan(s * d.a.macd + B.macdTol * Math.abs(d.a.macd));
+      for (const w of [d.a, d.b]) {
+        expect(w.i).toBe(w.mi); // anchored on the MACD candle
+        expect(s * line[w.i]).toBeGreaterThanOrEqual(s * line[w.i - 1]);
+        expect(s * line[w.i]).toBeGreaterThan(s * line[w.i - 2]);
+        expect(s * line[w.i]).toBeGreaterThan(s * line[w.i + 1]);
+      }
+      const h = (k: number) => line[k] - sg[k];
+      if (d.side === "high") { expect(h(d.cross - 1)).toBeGreaterThan(0); expect(h(d.cross)).toBeLessThanOrEqual(0); }
+      else { expect(h(d.cross - 1)).toBeLessThan(0); expect(h(d.cross)).toBeGreaterThanOrEqual(0); }
+      expect(d.cross - d.b.i).toBeLessThanOrEqual(B.crossWithin);
+      expect(d.b.i - d.a.i).toBeLessThanOrEqual(B.maxGap);
+    }
+  });
+
+  it("does not repaint", () => {
+    for (const d of found.slice(0, 25)) {
+      const key = (x: typeof d) => `${x.side}${x.a.i}-${x.b.i}`;
+      expect(detectDivergences(c.slice(0, d.confirmedIndex + 1), B).divergences.map(key)).toContain(key(d));
+      expect(detectDivergences(c.slice(0, d.confirmedIndex), B).divergences.map(key)).not.toContain(key(d));
+    }
+  });
+
+  it("a mirrored chart gives the mirrored answer", () => {
+    const hi = detectDivergences(c, { ...B, low: false }).divergences.map((d) => [d.a.i, d.b.i]);
+    const lo = detectDivergences(mirror(c), { ...B, high: false }).divergences.map((d) => [d.a.i, d.b.i]);
+    expect(lo).toEqual(hi);
+  });
+});
+
 describe("edge cases", () => {
   it("ignores extremes that are too far apart", () => {
     expect(detectDivergences(candles(twoRallies(2.5, 0.6, 35)), { ...highsOnly, maxGap: 5 }).divergences).toEqual([]);

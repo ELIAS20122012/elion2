@@ -106,6 +106,12 @@ export default function RulesPage() {
 
                 <div className="assume">
                   <span className="src guess">فرض من — اصلاح کنید</span>
+                  <label>روش تشخیص
+                    <select value={divP.method} onChange={(e) => setDivP({ ...divP, method: e.target.value as "price" | "macd" })}>
+                      <option value="macd">B — از روی مکدی (تمیز، شبیه اندیکاتور مرجع MT5)</option>
+                      <option value="price">A — از روی سوینگ قیمت (بیشتر پیدا می‌کند، شلوغ‌تر)</option>
+                    </select>
+                  </label>
                   <label className="check">
                     <input type="checkbox" checked={divP.high} onChange={(e) => setDivP({ ...divP, high: e.target.checked })} /> سقف‌ها (نارنجی)
                   </label>
