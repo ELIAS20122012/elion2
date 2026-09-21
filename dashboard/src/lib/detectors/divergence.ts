@@ -95,13 +95,21 @@ function detectSide(c: Candle[], line: number[], p: DivParams, side: Side): { fo
   const pairs = pairWithin(priceIdx, macdIdx, p.tol);
 
   const found: Divergence[] = [];
+  const mk = (x: { pi: number; mi: number }): Swing => ({ i: x.pi, price: side === "high" ? c[x.pi].high : c[x.pi].low, mi: x.mi, macd: line[x.mi] });
   for (let k = 1; k < pairs.length; k++) {
-    const A = pairs[k - 1];
     const B = pairs[k];
-    if (B.pi - A.pi > p.maxGap) continue;
-    if (price[B.pi] > price[A.pi] && m[B.mi] < m[A.mi]) {
-      const mk = (x: { pi: number; mi: number }): Swing => ({ i: x.pi, price: side === "high" ? c[x.pi].high : c[x.pi].low, mi: x.mi, macd: line[x.mi] });
-      found.push({ side, a: mk(A), b: mk(B), confirmedIndex: Math.max(B.pi + p.n, B.mi + MACD_WINDOW) });
+    // ASSUMPTION: the first extreme is either the previous one, or the "main" one — the one where the MACD went furthest
+    // in the last `maxGap` candles (a person skips the small wiggles in between and joins the big extremes).
+    const cands = new Set<number>([k - 1]);
+    let main = -1;
+    for (let j = k - 1; j >= 0 && B.pi - pairs[j].pi <= p.maxGap; j--) if (main < 0 || m[pairs[j].mi] > m[pairs[main].mi]) main = j;
+    if (main >= 0) cands.add(main);
+    for (const j of cands) {
+      const A = pairs[j];
+      if (B.pi - A.pi > p.maxGap) continue;
+      if (price[B.pi] > price[A.pi] && m[B.mi] < m[A.mi]) {
+        found.push({ side, a: mk(A), b: mk(B), confirmedIndex: Math.max(B.pi + p.n, B.mi + MACD_WINDOW) });
+      }
     }
   }
   return { found, priceSwings: priceIdx.length, matched: pairs.length };
