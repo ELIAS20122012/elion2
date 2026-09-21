@@ -51,7 +51,8 @@ const K_DIV = "rt.rule.divergence";
 export function getDivParams(): DivParams {
   try {
     const o = JSON.parse(localStorage.getItem(K_DIV) ?? "null");
-    if (o && Number.isFinite(o.n) && o.n >= 1 && Number.isFinite(o.maxGap) && o.maxGap >= 3) {
+    // a stored gap under 10 candles finds almost nothing (a stale value from a box that snapped to its minimum): use the default
+    if (o && Number.isFinite(o.n) && o.n >= 1 && Number.isFinite(o.maxGap) && o.maxGap >= 10) {
       const tol = Number.isFinite(o.tol) && o.tol >= 0 ? Math.round(o.tol) : DEFAULT_DIV.tol;
       const crossWithin = Number.isFinite(o.crossWithin) && o.crossWithin >= 1 ? Math.round(o.crossWithin) : DEFAULT_DIV.crossWithin;
       const macdTol = Number.isFinite(o.macdTol) && o.macdTol >= 0 ? o.macdTol : DEFAULT_DIV.macdTol;
@@ -91,29 +92,27 @@ export function useMaxPerDay(): [number, (n: number) => void] {
   return [usePrefValue(getMaxPerDay), setMaxPerDay];
 }
 
-/* ---------- chart shift: empty space to the right of the last candle (like "Shift end of the chart" in MT5) ---------- */
-const K_SHIFT = "rt.chart.shift";
-const DEFAULT_SHIFT = 12;
+/* ---------- chart shift: like "Chart shift" in MT5 — a single on/off, the last candle sits 20% in from the right edge ---------- */
+const K_SHIFT = "rt.chart.shiftOn";
 
-export function getChartShift(): number {
+export function getChartShift(): boolean {
   try {
-    const n = Number(localStorage.getItem(K_SHIFT));
-    return localStorage.getItem(K_SHIFT) !== null && Number.isFinite(n) && n >= 0 ? Math.min(n, 150) : DEFAULT_SHIFT;
+    return localStorage.getItem(K_SHIFT) !== "0"; // on by default, as in MT5
   } catch {
-    return DEFAULT_SHIFT;
+    return true;
   }
 }
 
-export function setChartShift(n: number): void {
+export function setChartShift(on: boolean): void {
   try {
-    localStorage.setItem(K_SHIFT, String(Math.max(0, Math.min(150, Math.round(n)))));
+    localStorage.setItem(K_SHIFT, on ? "1" : "0");
   } catch {
     /* not persisted */
   }
   window.dispatchEvent(new Event("rt-prefs"));
 }
 
-export function useChartShift(): [number, (n: number) => void] {
+export function useChartShift(): [boolean, (on: boolean) => void] {
   return [usePrefValue(getChartShift), setChartShift];
 }
 

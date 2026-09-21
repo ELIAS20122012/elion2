@@ -53,8 +53,8 @@ interface Props {
   showVolume: boolean;
   /** scroll the chart so this time is in view; a new `nonce` triggers it again for the same time */
   focus?: { time: number; nonce: number } | null;
-  /** empty candles to the right of the last one (MT5's "shift end of the chart") */
-  rightOffset?: number;
+  /** MT5's "Chart shift": the last candle sits ~20% of the width in from the right edge */
+  shift?: boolean;
 }
 
 interface Drag { id: string; kind: "point" | "body"; idx: number; startLogical: number; startPrice: number; orig: DPoint[] }
@@ -106,7 +106,7 @@ export default function Chart(props: Props) {
       grid: { vertLines: { color: C.grid }, horzLines: { color: C.grid } },
       crosshair: { mode: CrosshairMode.Normal },
       rightPriceScale: { borderColor: C.border, scaleMargins: { top: 0.08, bottom: 0.08 } },
-      timeScale: { borderColor: C.border, timeVisible: true, secondsVisible: false, rightOffset: props.rightOffset ?? 8 },
+      timeScale: { borderColor: C.border, timeVisible: true, secondsVisible: false, rightOffset: props.shift === false ? 0 : 12 },
     });
     const series = chart.addSeries(CandlestickSeries, {
       upColor: C.up, downColor: C.down, wickUpColor: C.up, wickDownColor: C.down, borderVisible: false,
@@ -308,10 +308,12 @@ export default function Chart(props: Props) {
   /* ---- shift end of the chart ---- */
   useEffect(() => {
     const chart = chartRef.current;
-    if (!chart || props.rightOffset == null) return;
-    chart.timeScale().applyOptions({ rightOffset: props.rightOffset });
-    chart.timeScale().scrollToRealTime();
-  }, [props.rightOffset]);
+    if (!chart || props.shift == null) return;
+    const ts = chart.timeScale();
+    const bars = ts.width() / ts.options().barSpacing; // candles that fit across the chart
+    ts.applyOptions({ rightOffset: props.shift ? Math.max(3, Math.round(bars * 0.2)) : 0 });
+    ts.scrollToRealTime();
+  }, [props.shift, tfSec, candles.length === 0]);
 
   /* ---- jump to a moment (used to step through what a rule found) ---- */
   const focusNonce = props.focus?.nonce;

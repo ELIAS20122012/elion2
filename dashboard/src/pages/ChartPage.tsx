@@ -75,54 +75,57 @@ export default function ChartPage() {
   return (
     <div className="chart-page">
       <section className="card chart-card">
-        <div className="chart-head">
-          <div className="viewtabs" role="tablist">
-            <button role="tab" aria-selected={view === "bot"} className={view === "bot" ? "on" : ""} onClick={() => setView("bot")}>چارت ربات (داده‌ی MT5)</button>
-            <button role="tab" aria-selected={view === "tv"} className={view === "tv" ? "on" : ""} onClick={() => setView("tv")}>TradingView</button>
-            {view === "tv" && <span className="muted small">قیمت از TradingView است (OANDA)، نه بروکر شما · رسم‌ها ذخیره نمی‌شوند</span>}
-          </div>
+        <div className="chart-head mt5-bar">
           {view === "bot" && (
-            <div className="seg" role="group" aria-label="تایم‌فریم">
+            <div className="seg tf" role="group" aria-label="تایم‌فریم" dir="ltr">
               {TIMEFRAMES.map((t) => (
                 <button key={t.sec} className={s.tfSec === t.sec ? "on" : ""} onClick={() => s.setTfSec(t.sec)}>{t.label}</button>
               ))}
             </div>
           )}
-        </div>
-
-        {view === "bot" && (
-          <div className="chart-tools">
-            <label className="chip-switch" title="نمایش ورود و خروج معاملات روی چارت">
-              <input type="checkbox" checked={!!s.layers.trades} onChange={(e) => s.setLayers({ ...s.layers, trades: e.target.checked })} />
-              <span>معاملات</span>
-            </label>
-            <label className="chip-switch" title="نمایش دایورجنس‌ها روی چارت">
-              <input type="checkbox" checked={divOn} onChange={(e) => s.setLayers({ ...s.layers, divergence: e.target.checked })} />
-              <span>دایورجنس</span>
-            </label>
-            {divOn && (
-              <div className="stepper" aria-label="پیمایش دایورجنس‌ها">
-                {divs.length > 0 ? (
-                  <>
-                    <button className="btn sm" onClick={() => goto(divCursor + 1)} aria-label="قدیمی‌تر">قدیمی‌تر</button>
-                    <span dir="ltr">{divCursor + 1} / {divs.length}</span>
-                    <button className="btn sm" onClick={() => goto(divCursor - 1)} aria-label="جدیدتر">جدیدتر</button>
-                    <button className="btn sm primary" onClick={() => goto(0)}>آخرین</button>
-                    <span className="muted small">نارنجی (سقف) {nHigh} · سبز (کف) {nLow}</span>
-                  </>
-                ) : (
-                  <span className="muted small">روی این تایم‌فریم دایورجنسی پیدا نشد</span>
-                )}
-              </div>
-            )}
-            <label className="shift" title="فاصله‌ی خالی سمت راست آخرین کندل (مثل Shift end of chart در MT5)">
-              <span>شیفت انتهای چارت</span>
-              <input type="range" min={0} max={150} step={1} value={shift} dir="ltr" onChange={(e) => setShift(Number(e.target.value))} />
-              <b dir="ltr">{shift}</b>
-            </label>
-            <Link className="btn sm" to="/rules">تنظیمات قوانین ←</Link>
+          {view === "bot" && (
+            <>
+              <span className="sep" />
+              <button className={`tb ${shift ? "on" : ""}`} onClick={() => setShift(!shift)} aria-pressed={shift} title="Chart shift — فاصله‌ی خالی سمت راست آخرین کندل (مثل MT5)">
+                <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M3 15V5M3 10h8M8 6l4 4-4 4" /><path d="M17 4v12" strokeDasharray="2 2" />
+                </svg>
+              </button>
+              <span className="sep" />
+              <label className="chip-switch" title="نمایش ورود و خروج معاملات روی چارت">
+                <input type="checkbox" checked={!!s.layers.trades} onChange={(e) => s.setLayers({ ...s.layers, trades: e.target.checked })} />
+                <span>معاملات</span>
+              </label>
+              <label className="chip-switch" title="نمایش دایورجنس‌ها روی چارت">
+                <input type="checkbox" checked={divOn} onChange={(e) => s.setLayers({ ...s.layers, divergence: e.target.checked })} />
+                <span>دایورجنس</span>
+              </label>
+              {divOn && (
+                <div className="stepper" aria-label="پیمایش دایورجنس‌ها">
+                  {divs.length > 0 ? (
+                    <>
+                      <button className="btn sm" onClick={() => goto(divCursor + 1)} aria-label="قدیمی‌تر">قدیمی‌تر</button>
+                      <span dir="ltr">{divCursor + 1} / {divs.length}</span>
+                      <button className="btn sm" onClick={() => goto(divCursor - 1)} aria-label="جدیدتر">جدیدتر</button>
+                      <button className="btn sm primary" onClick={() => goto(0)}>آخرین</button>
+                      <span className="muted small">نارنجی (سقف) {nHigh} · سبز (کف) {nLow}</span>
+                    </>
+                  ) : (
+                    <span className="muted small">
+                      روی این تایم‌فریم دایورجنسی پیدا نشد — <Link to="/rules">تنظیمات قانون را ببینید</Link>
+                    </span>
+                  )}
+                </div>
+              )}
+              <Link className="btn sm" to="/rules" style={{ marginInlineStart: "auto" }}>تنظیمات قوانین ←</Link>
+            </>
+          )}
+          <div className="viewtabs" role="tablist" style={view === "bot" ? undefined : { marginInlineStart: 0 }}>
+            <button role="tab" aria-selected={view === "bot"} className={view === "bot" ? "on" : ""} onClick={() => setView("bot")}>MT5</button>
+            <button role="tab" aria-selected={view === "tv"} className={view === "tv" ? "on" : ""} onClick={() => setView("tv")}>TradingView</button>
           </div>
-        )}
+          {view === "tv" && <span className="muted small">قیمت از TradingView است (OANDA)، نه بروکر شما · رسم‌ها ذخیره نمی‌شوند</span>}
+        </div>
 
         {view === "tv" && (
           <div className="chart-area tv">
@@ -171,7 +174,7 @@ export default function ChartPage() {
               showTrades={!!s.layers.trades}
               overlay={overlay}
               focus={focus}
-              rightOffset={shift}
+              shift={shift}
               indicators={s.indicators}
               drawings={s.drawings}
               tool={s.tool}

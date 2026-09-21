@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import NumField from "../components/NumField";
 import PageHeader from "../components/PageHeader";
 import { MACD_DEFAULT } from "../lib/detectors/divergence";
 import { LAYERS, RULES, STATUS_LABEL } from "../lib/rules";
@@ -105,19 +106,19 @@ export default function RulesPage() {
                     <input type="checkbox" checked={divP.low} onChange={(e) => setDivP({ ...divP, low: e.target.checked })} /> کف‌ها (سبز)
                   </label>
                   <label>مکدی «سقف/کف» دارد یعنی حداکثر این تعداد کندل با سقف/کف قیمت فاصله داشته باشد
-                    <input type="number" min={0} max={20} value={divP.tol} dir="ltr" onChange={(e) => setDivP({ ...divP, tol: Math.max(0, Number(e.target.value) || 0) })} />
+                    <NumField min={0} max={20} value={divP.tol} onChange={(v) => setDivP({ ...divP, tol: v })} />
                   </label>
                   <label>کراس حداکثر چند کندل بعد از سقف/کف دوم مکدی رخ دهد
-                    <input type="number" min={1} max={50} value={divP.crossWithin} dir="ltr" onChange={(e) => setDivP({ ...divP, crossWithin: Math.max(1, Number(e.target.value) || 1) })} />
+                    <NumField min={1} max={50} value={divP.crossWithin} onChange={(v) => setDivP({ ...divP, crossWithin: v })} />
                   </label>
                   <label>مکدی دو کف/سقف اگر تا این درصد به هم نزدیک بود «هم‌سطح» حساب شود (۰ = فقط دقیقاً بالاتر/پایین‌تر)
-                    <input type="number" min={0} max={50} step={1} value={Math.round(divP.macdTol * 100)} dir="ltr" onChange={(e) => setDivP({ ...divP, macdTol: Math.max(0, Number(e.target.value) || 0) / 100 })} />
+                    <NumField min={0} max={50} step={1} value={Math.round(divP.macdTol * 100)} onChange={(v) => setDivP({ ...divP, macdTol: v / 100 })} />
                   </label>
                   <label>«سقف» یعنی قله‌ای که از این تعداد کندل هر طرف بالاتر باشد (کف: برعکس)
-                    <input type="number" min={1} max={10} value={divP.n} dir="ltr" onChange={(e) => setDivP({ ...divP, n: Math.max(1, Number(e.target.value) || 1) })} />
+                    <NumField min={1} max={10} value={divP.n} onChange={(v) => setDivP({ ...divP, n: v })} />
                   </label>
                   <label>دو سقف حداکثر چند کندل از هم فاصله داشته باشند
-                    <input type="number" min={3} max={1000} value={divP.maxGap} dir="ltr" onChange={(e) => setDivP({ ...divP, maxGap: Math.max(3, Number(e.target.value) || 3) })} />
+                    <NumField min={10} max={1000} value={divP.maxGap} onChange={(v) => setDivP({ ...divP, maxGap: v })} />
                   </label>
                   <small className="muted">سقف مکدی = نقطه‌ای که از کندل قبل و بعدش بالاتر است (کف: برعکس). فقط کندل‌های بسته حساب می‌شوند تا نتیجه بعداً عوض نشود.</small>
                 </div>
