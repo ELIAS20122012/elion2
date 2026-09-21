@@ -6,12 +6,19 @@ import { LAYERS, RULES, STATUS_LABEL } from "../lib/rules";
 import { TIMEFRAMES } from "../lib/data";
 import { useApp } from "../state/AppContext";
 import { useDivergence } from "../state/useDivergence";
+import { useDivLabels } from "../state/useDivLabels";
+import { FEATURES, analyseLabels, divKey } from "../lib/detectors/divergenceFeatures";
 
 const clock = (t: number) => new Date(t * 1000).toISOString().slice(5, 16).replace("T", " "); // broker (server) time, as on the MT5 axis
 
 export default function RulesPage() {
   const s = useApp();
   const { divP, setDivP, on, closedBars, divs, analysis } = useDivergence();
+  const { labels, error: labelError } = useDivLabels();
+  const rows = [...labels.values()];
+  const nOk = rows.filter((r) => r.label === "ok").length;
+  const nBad = rows.length - nOk;
+  const report = analyseLabels(rows);
   const done = RULES.filter((r) => r.status === "approved").length;
   const nHigh = divs.filter((d) => d.side === "high").length;
   const tf = TIMEFRAMES.find((t) => t.sec === s.tfSec)?.label ?? "";
@@ -123,11 +130,34 @@ export default function RulesPage() {
                   <small className="muted">سقف مکدی = نقطه‌ای که از کندل قبل و بعدش بالاتر است (کف: برعکس). فقط کندل‌های بسته حساب می‌شوند تا نتیجه بعداً عوض نشود.</small>
                 </div>
 
+                <div className="found-list">
+                  <h4>برچسب‌های شما (✓ درست / ✗ غلط)</h4>
+                  {labelError && <p className="muted small">⚠ سرور ژورنال در دسترس نیست: {labelError}</p>}
+                  <p className="muted small">✓ {nOk} · ✗ {nBad} — روی چارت با دکمه‌های «✓ درست / ✗ غلط» برچسب بزنید. هر چه بیشتر، آستانه‌ها دقیق‌تر از خودِ شما درمی‌آید.</p>
+                  {nOk >= 3 && nBad >= 3 ? (
+                    <table>
+                      <thead><tr><th>معیار</th><th>میانه‌ی درست‌ها</th><th>میانه‌ی غلط‌ها</th><th>بهترین مرز</th><th>درستی مرز</th></tr></thead>
+                      <tbody>
+                        {report.map((r) => (
+                          <tr key={r.id} title={FEATURES.find((f) => f.id === r.id)?.hint}>
+                            <td>{FEATURES.find((f) => f.id === r.id)?.label}</td>
+                            <td dir="ltr">{r.okMedian.toFixed(2)}</td>
+                            <td dir="ltr">{r.badMedian.toFixed(2)}</td>
+                            <td dir="ltr">{r.dir} {r.threshold.toFixed(2)}</td>
+                            <td dir="ltr">{Math.round(r.accuracy * 100)}%</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  ) : (
+                    <p className="muted small">برای مقایسه حداقل ۳ برچسب «درست» و ۳ برچسب «غلط» لازم است.</p>
+                  )}
+                </div>
                 {divs.length > 0 && (
                   <div className="found-list">
                     <h4>آخرین موارد پیداشده ({tf}، ساعت سرور بروکر)</h4>
                     <table>
-                      <thead><tr><th>نوع</th><th>نقطه‌ی اول</th><th>نقطه‌ی دوم</th><th>کراس</th><th>قیمت</th><th>مکدی</th></tr></thead>
+                      <thead><tr><th>نوع</th><th>نقطه‌ی اول</th><th>نقطه‌ی دوم</th><th>کراس</th><th>قیمت</th><th>مکدی</th><th>برچسب</th></tr></thead>
                       <tbody>
                         {[...divs].reverse().slice(0, 25).map((d) => (
                           <tr key={`${d.side}-${d.a.i}-${d.b.i}`}>
@@ -137,6 +167,7 @@ export default function RulesPage() {
                             <td dir="ltr">{clock(closedBars[d.cross].time)}</td>
                             <td dir="ltr">{d.a.price.toFixed(2)} → {d.b.price.toFixed(2)}</td>
                             <td dir="ltr">{d.a.macd.toFixed(2)} → {d.b.macd.toFixed(2)}</td>
+                            <td>{(() => { const v = labels.get(divKey(s.tfSec, closedBars, d))?.label; return v === "ok" ? "✓" : v === "bad" ? "✗" : "—"; })()}</td>
                           </tr>
                         ))}
                       </tbody>

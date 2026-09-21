@@ -244,6 +244,39 @@ def put_notes(trade_id: int, n: NotesIn):
         return {"ok": True}
 
 
+class RuleLabelIn(BaseModel):
+    rule: str = Field(min_length=1, max_length=60)
+    key: str = Field(min_length=1, max_length=200)
+    label: Literal["ok", "bad"]
+    features: dict | None = None
+
+
+@app.get("/rule-labels/{rule}")
+def list_rule_labels(rule: str):
+    import json
+    with db.db() as con:
+        rows = con.execute("SELECT key, label, features, updated_at FROM rule_labels WHERE rule=? ORDER BY updated_at", (rule,)).fetchall()
+        return [{"key": r["key"], "label": r["label"], "features": json.loads(r["features"]) if r["features"] else None, "updated_at": r["updated_at"]} for r in rows]
+
+
+@app.post("/rule-labels")
+def put_rule_label(b: RuleLabelIn):
+    import json
+    with db.db() as con:
+        con.execute(
+            """INSERT INTO rule_labels (rule, key, label, features, updated_at) VALUES (?,?,?,?,?)
+               ON CONFLICT(rule, key) DO UPDATE SET label=excluded.label, features=excluded.features, updated_at=excluded.updated_at""",
+            (b.rule, b.key, b.label, json.dumps(b.features) if b.features is not None else None, db.now()),
+        )
+        return {"ok": True}
+
+
+@app.delete("/rule-labels/{rule}", status_code=204)
+def delete_rule_label(rule: str, key: str):
+    with db.db() as con:
+        con.execute("DELETE FROM rule_labels WHERE rule=? AND key=?", (rule, key))
+
+
 @app.delete("/accounts/{account_id}/trades", status_code=204)
 def clear_trades(account_id: int, source: str | None = None):
     with db.db() as con:

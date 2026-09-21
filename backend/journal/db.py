@@ -63,6 +63,15 @@ CREATE TABLE IF NOT EXISTS snapshots (
     equity REAL,
     PRIMARY KEY (account_id, time)
 );
+-- Elias's verdicts on what a taught rule found ("ok" = a real one, "bad" = not one). The rules are tuned from these.
+CREATE TABLE IF NOT EXISTS rule_labels (
+    rule TEXT NOT NULL,
+    key TEXT NOT NULL,                         -- identifies the finding: timeframe, side and the candle times
+    label TEXT NOT NULL,                       -- ok | bad
+    features TEXT,                             -- JSON with the measurements taken when it was labelled
+    updated_at INTEGER,
+    PRIMARY KEY (rule, key)
+);
 """
 
 

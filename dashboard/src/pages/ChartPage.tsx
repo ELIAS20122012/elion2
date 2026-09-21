@@ -12,6 +12,8 @@ import { TIMEFRAMES, type Trade } from "../lib/data";
 import { useJournal } from "../state/JournalContext";
 import { useAllAccounts } from "../state/useAllAccounts";
 import { useDivergence } from "../state/useDivergence";
+import { useDivLabels } from "../state/useDivLabels";
+import { divFeatures, divKey } from "../lib/detectors/divergenceFeatures";
 import { SPEEDS } from "../lib/useReplay";
 import { SYMBOL, useApp } from "../state/AppContext";
 
@@ -69,6 +71,17 @@ export default function ChartPage() {
     }
   }, [divOn, s.indicators]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Elias's verdict on the finding that is on screen now (✓ real / ✗ not real)
+  const { labels, set: setLabel, clear: clearLabel, error: labelError } = useDivLabels();
+  const current = newest[divCursor];
+  const currentKey = current ? divKey(s.tfSec, closedBars, current) : "";
+  const verdict = current ? labels.get(currentKey)?.label : undefined;
+  const judge = (label: "ok" | "bad") => {
+    if (!current) return;
+    void setLabel(currentKey, label, divFeatures(closedBars, current));
+    goto(divCursor + 1); // on to the next, older one
+  };
+
   const nHigh = divs.filter((d) => d.side === "high").length;
   const nLow = divs.length - nHigh;
 
@@ -108,6 +121,10 @@ export default function ChartPage() {
                       <span dir="ltr">{divCursor + 1} / {divs.length}</span>
                       <button className="btn sm" onClick={() => goto(divCursor - 1)} aria-label="جدیدتر">جدیدتر</button>
                       <button className="btn sm primary" onClick={() => goto(0)}>آخرین</button>
+                      <span className="sep" />
+                      <button className={`btn sm verdict ok ${verdict === "ok" ? "on" : ""}`} onClick={() => (verdict === "ok" ? void clearLabel(currentKey) : judge("ok"))} title="این یک دایورجنس درست است">✓ درست</button>
+                      <button className={`btn sm verdict bad ${verdict === "bad" ? "on" : ""}`} onClick={() => (verdict === "bad" ? void clearLabel(currentKey) : judge("bad"))} title="این دایورجنس نیست">✗ غلط</button>
+                      {labelError && <span className="muted small" title={labelError}>⚠ ذخیره‌ی برچسب ممکن نیست</span>}
                       <span className="muted small">نارنجی (سقف) {nHigh} · سبز (کف) {nLow}</span>
                     </>
                   ) : (

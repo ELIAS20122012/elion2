@@ -84,3 +84,18 @@ def test_api_flow():
 
         assert c.delete(f"/accounts/{acc['id']}").status_code == 204
         assert c.get(f"/accounts/{acc['id']}/trades").status_code == 404
+
+
+def test_rule_labels_roundtrip():
+    with TestClient(app) as c:
+        key = "60:low:1000:1600"
+        assert c.get("/rule-labels/divergence").json() == []
+        assert c.post("/rule-labels", json={"rule": "divergence", "key": key, "label": "ok", "features": {"gap": 10.0}}).json() == {"ok": True}
+        # a second verdict on the same finding replaces the first
+        c.post("/rule-labels", json={"rule": "divergence", "key": key, "label": "bad", "features": {"gap": 10.0}})
+        rows = c.get("/rule-labels/divergence").json()
+        assert len(rows) == 1 and rows[0]["label"] == "bad" and rows[0]["features"] == {"gap": 10.0}
+        assert c.post("/rule-labels", json={"rule": "divergence", "key": key, "label": "maybe"}).status_code == 422
+        assert c.get("/rule-labels/other-rule").json() == []
+        assert c.delete(f"/rule-labels/divergence?key={key}").status_code == 204
+        assert c.get("/rule-labels/divergence").json() == []

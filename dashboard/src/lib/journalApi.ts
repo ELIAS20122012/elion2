@@ -113,8 +113,19 @@ async function call<T>(path: string, init?: RequestInit): Promise<T> {
 
 const json = (method: string, body: unknown): RequestInit => ({ method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
 
+export interface RuleLabel {
+  key: string;
+  label: "ok" | "bad";
+  features: Record<string, number> | null;
+  updated_at: number;
+}
+
 export const journalApi = {
   health: () => call<{ ok: boolean }>("/health"),
+  ruleLabels: (rule: string) => call<RuleLabel[]>(`/rule-labels/${encodeURIComponent(rule)}`),
+  setRuleLabel: (rule: string, key: string, label: "ok" | "bad", features: Record<string, number> | null) =>
+    call<{ ok: boolean }>("/rule-labels", json("POST", { rule, key, label, features })),
+  clearRuleLabel: (rule: string, key: string) => call<void>(`/rule-labels/${encodeURIComponent(rule)}?key=${encodeURIComponent(key)}`, { method: "DELETE" }),
   accounts: () => call<Account[]>("/accounts"),
   createAccount: (a: AccountInput) => call<Account>("/accounts", json("POST", a)),
   updateAccount: (id: number, a: Partial<AccountInput>) => call<Account>(`/accounts/${id}`, json("PATCH", a)),
