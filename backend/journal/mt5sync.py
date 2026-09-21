@@ -10,6 +10,8 @@ from datetime import datetime, timezone
 
 import MetaTrader5 as mt5
 
+FUTURE_MARGIN = 86400  # seconds; see the note in _fetch about the broker clock running ahead of UTC
+
 # The MetaTrader5 package keeps one global connection per process and is not thread-safe: two threads calling
 # initialize()/shutdown() at once can crash the whole interpreter. Every MT5 call in this process goes through this lock.
 MT5_LOCK = threading.RLock()
@@ -59,7 +61,10 @@ def _fetch(expected_login: str | None, days: int, terminal_path: str | None) -> 
 
         now = datetime.now(timezone.utc)
         start = datetime.fromtimestamp(0, timezone.utc) if days <= 0 else datetime.fromtimestamp(now.timestamp() - days * 86400, timezone.utc)
-        deals = mt5.history_deals_get(start, now)
+        # MT5 stamps deals with the BROKER's clock (here UTC+3), which runs ahead of real UTC. A window that ends "now" in real
+        # UTC therefore hides every deal of the last few hours: a position you just closed stayed "open" in the journal until
+        # the broker clock offset had passed. End the window a day ahead so nothing recent is cut off.
+        deals = mt5.history_deals_get(start, datetime.fromtimestamp(now.timestamp() + FUTURE_MARGIN, timezone.utc))
         by_pos: dict[int, list] = {}
         for d in deals or []:
             if d.type in (mt5.DEAL_TYPE_BUY, mt5.DEAL_TYPE_SELL) and d.position_id:

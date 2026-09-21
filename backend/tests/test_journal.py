@@ -99,3 +99,34 @@ def test_rule_labels_roundtrip():
         assert c.get("/rule-labels/other-rule").json() == []
         assert c.delete(f"/rule-labels/divergence?key={key}").status_code == 204
         assert c.get("/rule-labels/divergence").json() == []
+
+def test_mt5_history_window_reaches_past_now():
+    """MT5 stamps deals with the broker's clock (ahead of UTC); the history window must not end at real 'now'."""
+    from datetime import datetime, timezone
+    from types import SimpleNamespace
+
+    from journal import mt5sync
+
+    seen = {}
+
+    class FakeMt5:
+        DEAL_TYPE_BUY, DEAL_TYPE_SELL, DEAL_ENTRY_IN, DEAL_ENTRY_OUT, DEAL_ENTRY_OUT_BY = 0, 1, 0, 1, 3
+        POSITION_TYPE_BUY = 0
+
+        def initialize(self, path=None): return True
+        def shutdown(self): pass
+        def account_info(self): return SimpleNamespace(login=1, balance=1.0, equity=1.0, currency="USD", server="S")
+        def positions_get(self): return []
+
+        def history_deals_get(self, start, end):
+            seen["end"] = end
+            return []
+
+    real = mt5sync.mt5
+    mt5sync.mt5 = FakeMt5()
+    try:
+        mt5sync._fetch("1", 30, None)
+    finally:
+        mt5sync.mt5 = real
+    hours_ahead = (seen["end"] - datetime.now(timezone.utc)).total_seconds() / 3600
+    assert hours_ahead >= 12  # far enough past 'now' to cover any broker offset
