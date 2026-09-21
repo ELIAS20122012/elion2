@@ -1,5 +1,5 @@
 import type { Candle } from "../data";
-import { macd } from "../indicators";
+import { macd, sma } from "../indicators";
 
 /**
  * RULE: regular divergence with the default MT5 MACD (definition given by Elias, 2026-09-21).
@@ -25,11 +25,13 @@ export interface DivParams {
   tol: number;
   /** ASSUMPTION: the two extremes must be at most this many candles apart. */
   maxGap: number;
+  /** ASSUMPTION: the signal/MACD cross must happen within this many candles after the second MACD extreme. */
+  crossWithin: number;
   /** which directions to look for */
   high: boolean;
   low: boolean;
 }
-export const DEFAULT_DIV: DivParams = { n: 2, tol: 3, maxGap: 100, high: true, low: true };
+export const DEFAULT_DIV: DivParams = { n: 2, tol: 3, maxGap: 100, crossWithin: 10, high: true, low: true };
 
 export type Side = "high" | "low";
 
@@ -44,6 +46,7 @@ export interface Divergence {
   side: Side;
   a: Swing;                // first extreme
   b: Swing;                // second extreme: price beyond the first, MACD not confirming
+  cross: number;           // candle where the signal line and the MACD crossed: the divergence counts as formed here
   confirmedIndex: number;  // earliest candle at which this could have been known (no repainting)
 }
 
@@ -84,7 +87,7 @@ export function pairWithin(priceIdx: number[], macdIdx: number[], tol: number): 
   return out;
 }
 
-function detectSide(c: Candle[], line: number[], p: DivParams, side: Side): { found: Divergence[]; priceSwings: number; matched: number } {
+function detectSide(c: Candle[], line: number[], hist: number[], p: DivParams, side: Side): { found: Divergence[]; priceSwings: number; matched: number } {
   // Work on a "highs" version of the data: for lows everything is mirrored (price and MACD negated), so one code path serves both.
   const sign = side === "high" ? 1 : -1;
   const price = c.map((x) => (side === "high" ? x.high : -x.low));
@@ -108,7 +111,14 @@ function detectSide(c: Candle[], line: number[], p: DivParams, side: Side): { fo
       const A = pairs[j];
       if (B.pi - A.pi > p.maxGap) continue;
       if (price[B.pi] > price[A.pi] && m[B.mi] < m[A.mi]) {
-        found.push({ side, a: mk(A), b: mk(B), confirmedIndex: Math.max(B.pi + p.n, B.mi + MACD_WINDOW) });
+        // From Elias: it only counts as formed when the signal line and the MACD cross after the second extreme.
+        // Lows: MACD crosses up through the signal (hist - to +). Highs: crosses down (hist + to -).
+        let cross = -1;
+        for (let k = B.mi + 1; k < line.length && k <= B.mi + p.crossWithin; k++) {
+          if (side === "high" ? hist[k - 1] > 0 && hist[k] <= 0 : hist[k - 1] < 0 && hist[k] >= 0) { cross = k; break; }
+        }
+        if (cross < 0) continue;
+        found.push({ side, a: mk(A), b: mk(B), cross, confirmedIndex: Math.max(B.pi + p.n, cross) });
       }
     }
   }
@@ -120,10 +130,12 @@ export function detectDivergences(c: Candle[], p: DivParams = DEFAULT_DIV): Anal
   const res: Analysis = { divergences: [], counts: { high: empty, low: empty } };
   if (c.length < 2 * p.n + 2) return res;
   const line = macd(c.map((x) => x.close), MACD_DEFAULT.fast, MACD_DEFAULT.slow, MACD_DEFAULT.signal).line;
+  const sig = sma(line, MACD_DEFAULT.signal); // MT5 signal line = simple average of the MACD line
+  const hist = line.map((v, i) => v - sig[i]);
 
   for (const side of ["high", "low"] as const) {
     if (!p[side]) continue;
-    const r = detectSide(c, line, p, side);
+    const r = detectSide(c, line, hist, p, side);
     res.divergences.push(...r.found);
     res.counts[side] = { priceSwings: r.priceSwings, matched: r.matched };
   }

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { UTCTimestamp } from "lightweight-charts";
 import type { Candle } from "../data";
-import { macd } from "../indicators";
+import { macd, sma } from "../indicators";
 import { DEFAULT_DIV, MACD_DEFAULT, detectDivergences, pairWithin, swingHighs, swingIndices } from "./divergence";
 
 /**
@@ -97,6 +97,19 @@ describe("divergence on the lows (downtrend): price lower low, MACD higher low",
   });
 });
 
+describe("the divergence only counts once the signal line and the MACD cross", () => {
+  it("without a cross inside the allowed window nothing is reported", () => {
+    const c = candles(twoRallies(2.5, 0.6, 35));
+    expect(detectDivergences(c, { ...highsOnly, crossWithin: 0 }).divergences).toEqual([]);
+    expect(detectDivergences(mirror(c), { ...lowsOnly, crossWithin: 0 }).divergences).toEqual([]);
+  });
+  it("the cross comes after the second MACD extreme and is confirmed on that candle, not earlier", () => {
+    const d = detectDivergences(candles(twoRallies(2.5, 0.6, 35)), highsOnly).divergences[0];
+    expect(d.cross).toBeGreaterThan(d.b.mi);
+    expect(d.confirmedIndex).toBeGreaterThanOrEqual(d.cross);
+  });
+});
+
 describe("symmetry", () => {
   it("a mirrored chart gives exactly the mirrored answer (same candle indices)", () => {
     const c = candles(twoRallies(2.5, 0.6, 35));
@@ -135,6 +148,11 @@ describe("invariants on 4000 candles of a random walk (both sides)", () => {
       if (d.side === "high") { expect(d.b.price).toBeGreaterThan(d.a.price); expect(d.b.macd).toBeLessThan(d.a.macd); }
       else { expect(d.b.price).toBeLessThan(d.a.price); expect(d.b.macd).toBeGreaterThan(d.a.macd); }
       expect(d.b.i - d.a.i).toBeLessThanOrEqual(DEFAULT_DIV.maxGap);
+      expect(d.cross - d.b.mi).toBeLessThanOrEqual(DEFAULT_DIV.crossWithin);
+      const sg = sma(line, 9);
+      const h = (k: number) => line[k] - sg[k];
+      if (d.side === "high") { expect(h(d.cross - 1)).toBeGreaterThan(0); expect(h(d.cross)).toBeLessThanOrEqual(0); }
+      else { expect(h(d.cross - 1)).toBeLessThan(0); expect(h(d.cross)).toBeGreaterThanOrEqual(0); }
     }
   });
 

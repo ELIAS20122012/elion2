@@ -53,7 +53,8 @@ export function getDivParams(): DivParams {
     const o = JSON.parse(localStorage.getItem(K_DIV) ?? "null");
     if (o && Number.isFinite(o.n) && o.n >= 1 && Number.isFinite(o.maxGap) && o.maxGap >= 3) {
       const tol = Number.isFinite(o.tol) && o.tol >= 0 ? Math.round(o.tol) : DEFAULT_DIV.tol;
-      return { n: Math.round(o.n), tol, maxGap: Math.round(o.maxGap), high: o.high !== false, low: o.low !== false };
+      const crossWithin = Number.isFinite(o.crossWithin) && o.crossWithin >= 1 ? Math.round(o.crossWithin) : DEFAULT_DIV.crossWithin;
+      return { n: Math.round(o.n), tol, maxGap: Math.round(o.maxGap), crossWithin, high: o.high !== false, low: o.low !== false };
     }
   } catch {
     /* fall back to the defaults */

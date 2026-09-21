@@ -67,6 +67,7 @@ export default function ChartPage() {
       const position = hi ? "aboveBar" : "belowBar";
       markers.push({ time: A.time, position, shape: "circle", color });
       markers.push({ time: B.time, position, shape: hi ? "arrowDown" : "arrowUp", color, text: hi ? "دایورجنس سقف" : "دایورجنس کف" });
+      markers.push({ time: closedBars[d.cross].time, position: hi ? "aboveBar" : "belowBar", shape: "square", color, text: "کراس" }); // formed here
     }
     return { lines, markers };
   }, [divs, closedBars]);
@@ -283,6 +284,7 @@ export default function ChartPage() {
                   <li><span className="src you">از شما</span>مکدی پیش‌فرض MT5 ({MACD_DEFAULT.fast}, {MACD_DEFAULT.slow}, {MACD_DEFAULT.signal})</li>
                   <li><span className="src you">از شما</span>سقف (روند صعودی): قیمت دو سقف، دومی بالاتر · مکدی دو سقف، دومی پایین‌تر</li>
                   <li><span className="src you">از شما</span>کف (روند نزولی): قیمت دو کف، دومی پایین‌تر · مکدی دو کف، دومی بالاتر</li>
+                  <li><span className="src you">از شما</span>دایورجنس وقتی شکل گرفته که بعد از سقف/کف دوم، مکدی با خط سیگنال کراس کند (کف: مکدی از پایین سیگنال را به بالا بشکند · سقف: برعکس)</li>
                   <li><span className="src you">از شما</span>هر سقف/کف قیمت باید یک سقف/کف مکدی هم کنارش داشته باشد (تناسب)</li>
                 </ul>
                 <div className="assume">
@@ -295,6 +297,9 @@ export default function ChartPage() {
                   </label>
                   <label>مکدی «سقف/کف» دارد یعنی حداکثر این تعداد کندل با سقف/کف قیمت فاصله داشته باشد
                     <input type="number" min={0} max={20} value={divP.tol} dir="ltr" onChange={(e) => setDivP({ ...divP, tol: Math.max(0, Number(e.target.value) || 0) })} />
+                  </label>
+                  <label>کراس حداکثر چند کندل بعد از سقف/کف دوم مکدی رخ دهد
+                    <input type="number" min={1} max={50} value={divP.crossWithin} dir="ltr" onChange={(e) => setDivP({ ...divP, crossWithin: Math.max(1, Number(e.target.value) || 1) })} />
                   </label>
                   <label>«سقف» یعنی قله‌ای که از این تعداد کندل هر طرف بالاتر باشد (کف: برعکس)
                     <input type="number" min={1} max={10} value={divP.n} dir="ltr" onChange={(e) => setDivP({ ...divP, n: Math.max(1, Number(e.target.value) || 1) })} />
