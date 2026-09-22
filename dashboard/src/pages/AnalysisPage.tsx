@@ -1,10 +1,10 @@
-﻿import { useMemo } from "react";
+import { useMemo } from "react";
 import { useMaxPerDay } from "../lib/prefs";
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import AccountBar, { BackendGate } from "../components/AccountBar";
-import Kpis from "../components/Kpis";
+import Icon from "../components/Icon";
 import PageHeader from "../components/PageHeader";
-import { byDay, byDuration, byHour, byTag, byWeekday, equityCurve, excursions, isClosed, money, summarize, type Bucket } from "../lib/analytics";
+import { byDay, byDuration, byHour, byTag, byWeekday, equityCurve, excursions, fmtDuration, isClosed, money, summarize, type Bucket, type Summary } from "../lib/analytics";
 import { fmtDateTime } from "../lib/data";
 import type { JTrade } from "../lib/journalApi";
 import { useJournal } from "../state/JournalContext";
@@ -43,39 +43,24 @@ function Body() {
 
   return (
     <>
-      <Kpis s={s} full />
-
-      <section className="card">
-        <h3>منحنی سرمایه و افت</h3>
-        <div className="chart-box">
-          <ResponsiveContainer width="100%" height={280}>
-            <AreaChart data={curve} margin={{ top: 8, right: 8, left: 8, bottom: 0 }}>
-              <CartesianGrid stroke={GRID} vertical={false} />
-              <XAxis dataKey="time" tickFormatter={(t: number) => fmtDateTime(t).slice(5, 10)} {...AXIS} minTickGap={40} />
-              <YAxis {...AXIS} orientation="right" width={56} />
-              <Tooltip {...TIP} labelFormatter={(t) => fmtDateTime(t as number)} formatter={(v: number, n: string) => [v.toFixed(2), n === "equity" ? "سرمایه" : "افت"]} />
-              <Area isAnimationActive={false} type="monotone" dataKey="equity" stroke="#e0b354" fill="rgba(224,179,84,0.12)" strokeWidth={2} dot={false} />
-              <Area isAnimationActive={false} type="monotone" dataKey="drawdown" stroke="#ef5350" fill="rgba(239,83,80,0.12)" strokeWidth={1} dot={false} />
-            </AreaChart>
-          </ResponsiveContainer>
-        </div>
-      </section>
+      <Hero s={s} curve={curve} />
+      <KpiStrip s={s} />
 
       <div className="two-col">
-        <Bars title="سود/زیان بر اساس ساعت ورود" data={hours} sub="ساعت بروکر" />
-        <Bars title="سود/زیان بر اساس روز هفته" data={byWeekday(trades)} />
-        <Bars title="سود/زیان بر اساس مدت معامله" data={byDuration(trades)} sub="اسکالپ را از معاملات طولانی جدا می‌کند" />
+        <Bars icon="clock" title="سود/زیان بر اساس ساعت ورود" data={hours} sub="ساعت بروکر" />
+        <Bars icon="calendar" title="سود/زیان بر اساس روز هفته" data={byWeekday(trades)} />
+        <Bars icon="target" title="سود/زیان بر اساس مدت معامله" data={byDuration(trades)} sub="اسکالپ را از معاملات طولانی جدا می‌کند" />
         <Observations trades={closed} hours={hours} days={days.length} overDays={overDays} maxPerDay={maxPerDay} avgGive={avgGive} />
       </div>
 
       <section className="card">
         <div className="filters">
-          <h3>روزها — تعداد معاملات و پس‌دادن سود</h3>
+          <h3><Icon name="calendar" size={17} />روزها — تعداد معاملات و پس‌دادن سود</h3>
           <label className="inline-field">سقف معامله در روز <input type="number" min={1} value={maxPerDay} onChange={(e) => setMaxPerDay(Math.max(1, Number(e.target.value) || 1))} dir="ltr" /></label>
         </div>
         <p className="muted small">«اوج» بهترین سود تحقق‌یافته‌ی روز و «پس‌دادن» فاصله‌ی اوج تا سود پایان روز است. (بر پایه‌ی معاملات بسته؛ سود شناور معاملات بازِ لحظه‌ای را نمی‌بیند.)</p>
         <div className="table-wrap">
-          <table>
+          <table className="an-table">
             <thead><tr><th>روز</th><th>معاملات</th><th>برد</th><th>سود پایان روز</th><th>اوج سود</th><th>پس‌دادن</th><th>حداکثر در یک ساعت</th><th>هشدار</th></tr></thead>
             <tbody>
               {days.map((d) => (
@@ -99,30 +84,115 @@ function Body() {
   );
 }
 
-function Inside({ trades }: { trades: JTrade[] }) {
-  const e = excursions(trades);
-  if (!e) return null;
-  const cells: [string, string][] = [
-    ["معاملات زیر نظر", String(e.tracked)],
-    ["میانگین بیشترین سود شناور", money(e.avgMfe)],
-    ["میانگین بیشترین ضرر شناور", money(e.avgMae)],
-    ["میانگین سود پس‌داده‌شده از اوج", money(-e.avgGiveback)],
-    ["از اوجِ سود چند درصد را گرفتی (معاملات برنده)", e.captured != null ? `${Math.round(e.captured * 100)}%` : "—"],
-    ["معاملاتی که سود رفت ولی با ضرر بسته شد", String(e.peakThenLoss)],
-  ];
+/* ---- headline: net P&L, its context, and the equity curve, all in one focal card ---- */
+function Hero({ s, curve }: { s: Summary; curve: { time: number; equity: number; drawdown: number }[] }) {
+  const positive = s.net >= 0;
   return (
-    <section className="card">
-      <h3>درون معامله (MFE / MAE)</h3>
-      <p className="muted small">فقط معاملاتی که خودکار زیر نظر بودند (از نصب اندیکاتور به بعد). نشان می‌دهد سود را در کجای معامله دیده‌ای و چقدر از آن را پس داده‌ای.</p>
-      <div className="kpis">{cells.map(([l, v]) => <div key={l} className="card kpi"><span>{l}</span><b dir="ltr">{v}</b></div>)}</div>
+    <section className="card an-hero">
+      <div className="an-hero-top">
+        <div className="an-hero-pnl">
+          <span className="an-hero-label">سود/زیان خالص</span>
+          <div className={`an-hero-num ${positive ? "up" : "down"}`} dir="ltr">
+            <Icon name={positive ? "trend" : "alert"} size={26} />
+            {money(s.net)}
+          </div>
+          <span className="muted small">روی {s.count} معامله‌ی بسته · نرخ برد {Math.round(s.winRate * 100)}%</span>
+        </div>
+        <div className="an-hero-badges">
+          <HeroBadge icon="scale" label="ضریب سود (PF)" value={s.profitFactor != null ? s.profitFactor.toFixed(2) : "—"} tone={s.profitFactor != null && s.profitFactor >= 1 ? "up" : "down"} />
+          <HeroBadge icon="target" label="امید ریاضی هر معامله" value={money(s.expectancy)} tone={s.expectancy >= 0 ? "up" : "down"} />
+          <HeroBadge icon="bolt" label="بیشترین افت (Drawdown)" value={money(-s.maxDrawdown)} tone="warn" />
+        </div>
+      </div>
+      <div className="chart-box an-hero-chart">
+        <ResponsiveContainer width="100%" height={260}>
+          <AreaChart data={curve} margin={{ top: 8, right: 8, left: 8, bottom: 0 }}>
+            <defs>
+              <linearGradient id="anEquityFill" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#e0b354" stopOpacity={0.35} />
+                <stop offset="100%" stopColor="#e0b354" stopOpacity={0.02} />
+              </linearGradient>
+            </defs>
+            <CartesianGrid stroke={GRID} vertical={false} />
+            <XAxis dataKey="time" tickFormatter={(t: number) => fmtDateTime(t).slice(5, 10)} {...AXIS} minTickGap={40} />
+            <YAxis {...AXIS} orientation="right" width={56} />
+            <Tooltip {...TIP} labelFormatter={(t) => fmtDateTime(t as number)} formatter={(v: number, n: string) => [v.toFixed(2), n === "equity" ? "سرمایه" : "افت"]} />
+            <Area isAnimationActive={false} type="monotone" dataKey="equity" stroke="#e0b354" fill="url(#anEquityFill)" strokeWidth={2.5} dot={false} />
+            <Area isAnimationActive={false} type="monotone" dataKey="drawdown" stroke="#ef5350" fill="rgba(239,83,80,0.10)" strokeWidth={1} dot={false} />
+          </AreaChart>
+        </ResponsiveContainer>
+      </div>
     </section>
   );
 }
 
-function Bars({ title, data, sub }: { title: string; data: Bucket[]; sub?: string }) {
+function HeroBadge({ icon, label, value, tone }: { icon: string; label: string; value: string; tone: "up" | "down" | "warn" }) {
+  return (
+    <div className={`hero-badge ${tone}`}>
+      <Icon name={icon} size={18} />
+      <div>
+        <span>{label}</span>
+        <b dir="ltr">{value}</b>
+      </div>
+    </div>
+  );
+}
+
+/* ---- secondary numbers: real, but not headline-worthy — a compact strip, not another wall of big cards ---- */
+function KpiStrip({ s }: { s: Summary }) {
+  const chips: { label: string; value: string; tone?: "up" | "down" }[] = [
+    { label: "میانگین سود", value: s.wins ? money(s.avgWin) : "—", tone: "up" },
+    { label: "میانگین زیان", value: s.losses ? money(s.avgLoss) : "—", tone: "down" },
+    { label: "نسبت سود به زیان", value: s.payoff != null ? s.payoff.toFixed(2) : "—" },
+    { label: "بهترین معامله", value: money(s.bestTrade), tone: "up" },
+    { label: "بدترین معامله", value: money(s.worstTrade), tone: "down" },
+    { label: "بیشترین سری برد", value: String(s.maxWinStreak), tone: "up" },
+    { label: "بیشترین سری باخت", value: String(s.maxLossStreak), tone: "down" },
+    { label: "میانگین مدت معامله", value: fmtDuration(s.avgDurationSec) },
+  ];
+  return (
+    <div className="kpi-strip">
+      {chips.map((c) => (
+        <div key={c.label} className="kpi-chip">
+          <span>{c.label}</span>
+          <b className={c.tone ?? ""} dir="ltr">{c.value}</b>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function Inside({ trades }: { trades: JTrade[] }) {
+  const e = excursions(trades);
+  if (!e) return null;
+  const cells: [string, string, string][] = [
+    ["wallet", "معاملات زیر نظر", String(e.tracked)],
+    ["trend", "میانگین بیشترین سود شناور", money(e.avgMfe)],
+    ["alert", "میانگین بیشترین ضرر شناور", money(e.avgMae)],
+    ["bolt", "میانگین سود پس‌داده‌شده از اوج", money(-e.avgGiveback)],
+    ["target", "از اوجِ سود چند درصد را گرفتی (معاملات برنده)", e.captured != null ? `${Math.round(e.captured * 100)}%` : "—"],
+    ["x", "معاملاتی که سود رفت ولی با ضرر بسته شد", String(e.peakThenLoss)],
+  ];
   return (
     <section className="card">
-      <h3>{title}</h3>
+      <h3><Icon name="wallet" size={17} />درون معامله (MFE / MAE)</h3>
+      <p className="muted small">فقط معاملاتی که خودکار زیر نظر بودند (از نصب اندیکاتور به بعد). نشان می‌دهد سود را در کجای معامله دیده‌ای و چقدر از آن را پس داده‌ای.</p>
+      <div className="kpis">
+        {cells.map(([icon, l, v]) => (
+          <div key={l} className="card kpi kpi-ico">
+            <Icon name={icon} size={16} />
+            <div><span>{l}</span><b dir="ltr">{v}</b></div>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function Bars({ icon, title, data, sub }: { icon: string; title: string; data: Bucket[]; sub?: string }) {
+  return (
+    <section className="card">
+      <h3><Icon name={icon} size={17} />{title}</h3>
       {sub && <p className="muted small">{sub}</p>}
       <div className="chart-box">
         <ResponsiveContainer width="100%" height={220}>
@@ -132,7 +202,7 @@ function Bars({ title, data, sub }: { title: string; data: Bucket[]; sub?: strin
             <YAxis {...AXIS} orientation="right" width={48} />
             <ReferenceLine y={0} stroke="rgba(255,255,255,0.2)" />
             <Tooltip {...TIP} formatter={(v: number, _n: string, p: { payload?: Bucket }) => [`${v.toFixed(2)}$ · ${p.payload?.count ?? 0} معامله · برد ${Math.round((p.payload?.winRate ?? 0) * 100)}%`, "خالص"]} />
-            <Bar isAnimationActive={false} dataKey="net" radius={[3, 3, 0, 0]}>
+            <Bar isAnimationActive={false} dataKey="net" radius={[4, 4, 0, 0]} maxBarSize={46}>
               {data.map((b) => <Cell key={b.key} fill={b.net >= 0 ? "#26a69a" : "#ef5350"} />)}
             </Bar>
           </BarChart>
@@ -146,17 +216,24 @@ function Observations({ trades, hours, days, overDays, maxPerDay, avgGive }: { t
   const solid = hours.filter((h) => h.count >= 3);
   const best = [...solid].sort((a, b) => b.net - a.net)[0];
   const worst = [...solid].sort((a, b) => a.net - b.net)[0];
-  const items: string[] = [];
-  if (best && best.net > 0) items.push(`سودآورترین ساعت ورود: ${best.label} (${money(best.net)} با ${best.count} معامله).`);
-  if (worst && worst.net < 0) items.push(`زیان‌ده‌ترین ساعت ورود: ${worst.label} (${money(worst.net)} با ${worst.count} معامله).`);
-  if (days) items.push(`${overDays} روز از ${days} روز بیش از ${maxPerDay} معامله داشته است.`);
-  if (avgGive > 0) items.push(`میانگین سودِ پس‌داده‌شده در هر روز: ${avgGive.toFixed(2)}$.`);
-  if (solid.length === 0) items.push("برای مشاهده‌ی الگوی ساعتی، حداقل ۳ معامله در یک ساعت لازم است.");
+  const items: { icon: string; tone: "up" | "down" | "warn" | "info"; text: string }[] = [];
+  if (best && best.net > 0) items.push({ icon: "clock", tone: "up", text: `سودآورترین ساعت ورود: ${best.label} (${money(best.net)} با ${best.count} معامله).` });
+  if (worst && worst.net < 0) items.push({ icon: "clock", tone: "down", text: `زیان‌ده‌ترین ساعت ورود: ${worst.label} (${money(worst.net)} با ${worst.count} معامله).` });
+  if (days) items.push({ icon: "calendar", tone: overDays > 0 ? "warn" : "info", text: `${overDays} روز از ${days} روز بیش از ${maxPerDay} معامله داشته است.` });
+  if (avgGive > 0) items.push({ icon: "bolt", tone: "warn", text: `میانگین سودِ پس‌داده‌شده در هر روز: ${avgGive.toFixed(2)}$.` });
+  if (solid.length === 0) items.push({ icon: "help", tone: "info", text: "برای مشاهده‌ی الگوی ساعتی، حداقل ۳ معامله در یک ساعت لازم است." });
   return (
     <section className="card">
-      <h3>مشاهدات</h3>
+      <h3><Icon name="spark" size={17} />مشاهدات</h3>
       <p className="muted small">توصیف داده‌ی {trades.length} معامله؛ نه پیشنهاد و نه قانون. برای اعتماد به الگو، داده‌ی بیشتری لازم است.</p>
-      <ul className="obs">{items.map((t) => <li key={t}>{t}</li>)}</ul>
+      <div className="insight-grid">
+        {items.map((it, i) => (
+          <div key={i} className={`insight ${it.tone}`}>
+            <Icon name={it.icon} size={17} />
+            <span>{it.text}</span>
+          </div>
+        ))}
+      </div>
     </section>
   );
 }
@@ -170,7 +247,7 @@ function Tags({ trades }: { trades: JTrade[] }) {
   const any = groups.some(([, rows]) => rows.length);
   return (
     <section className="card">
-      <h3>تحلیل بر اساس برچسب‌ها</h3>
+      <h3><Icon name="tag" size={17} />تحلیل بر اساس برچسب‌ها</h3>
       {!any ? (
         <p className="muted">هنوز معامله‌ای برچسب نخورده. در «ژورنال» روی هر معامله کلیک کنید و با چند کلیک اعتبار ستاپ، حالت روانی و خطای اجرا را بزنید تا اینجا نتیجه‌ی هر کدام را ببینید.</p>
       ) : (
@@ -178,9 +255,23 @@ function Tags({ trades }: { trades: JTrade[] }) {
           {groups.filter(([, rows]) => rows.length).map(([title, rows]) => (
             <div key={title}>
               <h4>{title}</h4>
-              <table>
+              <table className="an-table">
                 <thead><tr><th>برچسب</th><th>تعداد</th><th>برد</th><th>خالص</th></tr></thead>
-                <tbody>{rows.map((r) => <tr key={r.tag}><td>{r.tag}</td><td>{r.count}</td><td>{Math.round(r.winRate * 100)}%</td><td className={r.net >= 0 ? "up" : "down"}>{money(r.net)}</td></tr>)}</tbody>
+                <tbody>
+                  {rows.map((r) => (
+                    <tr key={r.tag}>
+                      <td>{r.tag}</td>
+                      <td>{r.count}</td>
+                      <td>
+                        <span className="wr-bar" title={`${Math.round(r.winRate * 100)}%`}>
+                          <i style={{ width: `${Math.round(r.winRate * 100)}%` }} />
+                        </span>
+                        {Math.round(r.winRate * 100)}%
+                      </td>
+                      <td className={r.net >= 0 ? "up" : "down"}>{money(r.net)}</td>
+                    </tr>
+                  ))}
+                </tbody>
               </table>
             </div>
           ))}
@@ -189,4 +280,3 @@ function Tags({ trades }: { trades: JTrade[] }) {
     </section>
   );
 }
-

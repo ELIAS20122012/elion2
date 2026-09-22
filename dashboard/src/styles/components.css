@@ -5,6 +5,8 @@
 .card > h3:first-child { margin-bottom: var(--sp-2); }
 .card-head { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); margin-bottom: var(--sp-3); flex-wrap: wrap; }
 .card-head h3 { margin: 0; }
+.card h3 { display: flex; align-items: center; gap: 8px; }
+.card h3 svg { flex: none; color: var(--gold); }
 
 /* ---- buttons ---- */
 .btn {

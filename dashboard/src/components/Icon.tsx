@@ -52,6 +52,11 @@ const PATHS: Record<string, string[]> = {
   fib: ["M3 5h18", "M3 10h18", "M3 15h12", "M3 20h18"],
   measure: ["M3 17L17 3l4 4L7 21z", "M7 13l2 2", "M10 10l2 2", "M13 7l2 2"],
   text: ["M5 6V4h14v2", "M12 4v16", "M9 20h6"],
+  clock: ["M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20z", "M12 7v5l4 2"],
+  calendar: ["M4 5h16v15H4z", "M4 9h16", "M8 3v4", "M16 3v4"],
+  target: ["M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20z", "M12 16a4 4 0 1 0 0-8 4 4 0 0 0 0 8z", "M12 12h.01"],
+  scale: ["M12 3v18", "M6 6h12", "M3 6l3 6-3 0a3 3 0 0 0 6 0l-3-6z", "M18 6l3 6-3 0a3 3 0 0 0 6 0l-3-6z"],
+  tag: ["M20.6 12.3 12.3 20.6a1.5 1.5 0 0 1-2.1 0l-7-7a1.5 1.5 0 0 1 0-2.1L11.5 3H19a1.5 1.5 0 0 1 1.5 1.5v7.4a1.5 1.5 0 0 1-.4 1z", "M15.5 8a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"],
 };
 
 export default function Icon({ name, size = 20 }: { name: string; size?: number }) {

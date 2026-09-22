@@ -233,3 +233,64 @@
 .mt5-bar .btn.verdict.bad.on { background: rgba(255,99,99,.2); border-color: #ff6363; color: #ff6363; }
 .mt5-bar .btn.verdict.ok:hover { border-color: #2ee6a6; }
 .mt5-bar .btn.verdict.bad:hover { border-color: #ff6363; }
+/* ============================================================
+   Analysis page: hero P&L + equity curve, compact secondary stats,
+   icon-based insights. Kept scoped to .an- classes so it cannot
+   leak into other pages that reuse .card/.kpi/.two-col.
+   ============================================================ */
+
+.an-hero { display: flex; flex-direction: column; gap: var(--sp-4); }
+.an-hero-top { display: flex; align-items: stretch; justify-content: space-between; gap: var(--sp-5); flex-wrap: wrap; }
+.an-hero-pnl { display: flex; flex-direction: column; gap: 6px; min-width: 220px; }
+.an-hero-label { color: var(--muted); font-size: var(--fs-sm); font-weight: 600; }
+.an-hero-num { display: flex; align-items: center; gap: 10px; font-family: var(--font-num); font-size: 42px; font-weight: 700; letter-spacing: -0.02em; line-height: 1; }
+.an-hero-num.up { color: var(--up); }
+.an-hero-num.down { color: var(--down); }
+.an-hero-badges { display: flex; gap: var(--sp-3); flex-wrap: wrap; align-items: stretch; }
+
+.hero-badge { display: flex; align-items: center; gap: 10px; padding: 10px 16px; border-radius: var(--r-md); background: var(--surface-2); border: 1px solid var(--line); min-width: 168px; }
+.hero-badge svg { flex: none; }
+.hero-badge span { display: block; color: var(--muted); font-size: var(--fs-xs); font-weight: 500; margin-bottom: 2px; }
+.hero-badge b { display: block; font-family: var(--font-num); font-size: var(--fs-lg); font-weight: 700; }
+.hero-badge.up svg { color: var(--up); } .hero-badge.up b { color: var(--up); }
+.hero-badge.down svg { color: var(--down); } .hero-badge.down b { color: var(--down); }
+.hero-badge.warn svg { color: var(--accent-2); } .hero-badge.warn b { color: var(--accent-2); }
+
+.an-hero-chart { padding-top: var(--sp-2); border-top: 1px solid var(--line); }
+
+/* secondary metrics: one slim scrollable strip instead of a wall of same-size cards */
+.kpi-strip { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: var(--r-lg); overflow: hidden; }
+.kpi-chip { background: var(--surface-1); padding: 12px 14px; display: flex; flex-direction: column; gap: 4px; }
+.kpi-chip span { color: var(--muted); font-size: var(--fs-xs); }
+.kpi-chip b { font-family: var(--font-num); font-size: var(--fs-md); font-weight: 700; }
+
+/* icon variant of the plain .kpi card (used for MFE/MAE) */
+.kpi.kpi-ico { flex-direction: row; align-items: center; gap: 10px; }
+.kpi.kpi-ico svg { flex: none; color: var(--gold); }
+.kpi.kpi-ico span { display: block; }
+.kpi.kpi-ico b { text-align: start; }
+
+/* insights: one glance, colour-coded by what it means */
+.insight-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: var(--sp-2); margin-top: var(--sp-2); }
+.insight { display: flex; align-items: flex-start; gap: 10px; padding: 10px 12px; border-radius: var(--r-md); background: var(--surface-2); border-inline-start: 3px solid var(--line-strong); font-size: var(--fs-sm); line-height: 1.55; }
+.insight svg { flex: none; margin-top: 1px; }
+.insight.up { border-inline-start-color: var(--up); } .insight.up svg { color: var(--up); }
+.insight.down { border-inline-start-color: var(--down); } .insight.down svg { color: var(--down); }
+.insight.warn { border-inline-start-color: var(--accent-2); } .insight.warn svg { color: var(--accent-2); }
+.insight.info { border-inline-start-color: var(--info); } .insight.info svg { color: var(--info); }
+
+/* tables: zebra + sticky header, a touch more breathing room */
+.an-table { width: 100%; }
+.an-table thead th { position: sticky; top: 0; background: var(--surface-1); color: var(--muted); font-weight: 600; font-size: var(--fs-xs); text-align: start; padding: 8px 10px; border-bottom: 1px solid var(--line-strong); }
+.an-table tbody td { padding: 8px 10px; border-bottom: 1px solid var(--line); font-size: var(--fs-sm); }
+.an-table tbody tr:nth-child(even) { background: rgba(255,255,255,0.015); }
+.an-table tbody tr:hover { background: var(--surface-2); }
+.an-table tr.flag td { background: var(--down-soft); }
+
+.wr-bar { display: inline-block; width: 54px; height: 6px; border-radius: var(--r-pill); background: var(--surface-3); overflow: hidden; vertical-align: middle; margin-inline-end: 6px; }
+.wr-bar i { display: block; height: 100%; background: var(--up); border-radius: var(--r-pill); }
+
+@media (max-width: 720px) {
+  .an-hero-top { flex-direction: column; }
+  .an-hero-num { font-size: 34px; }
+}
