@@ -13,8 +13,8 @@
 .hub-line { stroke: var(--gold); stroke-opacity: 0.4; stroke-width: 1; stroke-dasharray: 4 5; vector-effect: non-scaling-stroke; }
 .hub-line.off { stroke: var(--down); }
 .hub-line.soon { stroke: var(--muted); stroke-opacity: 0.35; }
-.hub-core { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 168px; height: 168px; display: grid; place-items: center; filter: drop-shadow(0 0 22px rgba(53, 192, 255, 0.45)); }
-.core-body { width: 128px; height: 128px; clip-path: polygon(25% 4%, 75% 4%, 100% 50%, 75% 96%, 25% 96%, 0 50%); background: radial-gradient(circle at 50% 35%, rgba(53, 192, 255, 0.4), rgba(8, 20, 60, 0.97) 70%); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; color: var(--gold); text-align: center; }
+.hub-core { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 168px; height: 168px; display: grid; place-items: center; filter: drop-shadow(0 0 22px rgba(91, 108, 255, 0.45)); }
+.core-body { width: 128px; height: 128px; clip-path: polygon(25% 4%, 75% 4%, 100% 50%, 75% 96%, 25% 96%, 0 50%); background: radial-gradient(circle at 50% 35%, rgba(120, 110, 255, 0.4), rgba(18, 12, 50, 0.97) 70%); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; color: var(--gold); text-align: center; }
 .core-body b { color: var(--text); font-size: 13px; }
 .core-body small { color: var(--muted); font-family: var(--font-num); font-size: 10.5px; letter-spacing: 0.06em; }
 .core-ring { position: absolute; inset: 0; border-radius: 50%; border: 1px solid var(--gold-line); animation: ring 3.4s ease-out infinite; }

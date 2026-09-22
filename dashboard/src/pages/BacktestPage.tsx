@@ -116,11 +116,11 @@ export default function BacktestPage() {
               <div className="chart-box">
                 <ResponsiveContainer width="100%" height={240}>
                   <AreaChart data={curve} margin={{ top: 8, right: 8, left: 8, bottom: 0 }}>
-                    <CartesianGrid stroke="rgba(255,255,255,0.06)" vertical={false} />
-                    <XAxis dataKey="time" tickFormatter={(t: number) => fmtDateTime(t).slice(5, 10)} stroke="#8a93a6" fontSize={11} minTickGap={40} />
-                    <YAxis stroke="#8a93a6" fontSize={11} orientation="right" width={56} domain={["auto", "auto"]} />
+                    <CartesianGrid stroke="var(--line)" vertical={false} />
+                    <XAxis dataKey="time" tickFormatter={(t: number) => fmtDateTime(t).slice(5, 10)} stroke="var(--muted)" fontSize={11} minTickGap={40} />
+                    <YAxis stroke="var(--muted)" fontSize={11} orientation="right" width={56} domain={["auto", "auto"]} />
                     <Tooltip contentStyle={{ background: "#161b26", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8 }} labelFormatter={(t) => fmtDateTime(t as number)} formatter={(v: number) => [v.toFixed(2), "سرمایه"]} />
-                    <Area isAnimationActive={false} type="monotone" dataKey="equity" stroke="#e0b354" fill="rgba(224,179,84,0.12)" strokeWidth={2} dot={false} />
+                    <Area isAnimationActive={false} type="monotone" dataKey="equity" stroke="var(--gold)" fill="var(--gold-soft)" strokeWidth={2} dot={false} />
                   </AreaChart>
                 </ResponsiveContainer>
               </div>

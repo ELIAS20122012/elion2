@@ -9,9 +9,9 @@ import { fmtDateTime } from "../lib/data";
 import type { JTrade } from "../lib/journalApi";
 import { useJournal } from "../state/JournalContext";
 
-const AXIS = { stroke: "#8a93a6", fontSize: 11 };
-const GRID = "rgba(255,255,255,0.06)";
-const TIP = { contentStyle: { background: "#161b26", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, direction: "rtl" as const }, labelStyle: { color: "#e6e9ef" } };
+const AXIS = { stroke: "var(--muted)", fontSize: 11 };
+const GRID = "var(--line)";
+const TIP = { contentStyle: { background: "var(--surface-2)", border: "1px solid var(--line-strong)", borderRadius: 8, direction: "rtl" as const }, labelStyle: { color: "var(--text)" } };
 
 export default function AnalysisPage() {
   return (
@@ -109,16 +109,20 @@ function Hero({ s, curve }: { s: Summary; curve: { time: number; equity: number;
           <AreaChart data={curve} margin={{ top: 8, right: 8, left: 8, bottom: 0 }}>
             <defs>
               <linearGradient id="anEquityFill" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#e0b354" stopOpacity={0.35} />
-                <stop offset="100%" stopColor="#e0b354" stopOpacity={0.02} />
+                <stop offset="0%" stopColor="var(--gold)" stopOpacity={0.35} />
+                <stop offset="100%" stopColor="var(--gold)" stopOpacity={0.02} />
+              </linearGradient>
+              <linearGradient id="anEquityStroke" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0%" stopColor="var(--gold)" />
+                <stop offset="100%" stopColor="var(--gold-2)" />
               </linearGradient>
             </defs>
             <CartesianGrid stroke={GRID} vertical={false} />
             <XAxis dataKey="time" tickFormatter={(t: number) => fmtDateTime(t).slice(5, 10)} {...AXIS} minTickGap={40} />
             <YAxis {...AXIS} orientation="right" width={56} />
             <Tooltip {...TIP} labelFormatter={(t) => fmtDateTime(t as number)} formatter={(v: number, n: string) => [v.toFixed(2), n === "equity" ? "سرمایه" : "افت"]} />
-            <Area isAnimationActive={false} type="monotone" dataKey="equity" stroke="#e0b354" fill="url(#anEquityFill)" strokeWidth={2.5} dot={false} />
-            <Area isAnimationActive={false} type="monotone" dataKey="drawdown" stroke="#ef5350" fill="rgba(239,83,80,0.10)" strokeWidth={1} dot={false} />
+            <Area isAnimationActive={false} type="monotone" dataKey="equity" stroke="url(#anEquityStroke)" fill="url(#anEquityFill)" strokeWidth={2.5} dot={false} />
+            <Area isAnimationActive={false} type="monotone" dataKey="drawdown" stroke="var(--down)" fill="var(--down-soft)" strokeWidth={1} dot={false} />
           </AreaChart>
         </ResponsiveContainer>
       </div>
@@ -128,11 +132,11 @@ function Hero({ s, curve }: { s: Summary; curve: { time: number; equity: number;
 
 function HeroBadge({ icon, label, value, tone }: { icon: string; label: string; value: string; tone: "up" | "down" | "warn" }) {
   return (
-    <div className={`hero-badge ${tone}`}>
-      <Icon name={icon} size={18} />
+    <div className="hero-badge">
+      <span className={`ico-avatar ${tone}`}><Icon name={icon} size={17} /></span>
       <div>
         <span>{label}</span>
-        <b dir="ltr">{value}</b>
+        <b className={tone} dir="ltr">{value}</b>
       </div>
     </div>
   );
@@ -165,22 +169,22 @@ function KpiStrip({ s }: { s: Summary }) {
 function Inside({ trades }: { trades: JTrade[] }) {
   const e = excursions(trades);
   if (!e) return null;
-  const cells: [string, string, string][] = [
-    ["wallet", "معاملات زیر نظر", String(e.tracked)],
-    ["trend", "میانگین بیشترین سود شناور", money(e.avgMfe)],
-    ["alert", "میانگین بیشترین ضرر شناور", money(e.avgMae)],
-    ["bolt", "میانگین سود پس‌داده‌شده از اوج", money(-e.avgGiveback)],
-    ["target", "از اوجِ سود چند درصد را گرفتی (معاملات برنده)", e.captured != null ? `${Math.round(e.captured * 100)}%` : "—"],
-    ["x", "معاملاتی که سود رفت ولی با ضرر بسته شد", String(e.peakThenLoss)],
+  const cells: [string, string, string, string][] = [
+    ["", "wallet", "معاملات زیر نظر", String(e.tracked)],
+    ["up", "trend", "میانگین بیشترین سود شناور", money(e.avgMfe)],
+    ["down", "alert", "میانگین بیشترین ضرر شناور", money(e.avgMae)],
+    ["warn", "bolt", "میانگین سود پس‌داده‌شده از اوج", money(-e.avgGiveback)],
+    ["", "target", "از اوجِ سود چند درصد را گرفتی (معاملات برنده)", e.captured != null ? `${Math.round(e.captured * 100)}%` : "—"],
+    ["down", "x", "معاملاتی که سود رفت ولی با ضرر بسته شد", String(e.peakThenLoss)],
   ];
   return (
     <section className="card">
       <h3><Icon name="wallet" size={17} />درون معامله (MFE / MAE)</h3>
       <p className="muted small">فقط معاملاتی که خودکار زیر نظر بودند (از نصب اندیکاتور به بعد). نشان می‌دهد سود را در کجای معامله دیده‌ای و چقدر از آن را پس داده‌ای.</p>
       <div className="kpis">
-        {cells.map(([icon, l, v]) => (
+        {cells.map(([tone, icon, l, v]) => (
           <div key={l} className="card kpi kpi-ico">
-            <Icon name={icon} size={16} />
+            <span className={`ico-avatar ${tone}`}><Icon name={icon} size={17} /></span>
             <div><span>{l}</span><b dir="ltr">{v}</b></div>
           </div>
         ))}
@@ -203,7 +207,7 @@ function Bars({ icon, title, data, sub }: { icon: string; title: string; data: B
             <ReferenceLine y={0} stroke="rgba(255,255,255,0.2)" />
             <Tooltip {...TIP} formatter={(v: number, _n: string, p: { payload?: Bucket }) => [`${v.toFixed(2)}$ · ${p.payload?.count ?? 0} معامله · برد ${Math.round((p.payload?.winRate ?? 0) * 100)}%`, "خالص"]} />
             <Bar isAnimationActive={false} dataKey="net" radius={[4, 4, 0, 0]} maxBarSize={46}>
-              {data.map((b) => <Cell key={b.key} fill={b.net >= 0 ? "#26a69a" : "#ef5350"} />)}
+              {data.map((b) => <Cell key={b.key} fill={b.net >= 0 ? "var(--up)" : "var(--down)"} />)}
             </Bar>
           </BarChart>
         </ResponsiveContainer>

@@ -18,6 +18,7 @@
 
   /* brand + semantics (up/down match the chart candles) */
   --gold: #e6b95a;
+  --gold-2: #b98a2c;                     /* second gradient stop for brand fills (logo, primary buttons) */
   --gold-soft: rgba(230, 185, 90, 0.13);
   --gold-line: rgba(230, 185, 90, 0.45);
   --up: #26a69a;
@@ -52,6 +53,7 @@
 
   --accent-2: #f59e0b;
   --glow: none;
+  --brand-grad: linear-gradient(135deg, var(--gold) 0%, var(--gold-2) 100%);
 
   /* layout */
   --sidebar-w: 248px;
@@ -71,9 +73,10 @@
   --text: #eaf2ff;
   --text-2: #a8bde6;
   --muted: #7088b5;
-  --gold: #35c0ff;                       /* the accent colour is electric blue in this theme */
-  --gold-soft: rgba(53, 192, 255, 0.14);
-  --gold-line: rgba(53, 192, 255, 0.5);
+  --gold: #5b6cff;                       /* brand: blue -> violet gradient (Elias, 2026-09-22) */
+  --gold-2: #b18cff;
+  --gold-soft: rgba(91, 108, 255, 0.14);
+  --gold-line: rgba(91, 108, 255, 0.5);
   --accent-2: #ff9d3d;
   --up: #2ee6a6;
   --up-soft: rgba(46, 230, 166, 0.14);

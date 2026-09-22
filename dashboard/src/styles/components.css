@@ -94,6 +94,16 @@ textarea { width: 100%; resize: vertical; }
 .kpi b { font-size: 24px; font-weight: 600; letter-spacing: -0.02em; line-height: 1.2; text-align: right; }
 .kpi small { color: var(--muted); font-size: var(--fs-xs); }
 
+/* icon-avatar: a small coloured chip behind an icon, used on KPI cards (brand blue/violet by default) */
+.ico-avatar { width: 34px; height: 34px; min-width: 34px; border-radius: 10px; display: grid; place-items: center; background: var(--gold-soft); color: var(--gold); }
+.ico-avatar.up { background: var(--up-soft); color: var(--up); }
+.ico-avatar.down { background: var(--down-soft); color: var(--down); }
+.ico-avatar.info { background: var(--info-soft); color: var(--info); }
+.ico-avatar.warn { background: rgba(255, 157, 61, 0.14); color: var(--accent-2); }
+.ico-avatar.violet { background: var(--violet-soft); color: var(--violet); }
+.kpi.kpi-ico { flex-direction: row; align-items: center; gap: 12px; }
+.kpi.kpi-ico > div { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+
 /* ---- tables ---- */
 .table-wrap { overflow: auto; border-radius: var(--r-md); }
 table { width: 100%; border-collapse: collapse; font-size: var(--fs-sm); }

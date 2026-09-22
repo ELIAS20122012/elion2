@@ -1,6 +1,13 @@
 /* App shell: sidebar, topbar, page container. */
-.shell { display: grid; grid-template-columns: var(--sidebar-w) minmax(0, 1fr); min-height: 100vh; transition: grid-template-columns var(--t-med) var(--ease); }
+.shell { position: relative; z-index: 1; display: grid; grid-template-columns: var(--sidebar-w) minmax(0, 1fr); min-height: 100vh; transition: grid-template-columns var(--t-med) var(--ease); }
 .shell.collapsed { grid-template-columns: var(--sidebar-w-collapsed) minmax(0, 1fr); }
+
+/* faint ambient brand glow behind the whole app (blue top-right, violet bottom-left in the neon theme) */
+.bg-glow { position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
+.bg-glow::before, .bg-glow::after { content: ""; position: absolute; width: 42vw; height: 42vw; max-width: 620px; max-height: 620px; border-radius: 50%; filter: blur(120px); opacity: 0.16; }
+.bg-glow::before { top: -14vw; inset-inline-end: -12vw; background: var(--gold); }
+.bg-glow::after { bottom: -16vw; inset-inline-start: -12vw; background: var(--gold-2); }
+:root:not([data-theme="neon"]) .bg-glow { display: none; }
 
 /* ---- sidebar ---- */
 .sidebar {

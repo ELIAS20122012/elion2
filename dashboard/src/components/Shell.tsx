@@ -47,6 +47,7 @@ export default function Shell() {
 
   return (
     <div className={`shell ${collapsed ? "collapsed" : ""}`}>
+      <div className="bg-glow" aria-hidden="true" />
       <aside className="sidebar">
         <div className="brand">
           <span className="logo"><Icon name="activity" size={18} /></span>
