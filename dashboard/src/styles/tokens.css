@@ -42,7 +42,7 @@
 
   /* space + shape */
   --sp-1: 4px; --sp-2: 8px; --sp-3: 12px; --sp-4: 16px; --sp-5: 24px; --sp-6: 32px;
-  --r-sm: 6px; --r-md: 10px; --r-lg: 14px; --r-pill: 999px;
+  --r-sm: 9px; --r-md: 15px; --r-lg: 22px; --r-pill: 999px;   /* softer, rounder shapes (Elias's coffee UI-kit reference, 2026-09-22) */
   --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.35);
   --shadow-2: 0 12px 32px rgba(0, 0, 0, 0.5);
 
@@ -54,6 +54,7 @@
   --accent-2: #f59e0b;
   --glow: none;
   --brand-grad: linear-gradient(135deg, var(--gold) 0%, var(--gold-2) 100%);
+  --brand-grad-soft: linear-gradient(135deg, var(--gold) 0%, var(--gold-2) 100%);   /* always light-on-light: safe under dark text */
 
   /* layout */
   --sidebar-w: 248px;
@@ -61,22 +62,23 @@
   --topbar-h: 60px;
 }
 
-/* Neon theme: deep navy with electric-blue glow (the Finova-style look). Same tokens, different values. */
+/* Neon theme: "Coffee" — warm dark wine surfaces, tan/cream brand accent (Elias, 2026-09-22, from his palette: #561C24 #6D2932 #C7B7A3 #E8D8C4). */
 :root[data-theme="neon"] {
-  --bg: #040814;
-  --surface-1: #08112a;
-  --surface-2: #0d1a3a;
-  --surface-3: #142450;
-  --overlay: rgba(2, 5, 16, 0.74);
-  --line: rgba(72, 140, 255, 0.16);
-  --line-strong: rgba(90, 165, 255, 0.36);
-  --text: #eaf2ff;
-  --text-2: #a8bde6;
-  --muted: #7088b5;
-  --gold: #5b6cff;                       /* brand: blue -> violet gradient (Elias, 2026-09-22) */
-  --gold-2: #b18cff;
-  --gold-soft: rgba(91, 108, 255, 0.14);
-  --gold-line: rgba(91, 108, 255, 0.5);
+  --bg: #140a0c;
+  --surface-1: #2a1319;
+  --surface-2: #3a1a21;
+  --surface-3: #4a222b;
+  --overlay: rgba(15, 6, 8, 0.74);
+  --line: rgba(199, 183, 163, 0.16);
+  --line-strong: rgba(232, 216, 196, 0.32);
+  --text: #f3e9dc;
+  --text-2: #c7b7a3;
+  --muted: #9c8776;
+  --gold: #c7b7a3;                       /* brand: coffee palette, tan -> cream (Elias, 2026-09-22) */
+  --gold-2: #e8d8c4;
+  --gold-soft: rgba(199, 183, 163, 0.16);
+  --gold-line: rgba(199, 183, 163, 0.5);
+  --brand-grad: linear-gradient(135deg, #561c24 0%, #6d2932 35%, #c7b7a3 75%, #e8d8c4 100%);
   --accent-2: #ff9d3d;
   --up: #2ee6a6;
   --up-soft: rgba(46, 230, 166, 0.14);
@@ -85,6 +87,6 @@
   --info: #7aa8ff;
   --info-soft: rgba(122, 168, 255, 0.14);
   --violet: #b18cff;
-  --glow: 0 0 28px rgba(53, 150, 255, 0.16);
+  --glow: 0 0 28px rgba(199, 183, 163, 0.16);
   --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.5);
 }

@@ -10,8 +10,8 @@
 
 /* ---- buttons ---- */
 .btn {
-  display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 36px; padding: 6px 14px;
-  background: var(--surface-2); border: 1px solid var(--line); border-radius: var(--r-md); font-size: var(--fs-sm); font-weight: 500; color: var(--text);
+  display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 36px; padding: 6px 16px;
+  background: var(--surface-2); border: 1px solid var(--line); border-radius: var(--r-pill); font-size: var(--fs-sm); font-weight: 500; color: var(--text);
   transition: background var(--t-fast), border-color var(--t-fast), color var(--t-fast), transform var(--t-fast); white-space: nowrap;
 }
 .btn:hover:not(:disabled) { background: var(--surface-3); border-color: var(--line-strong); }
@@ -48,8 +48,8 @@
 .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); flex: none; }
 
 /* ---- segmented control + tabs ---- */
-.seg, .speeds { display: inline-flex; background: var(--surface-2); border: 1px solid var(--line); border-radius: var(--r-md); padding: 3px; gap: 2px; }
-.seg button, .speeds button { padding: 5px 13px; border-radius: 7px; color: var(--muted); font-size: var(--fs-sm); font-weight: 500; transition: background var(--t-fast), color var(--t-fast); }
+.seg, .speeds { display: inline-flex; background: var(--surface-2); border: 1px solid var(--line); border-radius: var(--r-pill); padding: 3px; gap: 2px; }
+.seg button, .speeds button { padding: 5px 13px; border-radius: var(--r-pill); color: var(--muted); font-size: var(--fs-sm); font-weight: 500; transition: background var(--t-fast), color var(--t-fast); }
 .seg button:hover:not(.on), .speeds button:hover:not(.on) { color: var(--text); }
 .seg button.on, .speeds button.on { background: var(--surface-3); color: var(--gold); box-shadow: var(--shadow-1); }
 
