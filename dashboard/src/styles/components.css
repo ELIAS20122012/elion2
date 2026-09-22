@@ -17,10 +17,11 @@
 .btn {
   display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 36px; padding: 6px 16px;
   background: var(--surface-2); border: 1px solid var(--line); border-radius: var(--r-pill); font-size: var(--fs-sm); font-weight: 500; color: var(--text);
-  transition: background var(--t-fast), border-color var(--t-fast), color var(--t-fast), transform var(--t-fast); white-space: nowrap;
+  box-shadow: var(--shadow-1);
+  transition: background var(--t-fast), border-color var(--t-fast), color var(--t-fast), transform var(--t-fast), box-shadow var(--t-fast);
 }
 .btn:hover:not(:disabled) { background: var(--surface-3); border-color: var(--line-strong); }
-.btn:active:not(:disabled) { transform: translateY(1px); }
+.btn:active:not(:disabled) { transform: translateY(1px); box-shadow: none; }
 .btn svg { flex: none; }
 .btn.primary { background: var(--gold); color: var(--c-fern); border-color: transparent; font-weight: 700; }
 .btn.primary:hover:not(:disabled) { background: var(--gold); opacity: 0.82; border-color: transparent; }
@@ -103,11 +104,11 @@ textarea { width: 100%; resize: vertical; }
 .kpi small { color: var(--muted); font-size: var(--fs-xs); }
 
 /* icon-avatar: a small coloured chip behind an icon, used on KPI cards (brand blue/violet by default) */
-.ico-avatar { width: 34px; height: 34px; min-width: 34px; border-radius: 10px; display: grid; place-items: center; background: var(--gold-soft); color: var(--gold); }
+.ico-avatar { width: 34px; height: 34px; min-width: 34px; border-radius: 10px; display: grid; place-items: center; background: var(--gold-soft); color: var(--gold); box-shadow: var(--shadow-1); }
 .ico-avatar.up { background: var(--up-soft); color: var(--up); }
 .ico-avatar.down { background: var(--down-soft); color: var(--down); }
 .ico-avatar.info { background: var(--info-soft); color: var(--info); }
-.ico-avatar.warn { background: rgba(224, 145, 50, 0.16); color: var(--accent-2); }
+.ico-avatar.warn { background: rgba(201, 223, 163, 0.18); color: var(--accent-2); }
 .ico-avatar.violet { background: var(--violet-soft); color: var(--violet); }
 .kpi.kpi-ico { flex-direction: row; align-items: center; gap: 12px; }
 .kpi.kpi-ico > div { display: flex; flex-direction: column; gap: 3px; min-width: 0; }

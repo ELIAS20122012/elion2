@@ -77,12 +77,12 @@
 .rule-detail .found b { color: var(--accent-2); font-family: var(--font-num); font-size: var(--fs-lg); }
 .stepper { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-2); font-family: var(--font-num); font-size: var(--fs-sm); }
 .rule-detail .basis { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; font-size: var(--fs-xs); color: var(--text-2); }
-.rule-detail .assume { display: grid; gap: var(--sp-2); padding: var(--sp-3); border: 1px dashed rgba(224, 145, 50, 0.5); border-radius: var(--r-md); background: rgba(224, 145, 50, 0.08); }
+.rule-detail .assume { display: grid; gap: var(--sp-2); padding: var(--sp-3); border: 1px dashed rgba(201, 223, 163, 0.5); border-radius: var(--r-md); background: rgba(201, 223, 163, 0.1); }
 .rule-detail .assume label { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); font-size: var(--fs-xs); color: var(--text-2); }
 .rule-detail .assume input { width: 64px; min-height: 30px; padding: 3px 8px; flex: none; }
 .src { display: inline-block; font-size: 10px; padding: 2px 7px; border-radius: var(--r-pill); margin-inline-end: 8px; white-space: nowrap; }
 .src.you { color: var(--up); background: var(--up-soft); }
-.src.guess { color: var(--accent-2); background: rgba(224, 145, 50, 0.18); }
+.src.guess { color: var(--accent-2); background: rgba(201, 223, 163, 0.2); }
 .status-empty { display: flex; align-items: center; gap: var(--sp-2); padding: var(--sp-3); background: var(--surface-2); border-radius: var(--r-md); margin-bottom: var(--sp-2); color: var(--muted); }
 .stats .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--sp-2); }
 .stats .grid div { background: var(--surface-2); border-radius: var(--r-md); padding: var(--sp-3); }

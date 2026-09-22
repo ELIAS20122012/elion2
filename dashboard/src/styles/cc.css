@@ -14,7 +14,7 @@
 .hub-line.off { stroke: var(--down); }
 .hub-line.soon { stroke: var(--muted); stroke-opacity: 0.35; }
 .hub-core { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 168px; height: 168px; display: grid; place-items: center; }
-.core-body { width: 128px; height: 128px; clip-path: polygon(25% 4%, 75% 4%, 100% 50%, 75% 96%, 25% 96%, 0 50%); background: var(--c-fern); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; color: var(--c-apricot); text-align: center; }
+.core-body { width: 128px; height: 128px; clip-path: polygon(25% 4%, 75% 4%, 100% 50%, 75% 96%, 25% 96%, 0 50%); background: var(--c-fern); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; color: var(--c-mint); text-align: center; }
 .core-body b { color: var(--c-ivory); font-size: 13px; }
 .core-body small { color: var(--c-sage); font-family: var(--font-num); font-size: 10.5px; letter-spacing: 0.06em; }
 .core-ring { position: absolute; inset: 0; border-radius: 50%; border: 1px solid var(--gold-line); animation: ring 3.4s ease-out infinite; }
@@ -24,7 +24,7 @@
   position: absolute; transform: translate(-50%, -50%); width: 138px; display: flex; flex-direction: column; align-items: center; gap: 3px;
   padding: 11px 8px 10px; background: var(--surface-1); border: 1px solid var(--line-strong); border-radius: var(--r-md); text-align: center;
   color: var(--on-surface); --text: var(--on-surface); --text-2: var(--on-surface-2); --muted: var(--on-surface-muted);
-  transition: border-color var(--t-fast), transform var(--t-fast), box-shadow var(--t-fast);
+  box-shadow: var(--shadow-1); transition: border-color var(--t-fast), transform var(--t-fast), box-shadow var(--t-fast);
 }
 .hub-node:hover:not(:disabled) { border-color: var(--gold); transform: translate(-50%, -50%) scale(1.05); box-shadow: 0 0 20px var(--gold-line); }
 .hub-node:disabled { cursor: default; }
@@ -76,7 +76,7 @@
 .alerts li { display: flex; align-items: flex-start; gap: 10px; padding: 9px 11px; border-radius: var(--r-md); font-size: var(--fs-sm); line-height: 1.6; }
 .alerts li svg { flex: none; margin-top: 3px; }
 .alerts li.critical { background: var(--down-soft); color: var(--down); }
-.alerts li.warn { background: rgba(224, 145, 50, 0.16); color: var(--accent-2); }
+.alerts li.warn { background: rgba(201, 223, 163, 0.18); color: var(--accent-2); }
 .alerts li.info { background: var(--info-soft); color: var(--info); }
 .alerts li.ok { background: var(--up-soft); color: var(--up); }
 

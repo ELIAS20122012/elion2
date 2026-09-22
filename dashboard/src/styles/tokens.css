@@ -1,18 +1,23 @@
 /* Design tokens: the only place colours, type and spacing are defined.
-   "Cherish" palette (Elias, 2026-09-22) — exactly these four colours, in a light and a dark mode, switched with
-   one toggle. Flat colour blocking only: every token below is ONE of the four, used solid, or that one colour
-   at reduced opacity for a border/soft-background. No gradients, no mixing two of the four together (Elias,
-   2026-09-22, second note).
+   "Cherish" palette (Elias, 2026-09-22, updated 2026-09-22): apricot dropped entirely, replaced with a second,
+   lighter green — now a green ramp (fern -> sage -> mint) plus cream. Flat colour blocking only: every token
+   below is ONE of these four, used solid, or that one colour at reduced opacity for a border/soft-background.
+   No gradients, no mixing two of the four together.
 
-   Contrast note: of the four, only ivory-on-fern (either direction) is high-contrast; apricot and sage are both
+   Contrast note: of the four, only ivory-on-fern (either direction) is high-contrast; sage and mint are both
    medium-light and only read well as text/icons against fern, not against ivory. So cards/surfaces are fern
    (dark) with ivory text in BOTH modes — what changes between light and dark is the page canvas itself (ivory
-   vs fern) and the text that sits directly on it. Sidebar stays apricot in both modes (constant nav colour). */
+   vs fern) and the text that sits directly on it. Sidebar stays mint in both modes (constant nav colour).
+
+   Trading-semantics note: with apricot gone, profit and loss are now two shades of the SAME hue (mint vs sage)
+   instead of green vs red/orange - color alone no longer separates "up" from "down" at a glance the way it used
+   to. The +/- sign carries that now. Said this plainly to Elias; can add a ▲/▼ glyph next to amounts if that's
+   not enough on its own. */
 :root {
   /* the four source colours */
   --c-ivory: #ffefcd;
   --c-sage: #a5be74;
-  --c-apricot: #e09132;
+  --c-mint: #c9dfa3;
   --c-fern: #424530;
 
   /* type */
@@ -46,24 +51,25 @@
   --on-surface: var(--c-ivory);
   --on-surface-2: rgba(255, 239, 205, 0.75);
   --on-surface-muted: rgba(255, 239, 205, 0.5);
-  --sidebar-bg: var(--c-apricot);
+  --sidebar-bg: var(--c-mint);
   --on-sidebar: var(--c-fern);
 
   --gold: var(--c-sage);            /* accent used inside cards/content: buttons, links, active states */
   --gold-2: var(--c-sage);
   --gold-soft: rgba(165, 190, 116, 0.2);
   --gold-line: rgba(165, 190, 116, 0.55);
-  --accent-2: var(--c-apricot);
-  --up: var(--c-sage);
-  --up-soft: rgba(165, 190, 116, 0.2);
-  --down: var(--c-apricot);
-  --down-soft: rgba(224, 145, 50, 0.2);
+  --accent-2: var(--c-mint);
+  --up: var(--c-mint);
+  --up-soft: rgba(201, 223, 163, 0.22);
+  --down: var(--c-sage);
+  --down-soft: rgba(165, 190, 116, 0.2);
   --info: var(--c-sage);
   --info-soft: rgba(165, 190, 116, 0.16);
   --violet: var(--c-sage);
   --violet-soft: rgba(165, 190, 116, 0.16);
   --glow: none;
-  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.35);
+  /* a slight lift under cards/buttons (Elias, 2026-09-22): soft, close, low-opacity - not a heavy drop shadow */
+  --shadow-1: 0 2px 6px rgba(0, 0, 0, 0.22), 0 1px 2px rgba(0, 0, 0, 0.28);
   --shadow-2: 0 12px 32px rgba(0, 0, 0, 0.4);
   --brand-grad: var(--gold);
   --brand-grad-soft: var(--gold);
@@ -91,6 +97,7 @@
   --canvas-text: var(--c-ivory);
   --canvas-text-2: rgba(255, 239, 205, 0.75);
   --canvas-muted: rgba(255, 239, 205, 0.5);
+  --shadow-1: 0 2px 6px rgba(0, 0, 0, 0.35), 0 1px 2px rgba(0, 0, 0, 0.4);
 }
 
 /* ---- light mode: ivory canvas around the (still fern) cards ---- */
@@ -105,7 +112,7 @@
   --canvas-text: var(--c-fern);
   --canvas-text-2: rgba(66, 69, 48, 0.75);
   --canvas-muted: rgba(66, 69, 48, 0.55);
-  --shadow-1: 0 1px 2px rgba(66, 69, 48, 0.12);
+  --shadow-1: 0 2px 6px rgba(66, 69, 48, 0.16), 0 1px 2px rgba(66, 69, 48, 0.18);
   --shadow-2: 0 12px 28px rgba(66, 69, 48, 0.16);
 }
 
