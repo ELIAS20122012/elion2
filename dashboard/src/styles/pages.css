@@ -77,12 +77,12 @@
 .rule-detail .found b { color: var(--accent-2); font-family: var(--font-num); font-size: var(--fs-lg); }
 .stepper { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-2); font-family: var(--font-num); font-size: var(--fs-sm); }
 .rule-detail .basis { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; font-size: var(--fs-xs); color: var(--text-2); }
-.rule-detail .assume { display: grid; gap: var(--sp-2); padding: var(--sp-3); border: 1px dashed rgba(255, 157, 61, 0.45); border-radius: var(--r-md); background: rgba(255, 157, 61, 0.05); }
+.rule-detail .assume { display: grid; gap: var(--sp-2); padding: var(--sp-3); border: 1px dashed rgba(224, 145, 50, 0.5); border-radius: var(--r-md); background: rgba(224, 145, 50, 0.08); }
 .rule-detail .assume label { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); font-size: var(--fs-xs); color: var(--text-2); }
 .rule-detail .assume input { width: 64px; min-height: 30px; padding: 3px 8px; flex: none; }
 .src { display: inline-block; font-size: 10px; padding: 2px 7px; border-radius: var(--r-pill); margin-inline-end: 8px; white-space: nowrap; }
 .src.you { color: var(--up); background: var(--up-soft); }
-.src.guess { color: var(--accent-2); background: rgba(255, 157, 61, 0.16); }
+.src.guess { color: var(--accent-2); background: rgba(224, 145, 50, 0.18); }
 .status-empty { display: flex; align-items: center; gap: var(--sp-2); padding: var(--sp-3); background: var(--surface-2); border-radius: var(--r-md); margin-bottom: var(--sp-2); color: var(--muted); }
 .stats .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--sp-2); }
 .stats .grid div { background: var(--surface-2); border-radius: var(--r-md); padding: var(--sp-3); }
@@ -188,7 +188,7 @@
 
 /* live capture banners */
 .detected { display: grid; gap: var(--sp-3); }
-.detected-card { border-color: var(--gold-line); background: linear-gradient(90deg, var(--gold-soft), transparent 70%), var(--surface-1); display: flex; flex-wrap: wrap; gap: var(--sp-3) var(--sp-5); align-items: center; }
+.detected-card { border-color: var(--gold-line); background: var(--surface-1); display: flex; flex-wrap: wrap; gap: var(--sp-3) var(--sp-5); align-items: center; }
 .d-info { display: flex; flex-direction: column; gap: 3px; flex: 1; min-width: 260px; }
 .d-form { display: flex; gap: var(--sp-3); align-items: center; flex-wrap: wrap; }
 .d-form input:not([type="checkbox"]) { width: 190px; }
@@ -211,8 +211,8 @@
 .rule-card .switch { margin-inline-start: auto; }
 .found-list table { width: 100%; border-collapse: collapse; font-size: var(--fs-xs); }
 .found-list th, .found-list td { padding: 6px 8px; text-align: start; border-bottom: 1px solid var(--border); }
-.found-list td.hi { color: #ff9d3d; font-weight: 600; }
-.found-list td.lo { color: #2ee6a6; font-weight: 600; }.rule-settings .assume { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: var(--sp-3); align-items: start; }
+.found-list td.hi { color: var(--down); font-weight: 600; }
+.found-list td.lo { color: var(--up); font-weight: 600; }.rule-settings .assume { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: var(--sp-3); align-items: start; }
 .rule-settings .assume > .src, .rule-settings .assume > small { grid-column: 1 / -1; }
 .rule-settings .assume label { display: flex; flex-direction: column; gap: 6px; }
 .rule-settings .assume label.check { flex-direction: row; align-items: center; }
@@ -229,10 +229,10 @@
 /* TradingView widget: fill the whole area (percent heights collapse inside the flex layout) */
 .chart-area.tv { position: relative; }
 .chart-area.tv .tvbox { position: absolute; inset: 0; width: 100% !important; height: 100% !important; }
-.chart-area.tv .tvbox iframe { width: 100% !important; height: 100% !important; }.mt5-bar .btn.verdict.ok.on { background: rgba(46,230,166,.2); border-color: #2ee6a6; color: #2ee6a6; }
-.mt5-bar .btn.verdict.bad.on { background: rgba(255,99,99,.2); border-color: #ff6363; color: #ff6363; }
-.mt5-bar .btn.verdict.ok:hover { border-color: #2ee6a6; }
-.mt5-bar .btn.verdict.bad:hover { border-color: #ff6363; }
+.chart-area.tv .tvbox iframe { width: 100% !important; height: 100% !important; }.mt5-bar .btn.verdict.ok.on { background: var(--up-soft); border-color: var(--up); color: var(--up); }
+.mt5-bar .btn.verdict.bad.on { background: var(--down-soft); border-color: var(--down); color: var(--down); }
+.mt5-bar .btn.verdict.ok:hover { border-color: var(--up); }
+.mt5-bar .btn.verdict.bad:hover { border-color: var(--down); }
 /* ============================================================
    Analysis page: hero P&L + equity curve, compact secondary stats,
    icon-based insights. Kept scoped to .an- classes so it cannot

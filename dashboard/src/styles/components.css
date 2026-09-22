@@ -1,7 +1,12 @@
 /* Reusable components. Page-specific rules live in pages.css. */
 
 /* ---- card ---- */
-.card { background: var(--surface-1); border: 1px solid var(--line); border-radius: var(--r-lg); padding: var(--sp-4); box-shadow: var(--shadow-1); }
+.card {
+  background: var(--surface-1); border: 1px solid var(--line); border-radius: var(--r-lg); padding: var(--sp-4); box-shadow: var(--shadow-1);
+  /* cards can be a different flat colour from the page (Elias, 2026-09-22); re-pair text/muted for whatever sits on THIS surface,
+     so every descendant that reads --text/--text-2/--muted (almost everything) is automatically legible without per-component edits */
+  color: var(--on-surface); --text: var(--on-surface); --text-2: var(--on-surface-2); --muted: var(--on-surface-muted);
+}
 .card > h3:first-child { margin-bottom: var(--sp-2); }
 .card-head { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); margin-bottom: var(--sp-3); flex-wrap: wrap; }
 .card-head h3 { margin: 0; }
@@ -17,8 +22,8 @@
 .btn:hover:not(:disabled) { background: var(--surface-3); border-color: var(--line-strong); }
 .btn:active:not(:disabled) { transform: translateY(1px); }
 .btn svg { flex: none; }
-.btn.primary { background: var(--brand-grad-soft); color: var(--c-fern); border-color: transparent; font-weight: 700; }
-.btn.primary:hover:not(:disabled) { background: linear-gradient(135deg, var(--c-apricot), color-mix(in srgb, var(--c-apricot) 30%, var(--c-ivory) 70%)); border-color: transparent; }
+.btn.primary { background: var(--gold); color: var(--c-fern); border-color: transparent; font-weight: 700; }
+.btn.primary:hover:not(:disabled) { background: var(--gold); opacity: 0.82; border-color: transparent; }
 .btn.ghost { background: transparent; border-color: transparent; color: var(--text-2); }
 .btn.ghost:hover:not(:disabled) { background: var(--surface-2); color: var(--text); }
 .btn.danger { color: var(--down); }
@@ -102,7 +107,7 @@ textarea { width: 100%; resize: vertical; }
 .ico-avatar.up { background: var(--up-soft); color: var(--up); }
 .ico-avatar.down { background: var(--down-soft); color: var(--down); }
 .ico-avatar.info { background: var(--info-soft); color: var(--info); }
-.ico-avatar.warn { background: rgba(255, 157, 61, 0.14); color: var(--accent-2); }
+.ico-avatar.warn { background: rgba(224, 145, 50, 0.16); color: var(--accent-2); }
 .ico-avatar.violet { background: var(--violet-soft); color: var(--violet); }
 .kpi.kpi-ico { flex-direction: row; align-items: center; gap: 12px; }
 .kpi.kpi-ico > div { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
@@ -177,7 +182,7 @@ td.tags-cell { display: table-cell; }
 
 /* ---- live status ---- */
 .livebar { display: flex; align-items: center; gap: var(--sp-3); flex-wrap: wrap; padding: 11px var(--sp-4); border-radius: var(--r-lg); border: 1px solid var(--line); background: var(--surface-1); }
-.livebar.on { border-color: rgba(38, 166, 154, 0.45); background: linear-gradient(90deg, var(--up-soft), transparent 60%), var(--surface-1); }
+.livebar.on { border-color: var(--up); background: var(--surface-1); }
 .livebar .live-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--muted); }
 .livebar.on .live-dot { background: var(--up); animation: pulse 1.8s infinite; }
 .livebar .lv { font-family: var(--font-num); font-size: var(--fs-sm); background: var(--surface-2); padding: 4px 11px; border-radius: var(--r-pill); }
@@ -189,5 +194,6 @@ td.tags-cell { display: table-cell; }
 
 /* live account balance chip in the top bar (real numbers, independent of which terminal streams the chart) */
 .chip.live-acc { display: inline-flex; align-items: center; gap: 4px; }
-.chip.live-acc .up { color: #baffd8; }
-.chip.live-acc .down { color: #ffd0d0; }
+/* this chip's own background already IS --down (apricot, the "real account" warning colour), so its nested
+   floating +/- text can't also be --down/--up (would vanish or clash) - use dark/light of the chip's own colour */
+.chip.live-acc .up, .chip.live-acc .down { color: var(--c-fern); font-weight: 700; }
