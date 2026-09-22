@@ -4,6 +4,8 @@ import { fmtPrice } from "../lib/data";
 import { GROUPS, MODULES } from "../modules/registry";
 import { SYMBOL, useApp } from "../state/AppContext";
 import { useJournal } from "../state/JournalContext";
+import { useLiveAccount } from "../state/useLiveAccount";
+import { money } from "../lib/analytics";
 import Icon from "./Icon";
 
 const COLLAPSE_KEY = "rt.sidebar.collapsed";
@@ -41,6 +43,7 @@ export default function Shell() {
 
   const priceOk = mode === "live" ? live.status === "live" : true;
   const journalOk = j.status === "ok";
+  const myLive = useLiveAccount(j.accounts, journalOk); // Elias's real account, on every page, regardless of which terminal streams the chart
 
   return (
     <div className={`shell ${collapsed ? "collapsed" : ""}`}>
@@ -86,6 +89,12 @@ export default function Shell() {
           </div>
 
           <div className="chips">
+            {myLive && (
+              <span className="chip real live-acc" dir="ltr" title={`حساب واقعی شما: ${myLive.account.name}`}>
+                LIVE · {(myLive.live.balance ?? 0).toFixed(2)}$
+                {!!myLive.live.open_count && <span className={(myLive.live.floating ?? 0) >= 0 ? "up" : "down"}> ({money(myLive.live.floating ?? 0)})</span>}
+              </span>
+            )}
             <div className="seg" role="group" aria-label="منبع داده">
               <button className={mode === "live" ? "on" : ""} onClick={() => s.setMode("live")}>زنده MT5</button>
               <button className={mode === "replay" ? "on" : ""} onClick={() => s.setMode("replay")}>بازپخش</button>
@@ -93,8 +102,8 @@ export default function Shell() {
             {mode === "live" ? (
               <>
                 {live.account?.login && (
-                  <span className={`chip ${live.account.demo ? "demo" : "real"}`} dir="ltr">
-                    {live.account.demo ? "DEMO" : "REAL"} · {live.account.login}
+                  <span className={`chip ${live.account.demo ? "demo" : "real"}`} dir="ltr" title="حساب متصل به چارت (منبع کندل‌ها) — لزوماً حساب واقعی شما نیست">
+                    چارت: {live.account.demo ? "DEMO" : "REAL"} · {live.account.login}
                   </span>
                 )}
                 <span className={`chip ${live.status === "live" ? "on" : "off"}`}>

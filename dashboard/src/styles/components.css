@@ -171,3 +171,8 @@ td.tags-cell { display: table-cell; }
 .conn.live { color: var(--up); background: var(--up-soft); }
 .conn.live .dot { background: var(--up); }
 .conn.down .dot { background: var(--down); }
+
+/* live account balance chip in the top bar (real numbers, independent of which terminal streams the chart) */
+.chip.live-acc { display: inline-flex; align-items: center; gap: 4px; }
+.chip.live-acc .up { color: #baffd8; }
+.chip.live-acc .down { color: #ffd0d0; }
