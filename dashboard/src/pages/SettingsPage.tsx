@@ -1,3 +1,4 @@
+import Icon from "../components/Icon";
 import PageHeader from "../components/PageHeader";
 import { useMaxPerDay, useTheme } from "../lib/prefs";
 import { useApp } from "../state/AppContext";
@@ -13,11 +14,15 @@ export default function SettingsPage() {
       <section className="card settings">
         <h3>ظاهر</h3>
         <div className="row">
-          <div><b>تم</b><small>نئونی (آبی، مثل مرکز فرماندهی) یا کلاسیک (طلایی)</small></div>
-          <div className="seg" role="group" aria-label="تم">
-            <button className={theme === "neon" ? "on" : ""} onClick={() => setTheme("neon")}>نئونی</button>
-            <button className={theme === "classic" ? "on" : ""} onClick={() => setTheme("classic")}>کلاسیک</button>
-          </div>
+          <div><b>حالت روشن / تاریک</b><small>پالت Cherish — با یک کلید بین روشن و تاریک تعویض کنید</small></div>
+          <label className="theme-toggle">
+            <Icon name="sun" size={15} />
+            <span className="switch">
+              <input type="checkbox" checked={theme === "dark"} onChange={(e) => setTheme(e.target.checked ? "dark" : "light")} aria-label="تعویض حالت روشن/تاریک" />
+              <span />
+            </span>
+            <Icon name="moon" size={15} />
+          </label>
         </div>
       </section>
 

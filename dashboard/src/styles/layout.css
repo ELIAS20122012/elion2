@@ -7,7 +7,7 @@
 .bg-glow::before, .bg-glow::after { content: ""; position: absolute; width: 42vw; height: 42vw; max-width: 620px; max-height: 620px; border-radius: 50%; filter: blur(120px); opacity: 0.16; }
 .bg-glow::before { top: -14vw; inset-inline-end: -12vw; background: var(--gold); }
 .bg-glow::after { bottom: -16vw; inset-inline-start: -12vw; background: var(--gold-2); }
-:root:not([data-theme="neon"]) .bg-glow { display: none; }
+:root:not([data-theme="dark"]) .bg-glow { display: none; }
 
 /* ---- sidebar ---- */
 .sidebar {
@@ -15,7 +15,7 @@
   background: var(--surface-1); border-inline-end: 1px solid var(--line); overflow-y: auto;
 }
 .brand { display: flex; align-items: center; gap: 11px; padding: 4px 8px var(--sp-4); }
-.brand .logo { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 10px; background: linear-gradient(135deg, var(--gold), #b98a2c); color: #1b1407; font-size: 16px; flex: none; }
+.brand .logo { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 10px; background: var(--brand-grad); color: var(--surface-1); font-size: 16px; flex: none; }
 .brand strong { display: block; font-size: var(--fs-md); line-height: 1.2; }
 .brand small { color: var(--muted); font-size: var(--fs-xs); }
 

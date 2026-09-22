@@ -1,15 +1,16 @@
 import { useCallback, useEffect, useState } from "react";
 import { DEFAULT_DIV, type DivParams } from "./detectors/divergence";
 
-/* ---------- theme ---------- */
-export type Theme = "neon" | "classic";
+/* ---------- theme: Cherish palette, light or dark, one switch (Elias, 2026-09-22) ---------- */
+export type Theme = "light" | "dark";
 const K_THEME = "rt.theme";
 
 export function getTheme(): Theme {
   try {
-    return localStorage.getItem(K_THEME) === "classic" ? "classic" : "neon";
+    // any older/unknown stored value (the previous "neon"/"classic" themes, or none yet) falls back to dark
+    return localStorage.getItem(K_THEME) === "light" ? "light" : "dark";
   } catch {
-    return "neon";
+    return "dark";
   }
 }
 

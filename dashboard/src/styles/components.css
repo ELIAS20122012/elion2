@@ -17,8 +17,8 @@
 .btn:hover:not(:disabled) { background: var(--surface-3); border-color: var(--line-strong); }
 .btn:active:not(:disabled) { transform: translateY(1px); }
 .btn svg { flex: none; }
-.btn.primary { background: var(--gold); color: #1b1407; border-color: var(--gold); font-weight: 700; }
-.btn.primary:hover:not(:disabled) { background: #f0c96f; border-color: #f0c96f; }
+.btn.primary { background: var(--brand-grad-soft); color: var(--c-fern); border-color: transparent; font-weight: 700; }
+.btn.primary:hover:not(:disabled) { background: linear-gradient(135deg, var(--c-apricot), color-mix(in srgb, var(--c-apricot) 30%, var(--c-ivory) 70%)); border-color: transparent; }
 .btn.ghost { background: transparent; border-color: transparent; color: var(--text-2); }
 .btn.ghost:hover:not(:disabled) { background: var(--surface-2); color: var(--text); }
 .btn.danger { color: var(--down); }
@@ -82,6 +82,9 @@ textarea { width: 100%; resize: vertical; }
 .switch input:checked + span::after { background: var(--gold); inset-inline-start: 18px; }
 .switch input:focus-visible + span { outline: 2px solid var(--gold); outline-offset: 2px; }
 
+.theme-toggle { display: inline-flex; align-items: center; gap: 10px; cursor: pointer; color: var(--muted); }
+.theme-toggle:hover { color: var(--text-2); }
+
 .chipset { display: flex; flex-wrap: wrap; gap: 6px; }
 .chipset button { background: var(--surface-2); border: 1px solid var(--line); border-radius: var(--r-pill); padding: 6px 13px; font-size: var(--fs-sm); color: var(--text-2); transition: all var(--t-fast); }
 .chipset button:hover { color: var(--text); border-color: var(--line-strong); }
@@ -128,7 +131,7 @@ td.tags-cell { display: table-cell; }
 
 /* ---- progress ---- */
 .bar { flex: 1; min-width: 80px; height: 6px; background: var(--surface-3); border-radius: var(--r-pill); overflow: hidden; }
-.bar i { display: block; height: 100%; background: linear-gradient(90deg, var(--gold), #f3d590); border-radius: inherit; transition: width var(--t-med) var(--ease); }
+.bar i { display: block; height: 100%; background: var(--brand-grad); border-radius: inherit; transition: width var(--t-med) var(--ease); }
 
 /* ---- notices, empty states, feedback ---- */
 .notice { background: var(--surface-2); border: 1px solid var(--line); border-inline-start: 3px solid var(--gold); border-radius: var(--r-md); padding: var(--sp-3) var(--sp-4); font-size: var(--fs-sm); color: var(--text-2); }

@@ -1,34 +1,12 @@
-/* Design tokens: the only place colours, type and spacing are defined. */
+/* Design tokens: the only place colours, type and spacing are defined.
+   "Cherish" palette (Elias, 2026-09-22) — exactly these four colours, in a light and a dark mode,
+   switched with one toggle. Every other colour on this page is a mix/opacity of these four, not a new hue. */
 :root {
-  /* surfaces (darkest -> lightest) */
-  --bg: #080b11;
-  --surface-1: #0e121a;   /* cards */
-  --surface-2: #141a24;   /* inputs, raised */
-  --surface-3: #1b2230;   /* hover */
-  --overlay: rgba(4, 6, 10, 0.68);
-
-  /* lines */
-  --line: rgba(255, 255, 255, 0.07);
-  --line-strong: rgba(255, 255, 255, 0.15);
-
-  /* text */
-  --text: #e9ecf2;
-  --text-2: #aab3c4;
-  --muted: #7c879b;
-
-  /* brand + semantics (up/down match the chart candles) */
-  --gold: #e6b95a;
-  --gold-2: #b98a2c;                     /* second gradient stop for brand fills (logo, primary buttons) */
-  --gold-soft: rgba(230, 185, 90, 0.13);
-  --gold-line: rgba(230, 185, 90, 0.45);
-  --up: #26a69a;
-  --up-soft: rgba(38, 166, 154, 0.14);
-  --down: #ef5350;
-  --down-soft: rgba(239, 83, 80, 0.13);
-  --info: #6aa9ff;
-  --info-soft: rgba(106, 169, 255, 0.13);
-  --violet: #b794f6;
-  --violet-soft: rgba(183, 148, 246, 0.14);
+  /* the four source colours — never used bare in components, only through the roles below */
+  --c-ivory: #ffefcd;
+  --c-sage: #a5be74;
+  --c-apricot: #e09132;
+  --c-fern: #424530;
 
   /* type */
   --font-fa: Vazirmatn, "Segoe UI", Tahoma, sans-serif;
@@ -42,51 +20,92 @@
 
   /* space + shape */
   --sp-1: 4px; --sp-2: 8px; --sp-3: 12px; --sp-4: 16px; --sp-5: 24px; --sp-6: 32px;
-  --r-sm: 9px; --r-md: 15px; --r-lg: 22px; --r-pill: 999px;   /* softer, rounder shapes (Elias's coffee UI-kit reference, 2026-09-22) */
-  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.35);
-  --shadow-2: 0 12px 32px rgba(0, 0, 0, 0.5);
+  --r-sm: 9px; --r-md: 15px; --r-lg: 22px; --r-pill: 999px;   /* soft, rounded shapes (Elias's UI-kit reference, 2026-09-22) */
 
   /* motion */
   --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
   --t-fast: 0.12s;
   --t-med: 0.2s;
 
-  --accent-2: #f59e0b;
-  --glow: none;
-  --brand-grad: linear-gradient(135deg, var(--gold) 0%, var(--gold-2) 100%);
-  --brand-grad-soft: linear-gradient(135deg, var(--gold) 0%, var(--gold-2) 100%);   /* always light-on-light: safe under dark text */
-
   /* layout */
   --sidebar-w: 248px;
   --sidebar-w-collapsed: 72px;
   --topbar-h: 60px;
+
+  /* fallback colours (in case data-theme isn't set yet) = dark mode; see the two blocks below for the real values */
+  --bg: #23261a; --surface-1: #424530; --surface-2: #4d5238; --surface-3: #5c6242;
+  --line: rgba(255, 239, 205, 0.14); --line-strong: rgba(255, 239, 205, 0.28);
+  --text: #ffefcd; --text-2: #c3d1a4; --muted: #8fa066;
+  --gold: #e09132; --gold-2: #a5be74; --accent-2: #e09132;
+  --gold-soft: rgba(224, 145, 50, 0.16); --gold-line: rgba(224, 145, 50, 0.5);
+  --up: #a5be74; --up-soft: rgba(165, 190, 116, 0.16); --down: #e09132; --down-soft: rgba(224, 145, 50, 0.16);
+  --info: #a5be74; --info-soft: rgba(165, 190, 116, 0.14); --violet: #8fa066; --violet-soft: rgba(143, 160, 102, 0.14);
+  --glow: 0 0 28px rgba(224, 145, 50, 0.16);
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.5); --shadow-2: 0 12px 32px rgba(0, 0, 0, 0.55);
+  --brand-grad: linear-gradient(135deg, var(--c-apricot) 0%, var(--c-sage) 100%);
+  --brand-grad-soft: linear-gradient(135deg, var(--c-apricot) 0%, color-mix(in srgb, var(--c-apricot) 55%, var(--c-ivory) 45%) 100%);
 }
 
-/* Neon theme: "Coffee" — warm dark wine surfaces, tan/cream brand accent (Elias, 2026-09-22, from his palette: #561C24 #6D2932 #C7B7A3 #E8D8C4). */
-:root[data-theme="neon"] {
-  --bg: #140a0c;
-  --surface-1: #2a1319;
-  --surface-2: #3a1a21;
-  --surface-3: #4a222b;
-  --overlay: rgba(15, 6, 8, 0.74);
-  --line: rgba(199, 183, 163, 0.16);
-  --line-strong: rgba(232, 216, 196, 0.32);
-  --text: #f3e9dc;
-  --text-2: #c7b7a3;
-  --muted: #9c8776;
-  --gold: #c7b7a3;                       /* brand: coffee palette, tan -> cream (Elias, 2026-09-22) */
-  --gold-2: #e8d8c4;
-  --gold-soft: rgba(199, 183, 163, 0.16);
-  --gold-line: rgba(199, 183, 163, 0.5);
-  --brand-grad: linear-gradient(135deg, #561c24 0%, #6d2932 35%, #c7b7a3 75%, #e8d8c4 100%);
-  --accent-2: #ff9d3d;
-  --up: #2ee6a6;
-  --up-soft: rgba(46, 230, 166, 0.14);
-  --down: #ff5c7a;
-  --down-soft: rgba(255, 92, 122, 0.14);
-  --info: #7aa8ff;
-  --info-soft: rgba(122, 168, 255, 0.14);
-  --violet: #b18cff;
-  --glow: 0 0 28px rgba(199, 183, 163, 0.16);
+/* ---- dark mode: fern surfaces, ivory text, apricot/sage accents ---- */
+:root[data-theme="dark"] {
+  --bg: color-mix(in srgb, var(--c-fern) 55%, black);
+  --surface-1: var(--c-fern);
+  --surface-2: color-mix(in srgb, var(--c-fern) 82%, var(--c-sage) 18%);
+  --surface-3: color-mix(in srgb, var(--c-fern) 68%, var(--c-sage) 32%);
+  --overlay: rgba(15, 16, 10, 0.74);
+  --line: rgba(255, 239, 205, 0.14);
+  --line-strong: rgba(255, 239, 205, 0.28);
+  --text: var(--c-ivory);
+  --text-2: color-mix(in srgb, var(--c-ivory) 55%, var(--c-sage) 45%);
+  --muted: color-mix(in srgb, var(--c-sage) 55%, var(--c-fern) 45%);
+  --gold: var(--c-apricot);
+  --gold-2: var(--c-sage);
+  --gold-soft: color-mix(in srgb, var(--c-apricot) 16%, transparent);
+  --gold-line: color-mix(in srgb, var(--c-apricot) 50%, transparent);
+  --accent-2: var(--c-apricot);
+  --up: var(--c-sage);
+  --up-soft: color-mix(in srgb, var(--c-sage) 16%, transparent);
+  --down: var(--c-apricot);
+  --down-soft: color-mix(in srgb, var(--c-apricot) 16%, transparent);
+  --info: var(--c-sage);
+  --info-soft: color-mix(in srgb, var(--c-sage) 14%, transparent);
+  --violet: color-mix(in srgb, var(--c-sage) 60%, var(--c-ivory) 40%);
+  --violet-soft: color-mix(in srgb, var(--violet) 14%, transparent);
+  --glow: 0 0 28px color-mix(in srgb, var(--c-apricot) 18%, transparent);
   --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.5);
+  --shadow-2: 0 12px 32px rgba(0, 0, 0, 0.55);
+  --brand-grad: linear-gradient(135deg, var(--c-apricot) 0%, var(--c-sage) 100%);
+  --brand-grad-soft: linear-gradient(135deg, var(--c-apricot) 0%, color-mix(in srgb, var(--c-apricot) 55%, var(--c-ivory) 45%) 100%);
+}
+
+/* ---- light mode: ivory surfaces, fern text, same apricot/sage accents ---- */
+:root[data-theme="light"] {
+  --bg: var(--c-ivory);
+  --surface-1: color-mix(in srgb, var(--c-ivory) 90%, var(--c-fern) 10%);
+  --surface-2: color-mix(in srgb, var(--c-ivory) 82%, var(--c-fern) 18%);
+  --surface-3: color-mix(in srgb, var(--c-ivory) 72%, var(--c-fern) 28%);
+  --overlay: rgba(66, 69, 48, 0.45);
+  --line: rgba(66, 69, 48, 0.16);
+  --line-strong: rgba(66, 69, 48, 0.32);
+  --text: var(--c-fern);
+  --text-2: color-mix(in srgb, var(--c-fern) 70%, var(--c-ivory) 30%);
+  --muted: color-mix(in srgb, var(--c-fern) 45%, var(--c-ivory) 55%);
+  --gold: var(--c-apricot);
+  --gold-2: var(--c-sage);
+  --gold-soft: color-mix(in srgb, var(--c-apricot) 14%, transparent);
+  --gold-line: color-mix(in srgb, var(--c-apricot) 45%, transparent);
+  --accent-2: var(--c-apricot);
+  --up: var(--c-sage);
+  --up-soft: color-mix(in srgb, var(--c-sage) 20%, transparent);
+  --down: var(--c-apricot);
+  --down-soft: color-mix(in srgb, var(--c-apricot) 18%, transparent);
+  --info: var(--c-sage);
+  --info-soft: color-mix(in srgb, var(--c-sage) 16%, transparent);
+  --violet: color-mix(in srgb, var(--c-fern) 55%, var(--c-sage) 45%);
+  --violet-soft: color-mix(in srgb, var(--violet) 14%, transparent);
+  --glow: none;
+  --shadow-1: 0 1px 2px rgba(66, 69, 48, 0.14);
+  --shadow-2: 0 12px 28px rgba(66, 69, 48, 0.2);
+  --brand-grad: linear-gradient(135deg, var(--c-apricot) 0%, var(--c-sage) 100%);
+  --brand-grad-soft: linear-gradient(135deg, var(--c-apricot) 0%, color-mix(in srgb, var(--c-apricot) 55%, var(--c-ivory) 45%) 100%);
 }
