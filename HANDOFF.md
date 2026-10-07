@@ -5,6 +5,17 @@ Format: date · agent · what was done · state (finished / half-done + how to c
 
 ---
 
+## 2026-10-07 · Claude (cloud session, no access to the PC)
+- Antigravity CLI provider: `agyProvider` in src/providers/cli.ts (command `agy`, `-p "<prompt>"` as argument, flags before -p, no shell on
+  Windows, no permission-skipping flag). CliSpec got `promptAs` ("stdin"|"arg") and `shell`; args() now also receives the prompt.
+  Registered as provider `antigravity` ONLY when config `providers.antigravity.enabled` is true; team.ts tries it first for Gemini members
+  (Vertex → gemini-cli → gemini remain as backups). antigravity-setup.cmd installs, logs in and tests headless mode with redirected output.
+- Why not on by default: written from public docs/issues only — agy could not be run in the cloud. Known risks: `agy -p` reported to hang
+  when stdout is not a terminal (v1.0.6), and stdin-only prompting is not documented (so the prompt is the -p argument).
+- State: code + 6 new tests green (tests/antigravity.test.ts), NOT verified against a real agy. Next (Elias's PC): run antigravity-setup.cmd;
+  if it prints `agy answered: OK` set providers.antigravity.enabled=true and restart; if it hangs/fails, leave disabled and report the output.
+  Rollback: remove the flag (nothing else changes), or revert the branch.
+
 ## 2026-10-04 (3) · Claude (Cowork)
 - Website agent: src/plugins/website.ts. /site <request> → AI returns full HTML files (JSON) → guard rails (privacy.html kept,
   homepage keeps "Elias OS" + /privacy for Google OAuth, no external scripts) → site-draft/ → preview at panel /site-preview/

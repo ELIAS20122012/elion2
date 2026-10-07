@@ -21,7 +21,8 @@ Legend: [x] done · [ ] open · (P) postponed by Elias — only start when he as
 ## Open / next
 - [ ] Test first real `/ai` Mini Rescue episode; if motion is weak: first-frame-only Veo + stronger motion prompt, or Veo (non-fast)
 - [ ] Persian speech recognition: Gemini transcription (AI Studio free tier or Vertex) with Whisper fallback
-- [ ] Antigravity CLI as free Gemini provider (replace gemini-cli; Vertex stays as backup)
+- [ ] Antigravity CLI as free Gemini provider (replace gemini-cli; Vertex stays as backup) — code + antigravity-setup.cmd done (branch claude/antigravity-provider);
+      still open: run antigravity-setup.cmd on the PC, if it prints OK set providers.antigravity.enabled=true
 - [ ] Instagram publishing (after Elias sets up the channel) — with approval
 - [ ] Auto-publish Mini Rescue to YouTube with approval (`/ai publish youtube`) when Elias says so
 - [ ] Control the PC from Telegram (apps, screenshot, send file, restart)

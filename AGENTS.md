@@ -21,7 +21,7 @@ Trading (MT4) is only ONE small plugin — never make the core or prompts tradin
 ## Map
 ```
 src/kernel/        kernel.ts (tasks, runs, approvals, schedules, kv, events, skills, commands), verify.ts, permissions.ts, types.ts
-src/providers/     claude-code, cli (codex, gemini-cli), gemini-api, gemini-vertex, ollama, fallback ("auto" chain)
+src/providers/     claude-code, cli (codex, gemini-cli, agy = Antigravity), gemini-api, gemini-vertex, ollama, fallback ("auto" chain)
 src/plugins/       one file per plugin; builtin.ts lists them (BUILTIN_PLUGINS). types.ts = Plugin contract
                    research, team, aivideo (Mini Rescue videos), video (/short slides), youtube, reminders,
                    maintenance (backup/report), health (watchdog), vault (Obsidian), mt4, memory, trading, …

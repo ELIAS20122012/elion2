@@ -9,7 +9,7 @@ import { readConfig, safeName } from "./research.ts";
 
 export type ModelKey = "claude" | "chatgpt" | "gemini";
 export const MODEL_LABEL: Record<ModelKey, string> = { claude: "Claude", chatgpt: "ChatGPT", gemini: "Gemini" };
-export const MODEL_PROVIDERS: Record<ModelKey, string[]> = { claude: ["claude-code"], chatgpt: ["codex"], gemini: ["gemini-vertex", "gemini-cli", "gemini"] };
+export const MODEL_PROVIDERS: Record<ModelKey, string[]> = { claude: ["claude-code"], chatgpt: ["codex"], gemini: ["antigravity", "gemini-vertex", "gemini-cli", "gemini"] };
 const DEFAULT_MODEL: Record<string, ModelKey> = { researcher: "claude", critic: "claude", business: "chatgpt", content: "chatgpt", trader: "gemini" };
 
 const TRADING_RE = "ترید|معامله|trade|trading|MT4|فارکس|forex|طلا|بورس|کریپتو|crypto|بیت‌?کوین|اکسپرت|EA|سیگنال|بروکر|چارت|پوزیشن";

@@ -1,5 +1,6 @@
-// Subscription CLIs as providers: Codex CLI (ChatGPT plan) and Gemini CLI (Google account, free tier).
-// Prompt always goes through stdin — no shell quoting. Both run read-only (no file edits, no shell).
+// Subscription CLIs as providers: Codex CLI (ChatGPT plan), Gemini CLI and Antigravity CLI (Google account, free tier).
+// Prompt goes through stdin — no shell quoting — except Antigravity, which takes it as the -p argument (see agyProvider).
+// All run read-only (no file edits, no shell).
 import { spawn, spawnSync } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
@@ -21,7 +22,11 @@ const q = (s: string) => (isWin ? `"${s}"` : s);
 export interface CliSpec {
   name: string;
   command: string;
-  args: (outFile: string) => string[];
+  args: (outFile: string, prompt: string) => string[];
+  /** "stdin" (default): prompt is written to stdin. "arg": the prompt is part of args() and stdin stays empty. */
+  promptAs?: "stdin" | "arg";
+  /** Run through cmd.exe on Windows (default true: needed for .cmd shims like npm's). Native .exe CLIs set false. */
+  shell?: boolean;
   /** Read the answer: from the out-file if the CLI writes one, else stdout. */
   usesOutFile: boolean;
   cwd?: string;
@@ -37,14 +42,18 @@ export class CliProvider implements ExecutionProvider {
   }
 
   async health(): Promise<ProviderHealth> {
-    const r = spawnSync(this.spec.command, ["--version"], { shell: isWin, encoding: "utf8", timeout: 20000, windowsHide: true });
+    const r = spawnSync(this.spec.command, ["--version"], { shell: this.useShell, encoding: "utf8", timeout: 20000, windowsHide: true });
     return r.status === 0 ? { ok: true, detail: `${this.spec.command} ${r.stdout.trim().split("\n")[0]}` } : { ok: false, detail: `${this.spec.command} not found` };
+  }
+
+  private get useShell(): boolean {
+    return this.spec.shell ?? isWin;
   }
 
   execute(req: ExecutionRequest): Promise<ExecutionResult> {
     const outFile = path.join(os.tmpdir(), `elias-${randomUUID()}.txt`);
     return new Promise((resolve, reject) => {
-      const child = spawn(this.spec.command, this.spec.args(outFile), { shell: isWin, cwd: this.spec.cwd, windowsHide: true });
+      const child = spawn(this.spec.command, this.spec.args(outFile, req.prompt), { shell: this.useShell, cwd: this.spec.cwd, windowsHide: true });
       let stdout = "";
       let stderr = "";
       const kill = () => {
@@ -75,7 +84,10 @@ export class CliProvider implements ExecutionProvider {
         if (!out.trim()) return reject(limitOrError(`${this.spec.name} returned no answer: ${stderr.trim().slice(-500)}`));
         resolve({ output: out.trim(), meta: { provider: this.spec.name } });
       });
-      child.stdin.end(req.prompt);
+      child.stdin.on("error", () => {
+        /* the CLI exited before reading stdin — the close handler reports it */
+      });
+      child.stdin.end(this.spec.promptAs === "arg" ? undefined : req.prompt);
     });
   }
 }
@@ -107,5 +119,27 @@ export function geminiProvider(o: { command?: string; model?: string; cwd?: stri
     cwd: o.cwd,
     // stdin (the task) is prepended to -p; -p only tells it to answer that.
     args: () => [...(o.model ? ["-m", o.model] : []), "-p", q("Answer the request above.")],
+  });
+}
+
+/**
+ * Antigravity CLI (`agy`, Google's replacement for Gemini CLI). Official headless form: `agy [flags] -p "<prompt>"`.
+ * -p takes the prompt as its value and stdin-only prompting is not documented, so the prompt is passed as the argument
+ * (flags BEFORE -p). agy is a native binary, so no cmd.exe: Node quotes the argument itself (limit ≈ 32k chars on Windows).
+ * No permission-skipping flag on purpose: headless runs stay read-only/policy-gated like the other CLI providers.
+ */
+export function agyArgs(o: { model?: string } = {}): (outFile: string, prompt: string) => string[] {
+  return (_outFile, prompt) => [...(o.model ? ["--model", o.model] : []), "-p", prompt];
+}
+
+export function agyProvider(o: { command?: string; model?: string; cwd?: string; name?: string } = {}): CliProvider {
+  return new CliProvider({
+    name: o.name ?? "antigravity",
+    command: o.command ?? "agy",
+    usesOutFile: false,
+    promptAs: "arg",
+    shell: false,
+    cwd: o.cwd,
+    args: agyArgs(o),
   });
 }

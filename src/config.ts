@@ -7,7 +7,7 @@ import { DEFAULT_POLICY, mergePolicy, type Policy } from "./kernel/permissions.t
 import { EchoProvider } from "./providers/mock.ts";
 import { ClaudeCodeProvider, type ClaudeCodeOptions } from "./providers/claude-code.ts";
 import type { KernelEvent } from "./kernel/types.ts";
-import { codexProvider, geminiProvider } from "./providers/cli.ts";
+import { agyProvider, codexProvider, geminiProvider } from "./providers/cli.ts";
 import { GeminiVertexProvider } from "./providers/gemini-vertex.ts";
 import { GoogleAuth } from "./connectors/google.ts";
 import { GeminiApiProvider } from "./providers/gemini-api.ts";
@@ -33,6 +33,8 @@ export interface EliasConfig {
     chain?: string[];
     codex?: { command?: string; model?: string };
     geminiCli?: { command?: string; model?: string };
+    /** Antigravity CLI (`agy`). Off until "enabled": true — turn it on after antigravity-setup.cmd prints OK. */
+    antigravity?: { enabled?: boolean; command?: string; model?: string };
     vertex?: { model?: string; location?: string };
     gemini?: { command?: string; model?: string };
     ollama?: { url?: string; model?: string };
@@ -167,6 +169,10 @@ export function createKernel(cfg = loadConfig(), onEvent?: (e: Omit<KernelEvent,
       codexProvider({ cwd: ensureWorkspace(), ...(cfg.providers?.codex ?? {}) }),
       // Gemini CLI = Google account login (free); "gemini" below is the API-key provider.
       geminiProvider({ cwd: ensureWorkspace(), ...(cfg.providers?.geminiCli ?? {}), name: "gemini-cli" }),
+      // Antigravity CLI (free, Google account) replaces Gemini CLI for /team; only registered when enabled in config.
+      ...(cfg.providers?.antigravity?.enabled
+        ? [agyProvider({ cwd: ensureWorkspace(), command: cfg.providers.antigravity.command, model: cfg.providers.antigravity.model })]
+        : []),
       // Gemini on Vertex (Google OAuth, Cloud trial credit). Not in the default fallback chain — used by /team.
       vertexGemini(cfg),
       new GeminiApiProvider({
