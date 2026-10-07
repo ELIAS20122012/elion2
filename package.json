@@ -1,0 +1,19 @@
+{
+  "name": "elias-os",
+  "version": "0.0.1",
+  "description": "Elias OS — Personal Agentic OS (Phase 0: kernel)",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=22.18.0" },
+  "bin": { "elias": "bin/elias.js" },
+  "scripts": {
+    "elias": "node --disable-warning=ExperimentalWarning src/cli.ts",
+    "daemon": "node --disable-warning=ExperimentalWarning src/cli.ts daemon",
+    "test": "node --disable-warning=ExperimentalWarning --test \"tests/**/*.test.ts\"",
+    "typecheck": "tsc -p ."
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.9.0"
+  }
+}

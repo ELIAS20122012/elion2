@@ -1,0 +1,20 @@
+node_modules/
+data/
+*.db
+*.db-*
+config/elias.config.json
+config/secrets.json
+config/google-client.json
+config/google-token.json
+# generated media / local artefacts
+content/ai-videos/
+content/shorts/*.mp4
+content/youtube/
+*.mp4
+*.log
+setup-log.txt
+.wrangler/
+site-draft/
+*key*
+.env
+.env.*

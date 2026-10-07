@@ -1,0 +1,19 @@
+{
+  "dbPath": "data/elias.db",
+  "defaultProvider": "claude-code",
+  "claudeCode": {
+    "command": "claude",
+    "allowedTools": [],
+    "maxTurns": 10
+  },
+  "policy": {
+    "default": "approve",
+    "rules": {
+      "read:*": "allow",
+      "notify:telegram": "allow",
+      "trade:execute": "approve",
+      "publish:*": "approve"
+    }
+  },
+  "daemon": { "pollMs": 10000 }
+}

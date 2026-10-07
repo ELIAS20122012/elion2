@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Elias OS</title>
+<style>
+:root{--bg:#f6f7f9;--card:#fff;--fg:#1c1f24;--mute:#6b7280;--line:#e5e7eb;--acc:#2563eb;--ok:#16a34a;--bad:#dc2626;--warn:#d97706}
+@media (prefers-color-scheme:dark){:root{--bg:#0f1115;--card:#171a21;--fg:#e6e8eb;--mute:#9aa1ab;--line:#262b34;--acc:#60a5fa;--ok:#4ade80;--bad:#f87171;--warn:#fbbf24}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:14px/1.6 "Segoe UI",Tahoma,system-ui,sans-serif}
+header{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--line);background:var(--card);position:sticky;top:0;z-index:2}
+h1{font-size:18px;margin:0}h2{font-size:14px;margin:0 0 10px;color:var(--mute);font-weight:600}
+main{max-width:1200px;margin:0 auto;padding:16px;display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(340px,1fr))}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px;min-width:0}.wide{grid-column:1/-1}
+.pills{display:flex;flex-wrap:wrap;gap:6px}.pill{border:1px solid var(--line);border-radius:999px;padding:2px 10px;font-size:12px;white-space:nowrap}
+.ok{color:var(--ok)}.bad{color:var(--bad)}.warn{color:var(--warn)}.mute{color:var(--mute)}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(90px,1fr));gap:8px}.stat{border:1px solid var(--line);border-radius:8px;padding:8px;text-align:center}.stat b{display:block;font-size:20px}
+.row{display:flex;gap:8px;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--line)}.row:last-child{border:0}
+.row .t{min-width:0;flex:1}.row .t div{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+button{font:inherit;border:1px solid var(--line);background:transparent;color:var(--fg);border-radius:6px;padding:3px 10px;cursor:pointer}button:hover{border-color:var(--acc)}
+button.p{background:var(--acc);border-color:var(--acc);color:#fff}
+textarea,input{font:inherit;width:100%;border:1px solid var(--line);border-radius:6px;padding:8px;background:var(--bg);color:var(--fg)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}.skill{border:1px solid var(--line);border-radius:8px;padding:8px;cursor:pointer}.skill:hover{border-color:var(--acc)}
+.skill b{direction:ltr;display:block}.skill small{color:var(--mute)}
+details summary{cursor:pointer;list-style:none}pre{white-space:pre-wrap;word-break:break-word;background:var(--bg);border-radius:6px;padding:8px;margin:6px 0 0;max-height:320px;overflow:auto}
+.log{font:12px/1.5 ui-monospace,Consolas,monospace;direction:ltr;text-align:left;max-height:360px;overflow:auto}
+#toast{position:fixed;bottom:16px;left:16px;background:var(--fg);color:var(--bg);padding:8px 14px;border-radius:8px;opacity:0;transition:.2s}
+</style>
+</head>
+<body>
+<header><h1>🤖 Elias OS</h1><div class="pills" id="top"></div></header>
+<main>
+  <section class="card"><h2>وضعیت</h2><div class="stats" id="stats"></div></section>
+  <section class="card"><h2>🔐 منتظر تأیید</h2><div id="approvals"></div></section>
+  <section class="card"><h2>📥 تسک جدید</h2><textarea id="prompt" rows="3" placeholder="هر چیزی بنویس… (جواب در تلگرام هم می‌آید)"></textarea><div style="margin-top:8px;text-align:left"><button class="p" onclick="newTask()">ارسال</button></div></section>
+  <section class="card wide"><h2>🧩 اسکیل‌ها و دستورها</h2><div class="grid" id="skills"></div></section>
+  <section class="card wide"><h2>📋 تسک‌ها</h2><div id="tasks"></div></section>
+  <section class="card"><h2>⏰ زمان‌بندی</h2><div id="schedules"></div></section>
+  <section class="card"><h2>🔌 پلاگین‌ها</h2><div id="plugins"></div></section>
+  <section class="card wide"><h2>📜 لاگ</h2><div class="log" id="events"></div></section>
+</main>
+<div id="toast"></div>
+<script>
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const t=iso=>iso?new Date(iso).toLocaleString("fa-IR",{dateStyle:"short",timeStyle:"short"}):"-";
+const ICON={queued:"⏳",awaiting_approval:"🔐",running:"⚙️",verifying:"🔎",succeeded:"✅",failed:"❌",cancelled:"🛑"};
+const FA={queued:"در صف",awaiting_approval:"منتظر تأیید",running:"در حال اجرا",verifying:"بررسی",succeeded:"موفق",failed:"شکست",cancelled:"لغو"};
+let open=new Set();
+function toast(m){const e=$("toast");e.textContent=m;e.style.opacity=1;setTimeout(()=>e.style.opacity=0,2200)}
+async function post(url,body={}){const r=await fetch(url,{method:"POST",headers:{"content-type":"application/json","x-elias":"1"},body:JSON.stringify(body)});const j=await r.json();if(j.reply)alert(j.reply);else toast(j.ok?"✔ انجام شد":"خطا: "+j.error);load()}
+function runCmd(n){const i=prompt("/"+n+" — ورودی:","");if(i!==null)post(`/api/commands/${n}/run`,{input:i})}
+function newTask(){const p=$("prompt").value.trim();if(!p)return;post("/api/tasks",{prompt:p});$("prompt").value=""}
+function runSkill(n){const i=prompt("/"+n+" — ورودی (اختیاری):","");if(i!==null)post(`/api/skills/${n}/run`,{input:i})}
+async function load(){
+  let d;try{d=await (await fetch("/api/overview")).json()}catch{ $("top").innerHTML='<span class="pill bad">قطع</span>';return}
+  const hbAge=d.heartbeat?(Date.now()-new Date(d.heartbeat))/1000:1e9;
+  $("top").innerHTML=`<span class="pill ${hbAge<60?"ok":"bad"}">● ${hbAge<60?"روشن":"خاموش"}</span>`+
+    d.providers.map(p=>`<span class="pill ${p.coolingUntil?"warn":"ok"}" title="${p.coolingUntil?"محدود تا "+t(p.coolingUntil):"آماده"}">${esc(p.name)}</span>`).join("");
+  $("stats").innerHTML=Object.entries(d.stats).map(([k,v])=>`<div class="stat"><b>${v}</b>${ICON[k]} ${FA[k]}</div>`).join("");
+  $("approvals").innerHTML=d.approvals.length?d.approvals.map(a=>`<div class="row"><div class="t"><div>${esc(a.task)}</div><small class="mute">${esc(a.capability)}</small></div><button class="p" onclick="post('/api/approvals/${a.id}/approve')">تأیید</button><button onclick="post('/api/approvals/${a.id}/reject')">رد</button></div>`).join(""):'<span class="mute">چیزی نیست.</span>';
+  $("skills").innerHTML=d.skills.map(s=>`<div class="skill" onclick="runSkill('${s.name}')"><b>/${esc(s.name)}</b><small>${esc(s.description)}</small></div>`).join("")+
+    d.commands.map(c=>`<div class="skill" onclick="runCmd('${c.name}')"><b>/${esc(c.name)}</b><small>⚡ ${esc(c.description)}</small></div>`).join("");
+  $("tasks").innerHTML=d.tasks.map(x=>`<details ${open.has(x.id)?"open":""} ontoggle="this.open?open.add('${x.id}'):open.delete('${x.id}')"><summary class="row"><div class="t"><div>${ICON[x.status]} ${esc(x.title)}</div><small class="mute">${t(x.updatedAt)} · ${esc(x.provider)} · ${esc(x.source)}${x.failureKind?` · <span class="bad">${esc(x.failureKind)}</span>`:""}</small></div>${x.status==="failed"||x.status==="cancelled"?`<button onclick="event.preventDefault();post('/api/tasks/${x.id}/retry')">🔁</button>`:""}${["queued","awaiting_approval","running"].includes(x.status)?`<button onclick="event.preventDefault();post('/api/tasks/${x.id}/cancel')">🛑</button>`:""}</summary><pre>${esc(x.result||x.error||"—")}</pre></details>`).join("")||'<span class="mute">تسکی نیست.</span>';
+  $("schedules").innerHTML=d.schedules.map(s=>`<div class="row"><div class="t"><div>${esc(s.name)}</div><small class="mute" dir="ltr">${esc(s.cron)}</small></div><small>${s.enabled?"بعدی: "+t(s.nextRunAt):"غیرفعال"}</small></div>`).join("")||'<span class="mute">—</span>';
+  $("plugins").innerHTML=d.plugins.map(p=>`<div class="row"><div class="t"><div>${p.error?"✖":"✔"} ${esc(p.name)} <small class="mute">${esc(p.source)}</small></div><small class="${p.error?"bad":"mute"}">${esc(p.error||p.description)}</small></div></div>`).join("");
+  $("events").innerHTML=d.events.map(e=>`<div class="${e.level==="error"?"bad":e.level==="warn"?"warn":""}">${new Date(e.ts).toLocaleTimeString()} ${esc(e.type)} — ${esc(e.message)}</div>`).join("");
+}
+load();setInterval(load,5000);
+</script>
+</body>
+</html>
