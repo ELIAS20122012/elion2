@@ -22,7 +22,7 @@ export class GeminiVertexProvider implements ExecutionProvider {
   }
 
   async health(): Promise<ProviderHealth> {
-    return this.o.project() ? { ok: true, detail: `Vertex ${this.model()} (${this.o.project()})` } : { ok: false, detail: "Google not connected (google-setup.cmd)" };
+    return this.o.project() ? { ok: true, detail: `Vertex ${this.model()} (${this.o.project()})` } : { ok: false, detail: "Google not connected (setup/google-setup.cmd)" };
   }
 
   async execute(req: ExecutionRequest): Promise<ExecutionResult> {

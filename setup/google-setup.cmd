@@ -1,7 +1,7 @@
 @echo off
 chcp 65001 >nul
 title Elias OS - Google setup
-cd /d "%~dp0"
+cd /d "%~dp0.."
 rem Always use the NEWEST client_secret_*.json from Downloads (older ones may belong to other projects).
 for /f "delims=" %%F in ('dir /b /o-d "%USERPROFILE%\Downloads\client_secret_*.json" 2^>nul') do (
   copy /y "%USERPROFILE%\Downloads\%%F" config\google-client.json >nul

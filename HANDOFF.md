@@ -5,12 +5,25 @@ Format: date · agent · what was done · state (finished / half-done + how to c
 
 ---
 
+## 2026-10-08 (2) · Claude (Cowork)
+- Antigravity CLI provider "antigravity" (src/providers/cli.ts): agy [--model X] -p <prompt>, prompt as argument without a shell,
+  >24k chars → next provider. No --dangerously-skip-permissions (text answers only). Auto chain: claude-code, codex, antigravity,
+  gemini, ollama. /team gemini: antigravity → vertex → gemini-cli → gemini. Setup: setup/antigravity-setup.cmd.
+- State: tested with a fake agy only. Elias must run setup/antigravity-setup.cmd once (install + Google login).
+
+## 2026-10-08 · Claude (Cowork)
+- Video off: config plugins.disabled = ["aivideo","video"] (quality too low, wasted tokens). On startup config.ts
+  stopDisabledVideo() removes ai-daily/daily-short schedules and cancels unfinished video tasks. /ai and /short are gone.
+- Tidy: one-time setup/key scripts moved to setup/ (paths + messages updated). C:\Elion\tidy.cmd moves junk to
+  C:\Elion\_to_delete and the old trading API to trading-robot/legacy.
+- State: finished on disk; needs update-elias.cmd (restart). Roll back video: remove "disabled" from elias.config.json.
+
 ## 2026-10-04 (3) · Claude (Cowork)
 - Website agent: src/plugins/website.ts. /site <request> → AI returns full HTML files (JSON) → guard rails (privacy.html kept,
   homepage keeps "Elias OS" + /privacy for Google OAuth, no external scripts) → site-draft/ → preview at panel /site-preview/
   (served with CSP sandbox) → /site publish = approval (publish:website) → wrangler pages deploy (project elion-os-site).
 - Mini Rescue style switched to photoreal tilt-shift diorama; reference image content/templates/minirescue.ref.jpg auto-attached.
-- State: finished, 108 tests green. Wrangler must still be logged in on the PC (site-deploy.cmd did it once).
+- State: finished, 108 tests green. Wrangler must still be logged in on the PC (setup/site-deploy.cmd did it once).
 
 ## 2026-10-04 (2) · Claude (Cowork)
 - First real Mini Rescue episode had continuity bugs (problem solved in clip 1, then repeated; objects jumping; dust explosion).
@@ -19,7 +32,7 @@ Format: date · agent · what was done · state (finished / half-done + how to c
 - State: finished, 104 tests green. Next: Elias judges the next episode; options if still weak: veo-3.1 (non-fast).
 
 ## 2026-10-04 · Claude (Cowork)
-- Added this handbook (AGENTS.md, ROADMAP.md, HANDOFF.md), CLAUDE.md/GEMINI.md pointers, git-setup.cmd, .gitignore update.
+- Added this handbook (AGENTS.md, ROADMAP.md, HANDOFF.md), CLAUDE.md/GEMINI.md pointers, setup/git-setup.cmd, .gitignore update.
 - Latest features live and deployed: Mini Rescue 14 s pipeline + manual (free) mode + daily 10:00 schedule,
   Gemini via Vertex for /team, "Hey Elion" voice assistant with vocabulary hints, silent background jobs,
   trading de-emphasised in all prompts.

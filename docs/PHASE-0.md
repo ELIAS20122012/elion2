@@ -38,8 +38,8 @@
 - [x] Work skills: /journal /setup (trading) · /lesson /student /quiz (mentorship) · /idea /script /caption (content) · exact /lot calculator (code, not AI)
 - [x] Local web dashboard in the daemon: http://127.0.0.1:7420 (`elias dashboard`) — status, providers, approvals, tasks (retry/cancel), skills/commands, schedules, plugins, log
 - [x] YouTube plugin: `/yt` lists `content/youtube/`, `/yt N | notes` → AI metadata → approval (publish:youtube) → resumable upload (no auto-retry). Privacy via `plugins.options.youtube.privacy`
-- [x] Auto Shorts: `/short [topic]` → AI script → edge-tts Persian voice + Vazirmatn slides + ffmpeg (1080x1920) → video preview in Telegram + approval → upload. `elias short schedule --time 18:00` for one per day. Setup: `video-setup.cmd`
-- [x] AI videos: `/ai <template|idea>` → plan (template from `content/templates/*.md`, no questions) → Gemini image ×2 (first/last frame) → Veo 3.1 fast 8s 9:16 with audio → Telegram preview + approval → YouTube. Paid key: `media-key.cmd` (secrets.media.apiKey). Never auto-retried.
+- [x] Auto Shorts: `/short [topic]` → AI script → edge-tts Persian voice + Vazirmatn slides + ffmpeg (1080x1920) → video preview in Telegram + approval → upload. `elias short schedule --time 18:00` for one per day. Setup: `setup/video-setup.cmd`
+- [x] AI videos: `/ai <template|idea>` → plan (template from `content/templates/*.md`, no questions) → Gemini image ×2 (first/last frame) → Veo 3.1 fast 8s 9:16 with audio → Telegram preview + approval → YouTube. Paid key: `setup/media-key.cmd` (secrets.media.apiKey). Never auto-retried.
 - [x] Spoken replies: voice message → answer as text + Persian voice note (edge-tts → OGG/Opus). `/voice on` = every chat reply spoken
 - [x] Reminders (no AI): `/remind 18:30 …`, `فردا 9 …`, `2h …`, `۱۰ دقیقه …`, `هر روز 8:00 …`; "یادم بنداز …" in chat/voice; `/reminders`. Remote restart: Telegram `/restart` or `data/restart.flag`
 - [x] Agentic actions: AI answers can end with `>>> /command args` → ▶️ button in Telegram runs it (e.g. "یه شورت درباره ریسک بساز" by voice)
@@ -48,8 +48,8 @@
 - [x] Advisor skills: `/board` (4 advisors + synthesis, one AI call), `/plan` (calendar+tasks+notes), `/review` (end-of-day from today's daily note via context `vault:today`)
 - [x] Files in Telegram: photos/PDF/documents (≤20 MB) → `data/workspace/inbox/` (auto-cleaned after 7 days) → AI reads them (chart analysis without signals, summaries). Caption = request
 - [x] Chart markup: for chart screenshots the AI adds `MARKS: {levels:[{y,label,type}]}` → levels drawn on the image (Pillow) and sent back (approximate placement)
-- [x] MT4 bridge (read-only EA `mt4/EliasBridge.mq4`, `mt4-setup.cmd`): `/account`, `/trades`, `/draw 4188 مقاومت | 4122 حمایت` (draws on the MT4 chart), context `mt4:account`, risk watch every 5 min (no stop / risk > 1% / daily loss > 3% → Telegram alert once), daily trade report 23:00 Mon–Fri, `/tradereview` skill
-- [x] Remote panel: https://panel.eliongroup.org via Cloudflare Tunnel run by the daemon (`data/bin/cloudflared.exe`, token in secrets `tunnel.token` via `tunnel-key.cmd`) + Cloudflare Access; dashboard also checks the Access email header = owner
+- [x] MT4 bridge (read-only EA `mt4/EliasBridge.mq4`, `setup/mt4-setup.cmd`): `/account`, `/trades`, `/draw 4188 مقاومت | 4122 حمایت` (draws on the MT4 chart), context `mt4:account`, risk watch every 5 min (no stop / risk > 1% / daily loss > 3% → Telegram alert once), daily trade report 23:00 Mon–Fri, `/tradereview` skill
+- [x] Remote panel: https://panel.eliongroup.org via Cloudflare Tunnel run by the daemon (`data/bin/cloudflared.exe`, token in secrets `tunnel.token` via `setup/tunnel-key.cmd`) + Cloudflare Access; dashboard also checks the Access email header = owner
 - [x] Health watchdog (no AI): every 15 min Google, AI models/limits, tunnel, backups, disk, failure bursts → one Telegram alert on break + one on recovery; `/health`
 
 ## Phase 1 (toward the v0.1 success target: 08:00 daily briefing)

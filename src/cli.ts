@@ -199,7 +199,7 @@ async function main(argv: string[]): Promise<number> {
       case "voice": {
         if (sub !== "test" || !rest[0]) throw new Error("Usage: elias voice test <audio-file>");
         const t = makeTranscriber();
-        if (!t) throw new Error("Voice is not installed — run voice-setup.cmd");
+        if (!t) throw new Error("Voice is not installed — run setup/voice-setup.cmd");
         const r = await t.transcribe(rest[0]);
         t.close();
         console.log(`[${r.language}] ${r.duration}s audio in ${r.seconds}s:\n${r.text}`);
@@ -389,7 +389,7 @@ async function daemon(k: Kernel): Promise<number> {
       voice ? { transcriber: voice, download: telegramDownload(token), dir: path.join(HOME, "data", "voice-tmp"), speak: makeSpeaker(HOME) ?? undefined } : null,
       { download: telegramDownload(token), inbox: path.join(ensureWorkspace(), "inbox"), relInbox: "inbox", mark: makeMarker(HOME) ?? undefined },
     );
-    console.log(voice ? "Voice: enabled (faster-whisper)" : "Voice: not installed (run voice-setup.cmd)");
+    console.log(voice ? "Voice: enabled (faster-whisper)" : "Voice: not installed (run setup/voice-setup.cmd)");
     k.addEventSink((e) => tg!.notify(e));
     tgLoop = tg.run(() => stopping);
     tg.syncCommands().catch((e) => k.log("telegram.commands_failed", (e as Error).message, { level: "warn" }));

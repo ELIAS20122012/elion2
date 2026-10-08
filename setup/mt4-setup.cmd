@@ -1,7 +1,7 @@
 @echo off
 chcp 65001 >nul
 title Elias OS - MT4 bridge setup
-cd /d "%~dp0"
+cd /d "%~dp0.."
 set FOUND=0
 for /d %%T in ("%APPDATA%\MetaQuotes\Terminal\*") do (
   if exist "%%T\MQL4\Experts" (

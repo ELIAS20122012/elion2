@@ -1,7 +1,7 @@
 @echo off
 chcp 65001 >nul
 title Elias OS - Telegram setup
-cd /d "%~dp0"
+cd /d "%~dp0.."
 if not exist config\secrets.json copy config\secrets.example.json config\secrets.json >nul
 echo.
 echo  1) Notepad will open.

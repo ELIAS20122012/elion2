@@ -15,7 +15,7 @@ export interface CheckResult {
   fix?: string;
 }
 
-const AI = ["claude-code", "codex", "gemini-vertex", "gemini", "ollama"];
+const AI = ["claude-code", "codex", "antigravity", "gemini-vertex", "gemini", "ollama"];
 const ago = (iso: string | null) => (iso ? (Date.now() - new Date(iso).getTime()) / 3_600_000 : Infinity);
 
 export async function runChecks(k: Kernel, home: string, o: { google?: GoogleAuth | null; minFreeGb?: number } = {}): Promise<CheckResult[]> {
@@ -28,10 +28,10 @@ export async function runChecks(k: Kernel, home: string, o: { google?: GoogleAut
       await g.accessToken(AbortSignal.timeout(20_000));
       out.push({ key: "google", label: "گوگل", ok: true, detail: "متصل" });
     } catch (e) {
-      out.push({ key: "google", label: "گوگل", ok: false, detail: (e as Error).message.slice(0, 160), fix: "google-setup.cmd را یک بار اجرا کن" });
+      out.push({ key: "google", label: "گوگل", ok: false, detail: (e as Error).message.slice(0, 160), fix: "setup/google-setup.cmd را یک بار اجرا کن" });
     }
   } else if (g) {
-    out.push({ key: "google", label: "گوگل", ok: false, detail: "وصل نیست", fix: "google-setup.cmd را اجرا کن" });
+    out.push({ key: "google", label: "گوگل", ok: false, detail: "وصل نیست", fix: "setup/google-setup.cmd را اجرا کن" });
   }
 
   // AI models: health + usage-limit cooldowns

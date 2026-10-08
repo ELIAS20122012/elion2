@@ -26,7 +26,12 @@ export interface CliSpec {
   usesOutFile: boolean;
   cwd?: string;
   model?: string;
+  /** Pass the prompt as the last argument instead of stdin (CLIs without stdin support). Runs without a shell. */
+  promptArg?: boolean;
 }
+
+/** Windows command lines are capped at ~32k chars; longer prompts go to the next provider. */
+const MAX_ARG_PROMPT = 24_000;
 
 export class CliProvider implements ExecutionProvider {
   readonly name: string;
@@ -37,14 +42,18 @@ export class CliProvider implements ExecutionProvider {
   }
 
   async health(): Promise<ProviderHealth> {
-    const r = spawnSync(this.spec.command, ["--version"], { shell: isWin, encoding: "utf8", timeout: 20000, windowsHide: true });
+    const r = spawnSync(this.spec.command, ["--version"], { shell: isWin && !this.spec.promptArg, encoding: "utf8", timeout: 20000, windowsHide: true });
     return r.status === 0 ? { ok: true, detail: `${this.spec.command} ${r.stdout.trim().split("\n")[0]}` } : { ok: false, detail: `${this.spec.command} not found` };
   }
 
   execute(req: ExecutionRequest): Promise<ExecutionResult> {
     const outFile = path.join(os.tmpdir(), `elias-${randomUUID()}.txt`);
+    const viaArg = !!this.spec.promptArg;
+    if (viaArg && req.prompt.length > MAX_ARG_PROMPT) return Promise.reject(new ProviderUnavailableError(`${this.spec.name}: prompt too long for a command line`));
     return new Promise((resolve, reject) => {
-      const child = spawn(this.spec.command, this.spec.args(outFile), { shell: isWin, cwd: this.spec.cwd, windowsHide: true });
+      // promptArg: no shell, so Node quotes the prompt itself (newlines, quotes, Persian text stay intact).
+      const args = viaArg ? [...this.spec.args(outFile), req.prompt] : this.spec.args(outFile);
+      const child = spawn(this.spec.command, args, { shell: isWin && !viaArg, cwd: this.spec.cwd, windowsHide: true });
       let stdout = "";
       let stderr = "";
       const kill = () => {
@@ -75,7 +84,7 @@ export class CliProvider implements ExecutionProvider {
         if (!out.trim()) return reject(limitOrError(`${this.spec.name} returned no answer: ${stderr.trim().slice(-500)}`));
         resolve({ output: out.trim(), meta: { provider: this.spec.name } });
       });
-      child.stdin.end(req.prompt);
+      child.stdin.end(viaArg ? "" : req.prompt);
     });
   }
 }
@@ -107,5 +116,24 @@ export function geminiProvider(o: { command?: string; model?: string; cwd?: stri
     cwd: o.cwd,
     // stdin (the task) is prepended to -p; -p only tells it to answer that.
     args: () => [...(o.model ? ["-m", o.model] : []), "-p", q("Answer the request above.")],
+  });
+}
+
+/** agy on PATH, else the installer's default location (a daemon started before the install has the old PATH). */
+function agyCommand(): string {
+  const local = path.join(process.env.LOCALAPPDATA ?? "", "agy", "bin", "agy.exe");
+  return isWin && process.env.LOCALAPPDATA && fs.existsSync(local) ? local : "agy";
+}
+
+/** Antigravity CLI (`agy`): Google account login, free Gemini quota. Text answers only — no auto-approved tools. */
+export function antigravityProvider(o: { command?: string; model?: string; cwd?: string } = {}): CliProvider {
+  return new CliProvider({
+    name: "antigravity",
+    command: o.command ?? agyCommand(),
+    usesOutFile: false,
+    promptArg: true,
+    cwd: o.cwd,
+    // every flag must come before -p: agy treats the next argument as the prompt
+    args: () => [...(o.model ? ["--model", o.model] : []), "-p"],
   });
 }

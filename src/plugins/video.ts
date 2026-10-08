@@ -76,13 +76,13 @@ export class VideoRenderProvider implements ExecutionProvider {
   }
 
   async health() {
-    return this.installed() ? { ok: true, detail: "video venv ready" } : { ok: false, detail: "run video-setup.cmd" };
+    return this.installed() ? { ok: true, detail: "video venv ready" } : { ok: false, detail: "run setup/video-setup.cmd" };
   }
 
   execute(req: ExecutionRequest) {
     const m = req.prompt.match(MARK);
     if (!m) return Promise.reject(new ProviderUnavailableError("No render spec in task"));
-    if (!this.installed()) return Promise.reject(new ProviderUnavailableError("Video tools not installed — run video-setup.cmd"));
+    if (!this.installed()) return Promise.reject(new ProviderUnavailableError("Video tools not installed — run setup/video-setup.cmd"));
     const spec = JSON.parse(m[1]!) as { out: string; title: string; description: string; tags: string[] };
     fs.mkdirSync(spec.out, { recursive: true });
     const specFile = path.join(spec.out, "spec.json");

@@ -327,7 +327,7 @@ export class TelegramInterface {
       case "/voice": {
         const on = (args[0] ?? "").toLowerCase();
         if (on !== "on" && on !== "off") return this.send(`🔊 پاسخ صوتی: ${this.kernel.getKv("telegram.voice_replies") === "1" ? "روشن" : "خاموش"}\n/voice on — همه‌ی جواب‌ها صوتی هم بیایند\n/voice off — فقط جواب پیام‌های صوتی`);
-        if (!this.voice?.speak) return this.send("ابزار صدا نصب نیست — video-setup.cmd را اجرا کن.");
+        if (!this.voice?.speak) return this.send("ابزار صدا نصب نیست — setup/video-setup.cmd را اجرا کن.");
         this.kernel.setKv("telegram.voice_replies", on === "on" ? "1" : "0");
         return this.send(on === "on" ? "🔊 از این به بعد جواب‌ها صوتی هم می‌آیند." : "🔇 فقط پیام‌های صوتی جواب صوتی می‌گیرند.");
       }
@@ -456,7 +456,7 @@ ${ask ? `His request: ${ask}` : "No caption: describe or summarize it usefully. 
 
   private async handleVoice(audio: { file_id: string; duration?: number }): Promise<void> {
     if (!this.voice) {
-      await this.send("🎙️ پیام صوتی هنوز فعال نیست — voice-setup.cmd را اجرا کن.");
+      await this.send("🎙️ پیام صوتی هنوز فعال نیست — setup/voice-setup.cmd را اجرا کن.");
       return;
     }
     const max = this.voice.maxSeconds ?? 300;

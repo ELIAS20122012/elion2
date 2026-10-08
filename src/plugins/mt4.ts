@@ -166,7 +166,7 @@ export const mt4Plugin: Plugin = {
     const history = () => readJson<Mt4Order[]>(path.join(dir, "history.json")) ?? [];
     const offline = () =>
       feedAgeMs(dir) === Infinity
-        ? "MT4 وصل نیست — EliasBridge را روی یک چارت MT4 بگذار (mt4-setup.cmd)."
+        ? "MT4 وصل نیست — EliasBridge را روی یک چارت MT4 بگذار (setup/mt4-setup.cmd)."
         : `اطلاعات MT4 قدیمی است (${Math.round(feedAgeMs(dir) / 60000)} دقیقه) — MT4 یا EA خاموش است؟`;
     void home;
 

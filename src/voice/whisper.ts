@@ -18,7 +18,7 @@ export interface Transcriber {
 }
 
 export interface WhisperOptions {
-  /** Python executable (the venv created by voice-setup.cmd). */
+  /** Python executable (the venv created by setup/voice-setup.cmd). */
   python: string;
   script: string;
   model?: string;

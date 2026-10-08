@@ -1,7 +1,7 @@
 @echo off
 chcp 65001 >nul
 title Elias OS - Gemini CLI (free, Google account)
-cd /d "%~dp0"
+cd /d "%~dp0.."
 echo.
 where gemini >nul 2>nul
 if errorlevel 1 (

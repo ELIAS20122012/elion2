@@ -1,7 +1,7 @@
 @echo off
 chcp 65001 >nul
 title Elias OS - local git (version history for agents)
-cd /d "%~dp0"
+cd /d "%~dp0.."
 where git >nul 2>nul
 if errorlevel 1 (
   echo  Installing Git ...
@@ -10,7 +10,7 @@ if errorlevel 1 (
 )
 where git >nul 2>nul
 if errorlevel 1 (
-  echo  Git is not available yet - close this window, open it again and re-run git-setup.cmd
+  echo  Git is not available yet - close this window, open it again and re-run setup\git-setup.cmd
   goto end
 )
 if not exist .git (

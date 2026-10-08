@@ -153,7 +153,7 @@ export class MediaGenProvider implements ExecutionProvider {
 
   async health() {
     const b = this.backend();
-    return b ? { ok: true, detail: `${b.kind}: ${this.imageModel} + ${this.videoModel}` } : { ok: false, detail: "no backend — run google-setup.cmd (Vertex) or media-key.cmd" };
+    return b ? { ok: true, detail: `${b.kind}: ${this.imageModel} + ${this.videoModel}` } : { ok: false, detail: "no backend — run setup/google-setup.cmd (Vertex) or setup/media-key.cmd" };
   }
 
   private base(b: MediaBackend, model: string) {
@@ -238,7 +238,7 @@ export class MediaGenProvider implements ExecutionProvider {
     const m = req.prompt.match(MARK);
     if (!m) throw new ProviderUnavailableError("No media spec in task");
     const b = this.backend();
-    if (!b) throw new ProviderUnavailableError("No media backend — run google-setup.cmd again (Vertex AI)");
+    if (!b) throw new ProviderUnavailableError("No media backend — run setup/google-setup.cmd again (Vertex AI)");
     const spec = JSON.parse(m[1]!) as MediaSpec;
     fs.mkdirSync(spec.out, { recursive: true });
     const refs: Img[] = (spec.refs ?? [])
@@ -474,7 +474,7 @@ export const aiVideoPlugin: Plugin = {
           return `🎨 قالب‌ها: ${tpls.length ? tpls.join("، ") : "(خالی)"}\nاستفاده: /ai — یک قسمت تازه · /ai ایده · /ai ideas — ۱۰ ایده · /ai daily 10:00|off · /ai publish manual|youtube\nقالب جدید: یک فایل .md در ${templatesDir(home)}`;
         }
         const manual = (kernel.getKv("aivideo.mode") ?? "auto") === "manual";
-        if (!manual && !backend()) return "اتصال به Vertex AI آماده نیست — google-setup.cmd را دوباره اجرا کن (یا /ai mode manual).";
+        if (!manual && !backend()) return "اتصال به Vertex AI آماده نیست — setup/google-setup.cmd را دوباره اجرا کن (یا /ai mode manual).";
         const n = splitRefs(args).refs.length;
         if (manual) {
           kernel.createTask(aiPlanTask(home, args, hist()));

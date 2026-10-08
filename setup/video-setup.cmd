@@ -1,9 +1,9 @@
 @echo off
 chcp 65001 >nul
 title Elias OS - Video setup
-cd /d "%~dp0"
+cd /d "%~dp0.."
 if not exist data mkdir data
-set "LOG=%~dp0data\video-setup.log"
+set "LOG=%~dp0..\data\video-setup.log"
 echo ===== Video setup %date% %time% ===== > "%LOG%"
 echo  Installing video tools (Persian voice, slides, ffmpeg render). A few minutes...
 call :main >> "%LOG%" 2>&1

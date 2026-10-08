@@ -154,7 +154,7 @@ export class GoogleAuth {
     if (this.access && Date.now() < this.access.expires) return this.access.token;
     const client = this.loadClient();
     if (!fs.existsSync(this.tokenPath)) {
-      throw new ContextUnavailableError("Google is not authorized yet — run google-setup.cmd");
+      throw new ContextUnavailableError("Google is not authorized yet — run setup/google-setup.cmd");
     }
     const stored = JSON.parse(fs.readFileSync(this.tokenPath, "utf8")) as StoredToken;
     let tok;
@@ -165,7 +165,7 @@ export class GoogleAuth {
       );
     } catch (e) {
       if (/invalid_grant/.test(String(e))) {
-        throw new ContextUnavailableError("Google authorization expired or was revoked — run google-setup.cmd again");
+        throw new ContextUnavailableError("Google authorization expired or was revoked — run setup/google-setup.cmd again");
       }
       throw e;
     }

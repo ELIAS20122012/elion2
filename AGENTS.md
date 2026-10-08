@@ -48,7 +48,7 @@ tests/*.test.ts    node:test — must stay green
    `config/google-client.json`, tunnel token. Backups must never include them.
 2. **Paid actions** (Veo/Gemini image, Vertex) need Elias's prior approval; never auto-retry paid generation (maxAttempts 1).
 3. **Publishing** (YouTube etc.) always goes through an approval. MT4 bridge is **read-only** — no trading code, ever.
-4. No credentials typed into web pages by agents; Elias pastes keys into the `*-key.cmd` scripts himself.
+4. No credentials typed into web pages by agents; Elias pastes keys into the `setup/*-key.cmd` scripts himself.
 5. Do not rewrite git history (no force push / rebase / amend). Commit small, one feature per commit.
 6. **One agent at a time** on this folder. If `HANDOFF.md` says another agent is mid-task, finish/rollback that first.
 7. Don't touch `data/` (live DB, venvs, models) except through the code.

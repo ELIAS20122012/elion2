@@ -17,18 +17,17 @@ Legend: [x] done · [ ] open · (P) postponed by Elias — only start when he as
 - [x] "Hey Elion" desktop voice assistant (wake word + Ctrl+Alt+E, /listen, /words vocabulary)
 - [x] Elion Group website agent (/site → draft → sandboxed preview on panel → publish with approval via wrangler)
 - [x] MT4 read-only bridge (/account /trades /draw, risk alerts)
+- [x] Antigravity CLI (agy) provider: free Gemini via Google login; in the auto chain after codex, first choice for /team gemini
 
 ## Open / next
-- [ ] Test first real `/ai` Mini Rescue episode; if motion is weak: first-frame-only Veo + stronger motion prompt, or Veo (non-fast)
 - [ ] Persian speech recognition: Gemini transcription (AI Studio free tier or Vertex) with Whisper fallback
-- [ ] Antigravity CLI as free Gemini provider (replace gemini-cli; Vertex stays as backup)
 - [ ] Instagram publishing (after Elias sets up the channel) — with approval
-- [ ] Auto-publish Mini Rescue to YouTube with approval (`/ai publish youtube`) when Elias says so
 - [ ] Control the PC from Telegram (apps, screenshot, send file, restart)
 - [ ] Mobile PWA for the panel
 - [ ] Personal finance tracker
 
 ## Postponed by Elias (P)
+- (P) AI video / Mini Rescue / Shorts — switched off 2026-10-08 (quality too low, wasted tokens); plugins disabled in config
 - (P) Daily planner & goals (/goal, 08:00 plan, 22:00 check-in, weekly review)
 - (P) Automatic smart memory (learns from chats, /memory review)
 - (P) Email assistant (drafts, send only with approval)

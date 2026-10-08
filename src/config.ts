@@ -7,7 +7,7 @@ import { DEFAULT_POLICY, mergePolicy, type Policy } from "./kernel/permissions.t
 import { EchoProvider } from "./providers/mock.ts";
 import { ClaudeCodeProvider, type ClaudeCodeOptions } from "./providers/claude-code.ts";
 import type { KernelEvent } from "./kernel/types.ts";
-import { codexProvider, geminiProvider } from "./providers/cli.ts";
+import { antigravityProvider, codexProvider, geminiProvider } from "./providers/cli.ts";
 import { GeminiVertexProvider } from "./providers/gemini-vertex.ts";
 import { GoogleAuth } from "./connectors/google.ts";
 import { GeminiApiProvider } from "./providers/gemini-api.ts";
@@ -15,6 +15,8 @@ import { OllamaProvider } from "./providers/ollama.ts";
 import { FallbackProvider } from "./providers/fallback.ts";
 import { loadBuiltinPlugins, loadLocalPlugins, type PluginsConfig } from "./plugins/host.ts";
 import { BUILTIN_PLUGINS } from "./plugins/builtin.ts";
+import { AI_SCRIPT_TITLE } from "./plugins/aivideo.ts";
+import { SCRIPT_TITLE, SHORT_SCHEDULE } from "./plugins/video.ts";
 import { listClaudeSkills } from "./plugins/claude-skills.ts";
 
 export interface EliasConfig {
@@ -33,6 +35,7 @@ export interface EliasConfig {
     chain?: string[];
     codex?: { command?: string; model?: string };
     geminiCli?: { command?: string; model?: string };
+    antigravity?: { command?: string; model?: string };
     vertex?: { model?: string; location?: string };
     gemini?: { command?: string; model?: string };
     ollama?: { url?: string; model?: string };
@@ -167,6 +170,8 @@ export function createKernel(cfg = loadConfig(), onEvent?: (e: Omit<KernelEvent,
       codexProvider({ cwd: ensureWorkspace(), ...(cfg.providers?.codex ?? {}) }),
       // Gemini CLI = Google account login (free); "gemini" below is the API-key provider.
       geminiProvider({ cwd: ensureWorkspace(), ...(cfg.providers?.geminiCli ?? {}), name: "gemini-cli" }),
+      // Antigravity CLI (agy) = Google account login, free Gemini quota. Setup: setup/antigravity-setup.cmd
+      antigravityProvider({ cwd: ensureWorkspace(), ...(cfg.providers?.antigravity ?? {}) }),
       // Gemini on Vertex (Google OAuth, Cloud trial credit). Not in the default fallback chain — used by /team.
       vertexGemini(cfg),
       new GeminiApiProvider({
@@ -178,7 +183,7 @@ export function createKernel(cfg = loadConfig(), onEvent?: (e: Omit<KernelEvent,
     onEvent,
   });
   const byName = new Map(kernel.listProviders().map((p) => [p.name, p]));
-  const chain = (cfg.providers?.chain ?? ["claude-code", "codex", "gemini", "ollama"]).map((n) => byName.get(n)).filter((p) => !!p);
+  const chain = (cfg.providers?.chain ?? ["claude-code", "codex", "antigravity", "gemini", "ollama"]).map((n) => byName.get(n)).filter((p) => !!p);
   kernel.registerProvider(
     new FallbackProvider(chain, { get: (k) => kernel.getKv(k), set: (k, v) => kernel.setKv(k, v) }, {
       onSkip: (name, reason, until) =>
@@ -186,7 +191,21 @@ export function createKernel(cfg = loadConfig(), onEvent?: (e: Omit<KernelEvent,
     }),
   );
   loadBuiltinPlugins(kernel, BUILTIN_PLUGINS, HOME, cfg.plugins);
+  stopDisabledVideo(kernel, cfg.plugins?.disabled ?? []);
   return kernel;
+}
+
+/** Video plugins switched off in config: drop their daily schedules and cancel their unfinished tasks, so no tokens are spent. */
+export function stopDisabledVideo(kernel: Kernel, disabled: string[]): void {
+  const ai = disabled.includes("aivideo"), short = disabled.includes("video");
+  if (ai && kernel.getSchedule("ai-daily")) kernel.removeSchedule("ai-daily");
+  if (short && kernel.getSchedule(SHORT_SCHEDULE)) kernel.removeSchedule(SHORT_SCHEDULE);
+  const prefixes = [...(ai ? [AI_SCRIPT_TITLE, "🎥 ساخت ویدیو AI", "🦾"] : []), ...(short ? [SCRIPT_TITLE, "🎞 ساخت ویدیو", "🎬"] : [])];
+  if (!prefixes.length) return;
+  for (const t of kernel.listTasks({ limit: 1000 })) {
+    if (["succeeded", "failed", "cancelled"].includes(t.status) || !prefixes.some((p) => t.title.startsWith(p))) continue;
+    kernel.cancelTask(t.id, "video plugin disabled");
+  }
 }
 
 /** Built-ins + local plugins from <home>/plugins (async: they are imported at startup). */

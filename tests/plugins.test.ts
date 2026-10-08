@@ -1,3 +1,4 @@
+import { fileURLToPath } from "node:url";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
@@ -128,7 +129,7 @@ test("/lot: exact position size, rounded down", async () => {
 });
 
 test("all shipped skills/*.md parse", () => {
-  const r = loadSkillDir(new URL("../skills", import.meta.url).pathname);
+  const r = loadSkillDir(fileURLToPath(new URL("../skills", import.meta.url)));
   assert.deepEqual(r.errors, []);
   assert.ok(r.skills.length >= 11);
 });

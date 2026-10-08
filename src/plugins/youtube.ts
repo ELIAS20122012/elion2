@@ -66,13 +66,13 @@ export class YouTubeUploadProvider implements ExecutionProvider {
 
   async health() {
     if (!this.auth.isAuthorized()) return { ok: false, detail: "Google not authorized" };
-    return this.auth.hasScope(YT_SCOPE) ? { ok: true, detail: "youtube.upload granted" } : { ok: false, detail: "run google-setup.cmd again to grant YouTube upload" };
+    return this.auth.hasScope(YT_SCOPE) ? { ok: true, detail: "youtube.upload granted" } : { ok: false, detail: "run setup/google-setup.cmd again to grant YouTube upload" };
   }
 
   async execute(req: ExecutionRequest) {
     const u = parseUpload(req.prompt);
     if (!fs.existsSync(u.file)) throw new ProviderUnavailableError(`File not found: ${u.file}`);
-    if (!this.auth.hasScope(YT_SCOPE)) throw new ProviderUnavailableError("YouTube upload not granted — run google-setup.cmd again");
+    if (!this.auth.hasScope(YT_SCOPE)) throw new ProviderUnavailableError("YouTube upload not granted — run setup/google-setup.cmd again");
     const token = await this.auth.accessToken(req.signal);
     const size = fs.statSync(u.file).size;
     const type = MIME[path.extname(u.file).slice(1).toLowerCase()] ?? "video/*";
