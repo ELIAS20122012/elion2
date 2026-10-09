@@ -189,6 +189,8 @@ export interface SetupBacktest {
   winrate: number | null;
   total_r: number;
   open: number;
+  spread: number;
+  funnel: Record<string, number>;
   trades: { time: number; direction: string; entry: number; sl: number; tp: number; r: number | null; bars: number }[];
 }
 

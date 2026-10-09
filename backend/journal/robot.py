@@ -415,6 +415,7 @@ def save_positions(account_id: int, b: PositionsIn) -> dict:
                     "ON CONFLICT(account_id) DO UPDATE SET time=excluded.time, data=excluded.data",
                     (account_id, time.time(), json.dumps(data)))
     alerts.check(b.quotes)
+    setups.note_quotes(b.quotes)
     return {"ok": True, "order": next_order(account_id), "feed": wanted_feed(b.chart)}
 
 

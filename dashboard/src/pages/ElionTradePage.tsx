@@ -984,7 +984,7 @@ export default function ElionTradePage() {
                   <div style={{ flex: 1 }} />
                   <span onClick={btBusy ? undefined : runBacktest} style={btn("var(--e-gold)")}>{btBusy ? "Testing…" : `Backtest ${sym}`}</span>
                   {bt && bt.symbol === sym && (
-                    <span>{bt.bars} bars · {bt.closed} trades · win {bt.winrate ?? "—"}% · <b style={{ color: bt.total_r >= 0 ? UP : DOWN }}>{bt.total_r >= 0 ? "+" : ""}{bt.total_r}R</b>{bt.open ? ` · ${bt.open} open` : ""}</span>
+                    <span title={Object.entries(bt.funnel ?? {}).map(([k, v]) => `${k.replace(/^\d /, "")}: ${v}`).join("\n")}>{bt.bars} bars · {bt.closed} trades · win {bt.winrate ?? "—"}% · <b style={{ color: bt.total_r >= 0 ? UP : DOWN }}>{bt.total_r >= 0 ? "+" : ""}{bt.total_r}R</b>{bt.open ? ` · ${bt.open} open` : ""} · spread {fx(bt.symbol, bt.spread)} incl.</span>
                   )}
                 </div>
                 {setups.length === 0 ? <div style={{ padding: "4px 12px 16px", fontSize: 12, color: "var(--e-muted)" }}>No setups yet. The robot checks every closed M1 candle of the symbols MT4 streams; when it finds one you get it here and on Telegram.</div> : (

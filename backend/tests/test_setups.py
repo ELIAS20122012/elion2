@@ -112,3 +112,25 @@ def test_settings_and_disable(client):
 def test_module_cannot_trade():
     src = pathlib.Path(setups.__file__).read_text(encoding="utf-8")
     assert "robot_orders" not in src and "place(" not in src
+
+
+def test_server_offset_is_remembered_for_weekend_backtests(client):
+    now = 1_791_590_000.0
+    live = [{"time": int(now) + 3 * 3600 - 30, "open": 1, "high": 1, "low": 1, "close": 1}]
+    assert setups.utc_shift(live, now) == 3 * 3600          # live feed: learned
+    stale = [{"time": int(now) - 50 * 3600, "open": 1, "high": 1, "low": 1, "close": 1}]
+    assert setups.utc_shift(stale, now) == 3 * 3600         # weekend: remembered, not guessed
+
+
+def test_backtest_pays_the_spread(client):
+    acc = client.post("/accounts", json={"name": "R", "platform": "mt4", "kind": "robot"}).json()["id"]
+    h = {"X-API-Key": client.post(f"/accounts/{acc}/robot-key").json()["api_key"]}
+    client.put("/setups/settings", json={"params": {"hidden": 0, "session": 0}})
+    _feed(client, h, synth())
+    free = setups.backtest("SYN", spread=0.0)
+    paid = setups.backtest("SYN", spread=0.3)
+    assert free["closed"] > 0 and paid["total_r"] < free["total_r"]
+    assert all(t["spread_r"] > 0 for t in paid["trades"])
+    pulse = {"balance": 1, "equity": 1, "positions": [], "quotes": [{"symbol": "SYN", "bid": 100.0, "ask": 100.25}]}
+    assert client.post("/events/positions", json=pulse, headers=h).status_code == 200
+    assert abs(setups.spread_of("SYN") - 0.25) < 1e-9

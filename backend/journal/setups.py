@@ -56,6 +56,11 @@ CREATE TABLE IF NOT EXISTS setup_signals (
 def init() -> None:
     with db.db() as con:
         con.executescript(SCHEMA)
+        have = {r[1] for r in con.execute("PRAGMA table_info(setup_settings)")}
+        if "utc_shift" not in have:  # broker server time − UTC (s), learned from the live feed
+            con.execute("ALTER TABLE setup_settings ADD COLUMN utc_shift INTEGER")
+        if "spreads" not in have:    # latest bid/ask spread per symbol (JSON), for an honest backtest
+            con.execute("ALTER TABLE setup_settings ADD COLUMN spreads TEXT NOT NULL DEFAULT '{}'")
 
 
 # --- indicators (same maths as dashboard/src/lib/indicators.ts) ------------------------------------
@@ -161,10 +166,15 @@ def htf_trend(c: list[dict], tf: int, htf: int, n: int) -> list[int]:
     return out
 
 
-def detect(c: list[dict], p: dict, utc_shift: int = 0) -> list[dict]:
+def detect(c: list[dict], p: dict, utc_shift: int = 0, stats: dict | None = None) -> list[dict]:
     """Level Continuation signals on closed candles (the last candle is treated as still forming).
-    utc_shift: seconds to subtract from candle time to get UTC (broker server offset)."""
+    utc_shift: seconds to subtract from candle time to get UTC (broker server offset).
+    stats: if given, counts how many MACD crosses each rule rejected (backtest diagnostics)."""
     p = {**DEFAULTS, **p}
+    st = stats if stats is not None else {}
+
+    def drop(k: str) -> None:
+        st[k] = st.get(k, 0) + 1
     if len(c) < 60:
         return []
     tf = tf_of(c)
@@ -203,17 +213,24 @@ def detect(c: list[dict], p: dict, utc_shift: int = 0) -> list[dict]:
             if not all(fin(x) for x in (l0, l1, s0, s1)):
                 continue
             crossed = (l0 <= s0 and l1 > s1) if d == 1 else (l0 >= s0 and l1 < s1)
-            if not crossed or not fin(a[i]) or trend[i] != d:
+            if not crossed or not fin(a[i]):
+                continue
+            drop("1 crosses")
+            if trend[i] != d:
+                drop("2 x trend")
                 continue
             if p["session"]:
                 hr = time.gmtime(c[i]["time"] - utc_shift).tm_hour
                 if not 7 <= hr < 20:
+                    drop("3 x session")
                     continue
             m = bisect.bisect_right(pb_conf, i)
             if m < 2:
+                drop("4 x no pullback")
                 continue
             L, P = pb_sw[m - 1], pb_sw[m - 2]
             if i - L > p["crossWithin"]:
+                drop("4 x pullback too old")
                 continue
             level = NAN
             for j in reversed(lvl_sw):
@@ -224,16 +241,20 @@ def detect(c: list[dict], p: dict, utc_shift: int = 0) -> list[dict]:
                     level = lv
                     break
             if not fin(level):
+                drop("5 x no level")
                 continue
             pb = px(L, False)
             if abs(pb - level) > p["tol"] * a[L]:
+                drop("6 x pullback off level")
                 continue
             if p["hidden"]:
                 price_ok = pb > px(P, False) if d == 1 else pb < px(P, False)
                 mL, mP = macd_at(L, d), macd_at(P, d)
                 if not (price_ok and (mL < mP if d == 1 else mL > mP)):
+                    drop("7 x no hidden divergence")
                     continue
             if (d, L) in used:
+                drop("8 x same pullback")
                 continue
             used.add((d, L))
             sl = pb - p["slBuf"] * a[i] if d == 1 else pb + p["slBuf"] * a[i]
@@ -241,6 +262,7 @@ def detect(c: list[dict], p: dict, utc_shift: int = 0) -> list[dict]:
             risk = entry - sl if d == 1 else sl - entry
             if not risk > 0:
                 continue
+            drop("9 = signals")
             out.append({"index": i, "time": c[i]["time"], "direction": "buy" if d == 1 else "sell",
                         "entry": entry, "sl": sl, "tp": entry + d * risk * p["rr"], "level": level})
     return sorted(out, key=lambda s: s["index"])
@@ -283,12 +305,42 @@ def _load(symbol: str, count: int) -> list[dict]:
     return [dict(r) for r in reversed(rows)]
 
 
-def utc_shift(c: list[dict], now: float | None = None) -> int:
-    """Broker server time − UTC, in whole hours, read from a live feed (0 when the feed is stale)."""
+def _live_shift(c: list[dict], now: float | None = None) -> int | None:
+    """Server − UTC in whole hours, only when the newest bar is the one forming right now (live feed)."""
     if not c:
-        return 0
+        return None
     d = c[-1]["time"] - (now or time.time())
-    return round(d / 3600) * 3600 if abs(d) < 15 * 3600 else 0
+    h = round(d / 3600) * 3600
+    return h if abs(h) <= 14 * 3600 and -120 <= d - h <= 90 else None
+
+
+def utc_shift(c: list[dict], now: float | None = None) -> int:
+    """Broker server time − UTC. Learned while the market is live and remembered, so a backtest on a
+    weekend (stale feed) still puts the 07–20 UTC session in the right place."""
+    live = _live_shift(c, now)
+    with db.db() as con:
+        if live is not None:
+            con.execute("UPDATE setup_settings SET utc_shift=? WHERE id=1", (live,))
+            return live
+        r = con.execute("SELECT utc_shift FROM setup_settings WHERE id=1").fetchone()
+    return r["utc_shift"] if r and r["utc_shift"] is not None else 0
+
+
+def note_quotes(quotes) -> None:
+    """Remember the current spread of every Market Watch symbol (from the EA's 2-second pulse)."""
+    sp = {q.symbol: round(q.ask - q.bid, 8) for q in quotes if q.ask > 0 and q.bid > 0 and q.ask >= q.bid}
+    if not sp:
+        return
+    with db.db() as con:
+        r = con.execute("SELECT spreads FROM setup_settings WHERE id=1").fetchone()
+        old = json.loads(r["spreads"]) if r and r["spreads"] else {}
+        con.execute("UPDATE setup_settings SET spreads=? WHERE id=1", (json.dumps({**old, **sp}),))
+
+
+def spread_of(symbol: str) -> float:
+    with db.db() as con:
+        r = con.execute("SELECT spreads FROM setup_settings WHERE id=1").fetchone()
+    return float((json.loads(r["spreads"]) if r and r["spreads"] else {}).get(symbol, 0.0))
 
 
 def _digits(x: float) -> str:
@@ -355,37 +407,41 @@ def set_status(sid: int, status: str) -> dict | None:
 
 # --- backtest on stored MT4 history -------------------------------------------------------------------
 
-def backtest(symbol: str, params: dict | None = None, count: int = 20_000) -> dict:
+def backtest(symbol: str, params: dict | None = None, count: int = 20_000, spread: float | None = None) -> dict:
     """Every signal in the stored history, one trade at a time: entry = next bar open, exit at SL or TP
-    (both inside one bar counts as SL — the pessimistic reading). Result in R (risk units)."""
+    (both inside one bar counts as SL — the pessimistic reading). Result in R (risk units).
+    Candles are BID prices: a buy fills at the ask (open + spread) and exits on the bid; a sell fills on
+    the bid and its SL/TP trigger on the ask (high/low + spread). spread=None → the broker's live spread."""
+    sp = spread_of(symbol) if spread is None else spread
     p = {**settings()["params"], **(params or {})}
     c = _load(symbol, count)
-    sigs = detect(c, p, utc_shift(c))
+    funnel: dict = {}
+    sigs = detect(c, p, utc_shift(c), funnel)
     trades, busy_until = [], -1
     for s in sigs:
         i = s["index"]
         if i <= busy_until or i + 1 >= len(c):
             continue
         d = 1 if s["direction"] == "buy" else -1
-        entry = c[i + 1]["open"]
+        entry = c[i + 1]["open"] + (sp if d == 1 else 0.0)
         risk = (entry - s["sl"]) * d
         if risk <= 0:
             continue
         res, exit_i = None, len(c) - 1
         for k in range(i + 1, len(c)):
             b = c[k]
-            hit_sl = b["low"] <= s["sl"] if d == 1 else b["high"] >= s["sl"]
-            hit_tp = b["high"] >= s["tp"] if d == 1 else b["low"] <= s["tp"]
+            hit_sl = b["low"] <= s["sl"] if d == 1 else b["high"] + sp >= s["sl"]
+            hit_tp = b["high"] >= s["tp"] if d == 1 else b["low"] + sp <= s["tp"]
             if hit_sl or hit_tp:
                 exit_p = s["sl"] if hit_sl else s["tp"]
                 res, exit_i = round((exit_p - entry) * d / risk, 2), k
                 break
         busy_until = exit_i
         trades.append({"time": s["time"], "direction": s["direction"], "entry": entry, "sl": s["sl"], "tp": s["tp"],
-                       "r": res, "bars": exit_i - i})
+                       "r": res, "bars": exit_i - i, "spread_r": round(sp / risk, 2)})
     done = [t["r"] for t in trades if t["r"] is not None]
     wins = sum(1 for r in done if r > 0)
     return {"symbol": symbol, "bars": len(c), "from": c[0]["time"] if c else None, "to": c[-1]["time"] if c else None,
-            "params": p, "trades": trades, "closed": len(done), "wins": wins,
+            "spread": sp, "params": p, "funnel": dict(sorted(funnel.items())), "trades": trades, "closed": len(done), "wins": wins,
             "winrate": round(wins / len(done) * 100, 1) if done else None,
             "total_r": round(sum(done), 2), "open": len(trades) - len(done)}
