@@ -19,7 +19,7 @@ import type { Candle, Overlay, OverlayMarker, Trade } from "../lib/data";
 import { fmtPrice } from "../lib/data";
 import { TOOLS, TimeMap, drawState, uid, type DPoint, type Drawing, type ToolId } from "../lib/drawings";
 import { INDICATOR_BY_ID, type IndicatorInstance, type IndicatorOutput } from "../lib/indicators";
-import { DrawingsPrimitive } from "./DrawingsPrimitive";
+import { DrawingsPrimitive, setDrawPrecision } from "./DrawingsPrimitive";
 import Icon from "./Icon";
 
 const C = {
@@ -447,6 +447,7 @@ export default function Chart(props: Props) {
   /* ---- price precision of the symbol (axis, crosshair label, level titles) ---- */
   const prec = props.precision ?? 2;
   PREC = prec;
+  setDrawPrecision(prec);
   useEffect(() => {
     seriesRef.current?.applyOptions({ priceFormat: { type: "price", precision: prec, minMove: 1 / 10 ** prec } });
   }, [prec, candles.length > 0]);

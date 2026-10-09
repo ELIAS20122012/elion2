@@ -191,7 +191,30 @@ export interface SetupBacktest {
   open: number;
   spread: number;
   funnel: Record<string, number>;
-  trades: { time: number; direction: string; entry: number; sl: number; tp: number; r: number | null; bars: number }[];
+  trades: SetupTrade[];
+  skipped: { time: number; direction: string; entry: number; sl: number; tp: number }[];
+  params: Record<string, number>;
+}
+
+/** One robot backtest trade, with the points needed to draw it on the chart (times = MT4 server time). */
+export interface SetupTrade {
+  time: number;
+  direction: "buy" | "sell";
+  entry: number;
+  sl: number;
+  tp: number;
+  r: number | null;
+  bars: number;
+  spread_r: number;
+  entry_time: number;
+  exit_time: number;
+  exit_price: number | null;
+  level: number;
+  level_time: number;
+  pb_time: number;
+  pb: number;
+  prev_pb_time: number;
+  prev_pb: number;
 }
 
 export interface PriceAlert {
@@ -474,6 +497,9 @@ export const journalApi = {
   setupStatus: (id: number, status: Setup["status"]) => call<Setup>(`/setups/${id}/status`, json("POST", { status })),
   setupSettings: () => call<{ enabled: boolean; params: Record<string, number> }>("/setups/settings"),
   saveSetupSettings: (p: { enabled?: boolean; params?: Record<string, number> }) => call<{ enabled: boolean; params: Record<string, number> }>("/setups/settings", json("PUT", p)),
+  setupBacktestRun: (symbol: string, params: Record<string, number>) => call<SetupBacktest>("/setups/backtest", json("POST", { symbol, params })),
+  robotSymbols: () => call<{ symbol: string; bars: number; first: number; last: number }[]>("/robot/symbols"),
+  robotCandles: (symbol: string, count = 20000) => call<{ symbol: string; candles: { time: number; open: number; high: number; low: number; close: number; volume: number | null }[] }>(`/robot/candles?symbol=${encodeURIComponent(symbol)}&count=${count}`),
   setupBacktest: (symbol: string) => call<SetupBacktest>(`/setups/backtest?symbol=${encodeURIComponent(symbol)}`),
   notifySettings: () => call<TgNotify>("/notify/settings"),
   saveNotify: (p: Partial<Omit<TgNotify, "configured">>) => call<TgNotify>("/notify/settings", json("PUT", p)),

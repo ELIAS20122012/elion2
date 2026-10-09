@@ -232,13 +232,13 @@ def detect(c: list[dict], p: dict, utc_shift: int = 0, stats: dict | None = None
             if i - L > p["crossWithin"]:
                 drop("4 x pullback too old")
                 continue
-            level = NAN
+            level, lvl_j = NAN, -1
             for j in reversed(lvl_sw):
                 if j >= L or j + n > L:
                     continue
                 lv = px(j, True)
                 if any((c[k]["close"] > lv) if d == 1 else (c[k]["close"] < lv) for k in range(j + 1, L)):
-                    level = lv
+                    level, lvl_j = lv, j
                     break
             if not fin(level):
                 drop("5 x no level")
@@ -264,7 +264,9 @@ def detect(c: list[dict], p: dict, utc_shift: int = 0, stats: dict | None = None
                 continue
             drop("9 = signals")
             out.append({"index": i, "time": c[i]["time"], "direction": "buy" if d == 1 else "sell",
-                        "entry": entry, "sl": sl, "tp": entry + d * risk * p["rr"], "level": level})
+                        "entry": entry, "sl": sl, "tp": entry + d * risk * p["rr"], "level": level,
+                        "level_time": c[lvl_j]["time"], "pb_time": c[L]["time"], "pb": pb,
+                        "prev_pb_time": c[P]["time"], "prev_pb": px(P, False)})
     return sorted(out, key=lambda s: s["index"])
 
 
@@ -388,6 +390,14 @@ def scan_in_background(symbol: str) -> None:
     threading.Thread(target=scan, args=(symbol,), name="setup-scan", daemon=True).start()
 
 
+def symbols() -> list[dict]:
+    """Symbols with stored MT4 M1 history, most bars first (the backtest's data choices)."""
+    with db.db() as con:
+        rows = con.execute("SELECT symbol, COUNT(*) AS bars, MIN(time) AS first, MAX(time) AS last FROM robot_candles "
+                           "GROUP BY symbol ORDER BY bars DESC").fetchall()
+    return [dict(r) for r in rows]
+
+
 def listing(symbol: str | None = None, limit: int = 50) -> list[dict]:
     q, args = "SELECT * FROM setup_signals", []
     if symbol:
@@ -417,10 +427,11 @@ def backtest(symbol: str, params: dict | None = None, count: int = 20_000, sprea
     c = _load(symbol, count)
     funnel: dict = {}
     sigs = detect(c, p, utc_shift(c), funnel)
-    trades, busy_until = [], -1
+    trades, busy_until, skipped = [], -1, []
     for s in sigs:
         i = s["index"]
         if i <= busy_until or i + 1 >= len(c):
+            skipped.append({k: s[k] for k in ("time", "direction", "entry", "sl", "tp")})
             continue
         d = 1 if s["direction"] == "buy" else -1
         entry = c[i + 1]["open"] + (sp if d == 1 else 0.0)
@@ -437,11 +448,14 @@ def backtest(symbol: str, params: dict | None = None, count: int = 20_000, sprea
                 res, exit_i = round((exit_p - entry) * d / risk, 2), k
                 break
         busy_until = exit_i
+        exit_p = None if res is None else (s["sl"] if res < 0 else s["tp"])
         trades.append({"time": s["time"], "direction": s["direction"], "entry": entry, "sl": s["sl"], "tp": s["tp"],
-                       "r": res, "bars": exit_i - i, "spread_r": round(sp / risk, 2)})
+                       "r": res, "bars": exit_i - i, "spread_r": round(sp / risk, 2),
+                       "entry_time": c[i + 1]["time"], "exit_time": c[exit_i]["time"], "exit_price": exit_p,
+                       **{k: s[k] for k in ("level", "level_time", "pb_time", "pb", "prev_pb_time", "prev_pb")}})
     done = [t["r"] for t in trades if t["r"] is not None]
     wins = sum(1 for r in done if r > 0)
     return {"symbol": symbol, "bars": len(c), "from": c[0]["time"] if c else None, "to": c[-1]["time"] if c else None,
-            "spread": sp, "params": p, "funnel": dict(sorted(funnel.items())), "trades": trades, "closed": len(done), "wins": wins,
+            "spread": sp, "skipped": skipped, "params": p, "funnel": dict(sorted(funnel.items())), "trades": trades, "closed": len(done), "wins": wins,
             "winrate": round(wins / len(done) * 100, 1) if done else None,
             "total_r": round(sum(done), 2), "open": len(trades) - len(done)}

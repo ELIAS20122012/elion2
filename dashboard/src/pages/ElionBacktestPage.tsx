@@ -9,7 +9,8 @@ import { equityCurve, net, summarize } from "../lib/analytics";
 import { asJournalTrades, runBacktest, STRATEGIES, type BacktestResult, type SimConfig } from "../lib/backtest";
 import { aggregate, fmtDateTime, TIMEFRAMES, type Candle, type Trade } from "../lib/data";
 import { getSettings } from "../lib/elionSettings";
-import { journalApi, type NewTrade } from "../lib/journalApi";
+import { journalApi, type NewTrade, type SetupBacktest } from "../lib/journalApi";
+import RobotBacktestPanel, { robotDrawings } from "../components/RobotBacktestPanel";
 import { SPEEDS } from "../lib/useReplay";
 import { SYMBOL, useApp } from "../state/AppContext";
 import { useJournal } from "../state/JournalContext";
@@ -140,7 +141,15 @@ export default function ElionBacktestPage() {
   const mt5 = j.accounts.filter((a) => a.platform === "mt5" && a.enabled);
 
   const [mode, setMode] = useState(0);
-  const [srcKind, setSrcKind] = useState<"mt5" | "dash">("mt5");
+  const [srcKind, setSrcKind] = useState<"mt5" | "dash" | "mt4">("mt5");
+  // ELION Robot on the MT4 history the EA streamed (server backtest, drawn on the chart)
+  const [robotSym, setRobotSym] = useState(() => app.symbol || SYMBOL);
+  const [robotSyms, setRobotSyms] = useState<{ symbol: string; bars: number }[]>([]);
+  const [robotRes, setRobotRes] = useState<SetupBacktest | null>(null);
+  const [robotSel, setRobotSel] = useState<number | null>(null);
+  const [focus, setFocus] = useState<{ time: number; nonce: number } | null>(null);
+  const focusAt = (time: number) => setFocus({ time, nonce: Date.now() });
+  useEffect(() => { if (srcKind === "mt4") journalApi.robotSymbols().then(setRobotSyms).catch(() => undefined); }, [srcKind]);
   const [acctId, setAcctId] = useState<number | null>(null);
   const [tfSec, setTfSec] = useState(300);
   const [count, setCount] = useState(5000);
@@ -198,6 +207,17 @@ export default function ElionBacktestPage() {
       setSim({ pos: Math.max(0, Math.floor((c.length - 1) * (startPct / 100))), open: null, trades: [] });
       setAuto(null); setView("manual"); setLoading(false);
     };
+    if (srcKind === "mt4") {
+      setLoading(true); setLoadErr(null);
+      journalApi.robotCandles(robotSym, 20000)
+        .then((r) => {
+          const m1 = r.candles.map((c) => ({ ...c, time: c.time as Candle["time"], volume: c.volume ?? undefined }));
+          if (m1.length === 0) setLoadErr(`No MT4 history for ${robotSym} yet — open it in the Trade page watchlist so the EA streams it.`);
+          done(aggregate(m1, tfSec));
+        })
+        .catch((e: Error) => { if (!dead) { setLoadErr(e.message); setCandles([]); setLoading(false); } });
+      return () => { dead = true; };
+    }
     if (srcKind === "dash") {
       setLoadErr(null);
       done(aggregate(app.source.map((c) => ({ ...c })), tfSec));
@@ -209,7 +229,7 @@ export default function ElionBacktestPage() {
       .then((r) => done(r.candles.map(([time, open, high, low, close, volume]) => ({ time: time as Candle["time"], open, high, low, close, volume }))))
       .catch((e: Error) => { if (!dead) { setLoadErr(e.message); setCandles([]); setLoading(false); } });
     return () => { dead = true; };
-  }, [srcKind, acctId, tfSec, count, reload]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [srcKind, acctId, tfSec, count, reload, robotSym]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const last = candles.length - 1;
   const cur = candles[sim.pos];
@@ -301,10 +321,20 @@ export default function ElionBacktestPage() {
     setSaving(false);
   };
 
-  const shown = useMemo(() => (hideFuture ? candles.slice(0, sim.pos + 1) : candles), [candles, hideFuture, sim.pos]);
+  const shown = useMemo(() => (mode === 3 || !hideFuture ? candles : candles.slice(0, sim.pos + 1)), [candles, hideFuture, sim.pos, mode]);
+  const symShown = srcKind === "mt4" ? robotSym : SYMBOL;
+  const digits = (v: number) => (v >= 500 ? 2 : v >= 20 ? 3 : 5);
+  const prec = candles.length ? digits(candles[candles.length - 1].close) : 2;
+  const fmtPx = (v: number) => v.toFixed(v < 1 ? 5 : prec);
+  const chartDrawings = useMemo(() => (mode === 3 && robotRes?.symbol === robotSym ? [...app.drawings, ...robotDrawings(robotRes, tfSec, robotSel)] : app.drawings),
+    [mode, robotRes, robotSym, tfSec, robotSel, app.drawings]);
+  const openMode = (i: number) => {
+    setMode(i);
+    if (i === 3 && srcKind !== "mt4") { setSrcKind("mt4"); setTfSec(60); }
+  };
   const range = candles.length ? `${fmtDateTime(candles[0].time)} → ${fmtDateTime(candles[last].time)}` : "—";
   const tfLabel = TFS.find((t) => t.sec === tfSec)?.label ?? "M5";
-  const MODES: [string, string, string][] = [["monitoring", "Manual Replay", "Candle by candle practice"], ["photo_camera", "Setup Backtest", "Run a strategy on all bars"], ["settings", "Results & Insights", "Statistics and analysis"]];
+  const MODES: [string, string, string][] = [["monitoring", "Manual Replay", "Candle by candle practice"], ["photo_camera", "Setup Backtest", "Run a strategy on all bars"], ["settings", "Results & Insights", "Statistics and analysis"], ["smart_toy", "ELION Robot", "Robot on MT4 history"]];
   const canSave = activeTrades.length > 0 && j.status === "ok";
 
   return (
@@ -343,7 +373,7 @@ export default function ElionBacktestPage() {
           {MODES.map(([icon, title, sub], i) => {
             const a = i === mode;
             return (
-              <div key={title} onClick={() => setMode(i)} style={{ width: 236, height: 50, boxSizing: "border-box", borderRadius: 6, border: `1px solid ${a ? "rgba(233,215,176,.6)" : "var(--e-line)"}`, background: a ? "linear-gradient(90deg,#2a2618,#171a15)" : "var(--e-panel-2)", display: "flex", alignItems: "center", gap: 14, padding: "0 16px", cursor: "pointer" }}>
+              <div key={title} onClick={() => openMode(i)} style={{ width: 236, height: 50, boxSizing: "border-box", borderRadius: 6, border: `1px solid ${a ? "rgba(233,215,176,.6)" : "var(--e-line)"}`, background: a ? "linear-gradient(90deg,#2a2618,#171a15)" : "var(--e-panel-2)", display: "flex", alignItems: "center", gap: 14, padding: "0 16px", cursor: "pointer" }}>
                 <span className="e-icon" style={{ width: 32, height: 32, borderRadius: 6, background: a ? "#3a3320" : "transparent", display: "grid", placeItems: "center", fontSize: 20, color: "var(--e-gold)" }}>{icon}</span>
                 <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
                   <span style={{ fontSize: 13, color: a ? "var(--e-ivory)" : "var(--e-text)" }}>{title}</span>
@@ -365,7 +395,7 @@ export default function ElionBacktestPage() {
               <span style={{ fontSize: 15 }}>1.  Select Data</span>
               <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
                 <span style={{ fontSize: 11.5, color: "var(--e-text-3)" }}>Data source</span>
-                <Sel value={srcKind} onChange={(v) => setSrcKind(v as "mt5" | "dash")} options={[{ v: "mt5", l: "MT5 broker history" }, { v: "dash", l: "Dashboard feed (short)" }]} />
+                <Sel value={srcKind} onChange={(v) => setSrcKind(v as "mt5" | "dash" | "mt4")} options={[{ v: "mt4", l: "MT4 history (robot feed)" }, { v: "mt5", l: "MT5 broker history" }, { v: "dash", l: "Dashboard feed (short)" }]} />
               </div>
               {srcKind === "mt5" && mt5.length > 1 && (
                 <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
@@ -376,7 +406,9 @@ export default function ElionBacktestPage() {
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
                 <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
                   <span style={{ fontSize: 11.5, color: "var(--e-text-3)" }}>Symbol</span>
-                  <div style={{ ...BOX, height: 30, display: "flex", alignItems: "center", padding: "0 8px", fontSize: 12 }}>{SYMBOL}</div>
+                  {srcKind === "mt4" ? (
+                    <Sel value={robotSym} onChange={(v) => { setRobotSym(v); setRobotRes(null); setRobotSel(null); }} options={(robotSyms.some((s) => s.symbol === robotSym) ? robotSyms : [{ symbol: robotSym, bars: 0 }, ...robotSyms]).map((s) => ({ v: s.symbol, l: s.symbol }))} />
+                  ) : <div style={{ ...BOX, height: 30, display: "flex", alignItems: "center", padding: "0 8px", fontSize: 12 }}>{SYMBOL}</div>}
                 </div>
                 <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
                   <span style={{ fontSize: 11.5, color: "var(--e-text-3)" }}>Timeframe</span>
@@ -425,7 +457,7 @@ export default function ElionBacktestPage() {
           {/* chart */}
           <div style={{ borderRadius: 8, border: "1px solid var(--e-line)", background: "#0a1417", display: "flex", flexDirection: "column", minWidth: 0, overflow: "hidden" }}>
             <div style={{ height: 40, display: "flex", alignItems: "center", gap: 10, padding: "0 10px", borderBottom: "1px solid var(--e-line-3)", fontSize: 12.5 }}>
-              <span style={{ fontSize: 14 }}>{SYMBOL} · {tfLabel}</span>
+              <span style={{ fontSize: 14 }}>{symShown} · {tfLabel}</span>
               {cur && (
                 <span style={{ color: "var(--e-text-2)" }}>
                   Replay: {fmtDateTime(cur.time)} · O {cur.open.toFixed(2)} H {cur.high.toFixed(2)} L {cur.low.toFixed(2)} C <span style={{ color: cur.close >= cur.open ? "#3ec495" : "#ef5a50" }}>{cur.close.toFixed(2)}</span>
@@ -448,7 +480,8 @@ export default function ElionBacktestPage() {
                 <div className="loading">{loading ? "Loading candles…" : loadErr ? "No data — see the message on the left." : "No candles."}</div>
               ) : (
                 <Chart
-                  candles={shown} tfSec={tfSec} trades={chartTrades} showTrades overlay={app.overlay} shift={false} indicators={app.indicators} drawings={app.drawings}
+                  candles={shown} tfSec={tfSec} trades={mode === 3 ? [] : chartTrades} showTrades={mode !== 3} overlay={app.overlay} shift={false} indicators={app.indicators} drawings={chartDrawings}
+                  focus={focus} precision={prec}
                   tool={app.tool} magnet={app.magnet} color={app.color} selectedId={app.selectedId}
                   onAdd={(d) => app.setDrawings((l) => [...l, d])} onSelect={app.setSelectedId} onDelete={app.removeDrawing} onTool={app.setTool}
                   onUpdate={app.updateDrawing} onDuplicate={app.duplicateDrawing} onClearDrawings={() => app.setDrawings([])} showVolume={app.showVolume}
@@ -515,6 +548,14 @@ export default function ElionBacktestPage() {
                 {auto && <div style={{ fontSize: 11.5, color: "var(--e-text-2)", lineHeight: 1.5 }}>Last run: {auto.r.trades.length} trades from {auto.r.signals} signals ({auto.r.skipped} skipped). End balance ${auto.r.endBalance.toFixed(2)}.</div>}
                 <span style={{ fontSize: 10.5, color: "var(--e-muted)" }}>Entries at the next candle's open (+ spread on buys). Costs and risk come from the panel on the left. Short history means the result only compares setups — it doesn't prove profitability.</span>
               </>
+            )}
+
+            {mode === 3 && (
+              <RobotBacktestPanel
+                symbol={robotSym} symbols={robotSyms} onSymbol={(v) => { setRobotSym(v); setRobotRes(null); setRobotSel(null); }}
+                result={robotRes} onResult={(r) => { setRobotRes(r); setRobotSel(null); }}
+                selected={robotSel} onSelect={(k, time) => { setRobotSel(k); focusAt(time); }} onFocusTime={focusAt} fmt={fmtPx}
+              />
             )}
 
             {mode === 2 && (

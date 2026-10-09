@@ -852,6 +852,24 @@ def setups_backtest(symbol: str = "XAUUSD", count: int = 20000):
     return setups.backtest(symbol, None, max(500, min(count, 20000)))
 
 
+class SetupBacktestIn(BaseModel):
+    symbol: str = Field(min_length=1, max_length=30)
+    params: dict[str, float] = {}
+    count: int = 20000
+
+
+@app.post("/setups/backtest")
+def setups_backtest_run(b: SetupBacktestIn):
+    """Robot backtest with trial parameters (the live robot keeps its saved ones)."""
+    params = {k: v for k, v in b.params.items() if k in setups.DEFAULTS}
+    return setups.backtest(b.symbol, params, max(500, min(b.count, 20000)))
+
+
+@app.get("/robot/symbols")
+def robot_symbols():
+    return setups.symbols()
+
+
 @app.delete("/alerts/{aid}", status_code=204)
 def alerts_delete(aid: int):
     alerts.delete(aid)

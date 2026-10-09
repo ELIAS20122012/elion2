@@ -11,7 +11,7 @@ import TradingViewWidget from "../components/TradingViewWidget";
 import { isClosed, net } from "../lib/analytics";
 import { TIMEFRAMES, type Trade } from "../lib/data";
 import { beep, getSettings, useSettings } from "../lib/elionSettings";
-import { journalApi, type LivePending, type LivePosition, type LivePositions, type PriceAlert, type Setup, type SetupBacktest } from "../lib/journalApi";
+import { journalApi, type LivePending, type LivePosition, type LivePositions, type PriceAlert } from "../lib/journalApi";
 /** Level Continuation checklist (Rules → Checklist). Every item must be ticked before an order can be sent. */
 const CHECKLIST: { title: string; hint: string }[] = [
   { title: "Higher timeframe trend confirmed", hint: "H4/H1: HH/HL for buys, LL/LH for sells" },
@@ -313,35 +313,6 @@ export default function ElionTradePage() {
   const removeAlert = (a: PriceAlert) => journalApi.deleteAlert(a.id).then(loadAlerts).catch((e) => setPosMsg({ ok: false, text: (e as Error).message }));
   const armedAlerts = alerts.filter((a) => a.triggered_at == null);
 
-  /* ---- robot: Level Continuation suggestions found on the server (never auto-traded) ---- */
-  const [setups, setSetups] = useState<Setup[]>([]);
-  const [robotOn, setRobotOn] = useState<boolean | null>(null);
-  const [bt, setBt] = useState<SetupBacktest | null>(null);
-  const [btBusy, setBtBusy] = useState(false);
-  const loadSetups = () => journalApi.setups().then(setSetups).catch(() => undefined);
-  useEffect(() => {
-    loadSetups();
-    journalApi.setupSettings().then((x) => setRobotOn(x.enabled)).catch(() => undefined);
-    const h = window.setInterval(loadSetups, 10000);
-    return () => window.clearInterval(h);
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
-  const freshSetups = setups.filter((x) => x.status === "new" && Date.now() / 1000 - x.created_at < 1800);
-  const applySetup = (x: Setup) => {
-    if (x.symbol !== sym) app.setSymbol(x.symbol);
-    setSide(x.direction === "buy" ? "BUY" : "SELL");
-    setOrderType("market");
-    setEntryInput("");
-    const d = digitsOf(x.symbol, x.entry);
-    setSlInput(x.sl.toFixed(d));
-    setTpInput(x.tp.toFixed(d));
-    setPosMsg({ ok: true, text: `📐 Setup loaded into the ticket: ${x.direction.toUpperCase()} ${x.symbol} — check it, then place the order yourself` });
-  };
-  const markSetup = (x: Setup, status: Setup["status"]) => journalApi.setupStatus(x.id, status).then(loadSetups).catch((e) => setPosMsg({ ok: false, text: (e as Error).message }));
-  const toggleRobot = () => robotOn != null && journalApi.saveSetupSettings({ enabled: !robotOn }).then((x) => setRobotOn(x.enabled)).catch(() => undefined);
-  const runBacktest = () => {
-    setBtBusy(true);
-    journalApi.setupBacktest(sym).then(setBt).catch((e) => setPosMsg({ ok: false, text: (e as Error).message })).finally(() => setBtBusy(false));
-  };
   const cancelPending = async (o: LivePending) => {
     if (posAccId == null) return;
     setPosBusy(o.ticket);
@@ -848,7 +819,6 @@ export default function ElionTradePage() {
               ["Pending", `Pending (${pending.length})`],
               ["Today", `Today (${todayClosed.length})`],
               ["Alerts", `Alerts (${armedAlerts.length})`],
-              ["Robot", freshSetups.length ? `Robot 📐 ${freshSetups.length}` : "Robot"],
               ["News", "News"],
               ["Market", "Market"],
             ].map(([k, label]) => (
@@ -975,42 +945,6 @@ export default function ElionTradePage() {
                   </tbody>
                 </table>
               )
-            )}
-            {bottomTab === "Robot" && (
-              <div>
-                <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 12px", fontSize: 12, color: "var(--e-text-2)", flexWrap: "wrap" }}>
-                  <span onClick={toggleRobot} style={btn(robotOn ? UP : "#8fa3ad")}>{robotOn == null ? "…" : robotOn ? "● Robot ON" : "○ Robot OFF"}</span>
-                  <span>Level Continuation · entry M1 · trend M5 · hidden MACD divergence · TP 1:2 · 07–20 UTC — suggestions only, you place the trade.</span>
-                  <div style={{ flex: 1 }} />
-                  <span onClick={btBusy ? undefined : runBacktest} style={btn("var(--e-gold)")}>{btBusy ? "Testing…" : `Backtest ${sym}`}</span>
-                  {bt && bt.symbol === sym && (
-                    <span title={Object.entries(bt.funnel ?? {}).map(([k, v]) => `${k.replace(/^\d /, "")}: ${v}`).join("\n")}>{bt.bars} bars · {bt.closed} trades · win {bt.winrate ?? "—"}% · <b style={{ color: bt.total_r >= 0 ? UP : DOWN }}>{bt.total_r >= 0 ? "+" : ""}{bt.total_r}R</b>{bt.open ? ` · ${bt.open} open` : ""} · spread {fx(bt.symbol, bt.spread)} incl.</span>
-                  )}
-                </div>
-                {setups.length === 0 ? <div style={{ padding: "4px 12px 16px", fontSize: 12, color: "var(--e-muted)" }}>No setups yet. The robot checks every closed M1 candle of the symbols MT4 streams; when it finds one you get it here and on Telegram.</div> : (
-                  <table style={{ width: "100%", borderCollapse: "collapse" }}>
-                    <thead><tr>{["Time", "Symbol", "Side", "Entry ≈", "SL", "TP", "Status", ""].map((h) => <th key={h} style={th}>{h}</th>)}</tr></thead>
-                    <tbody>
-                      {setups.map((x) => (
-                        <tr key={x.id} style={{ opacity: x.status === "dismissed" ? 0.5 : 1 }}>
-                          <td style={td}>{new Date(x.created_at * 1000).toLocaleString([], { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}</td>
-                          <td style={td}>{x.symbol}</td>
-                          <td style={{ ...td, color: x.direction === "buy" ? UP : DOWN }}>{x.direction.toUpperCase()}</td>
-                          <td style={td}>{fx(x.symbol, x.entry)}</td>
-                          <td style={td}>{fx(x.symbol, x.sl)}</td>
-                          <td style={td}>{fx(x.symbol, x.tp)}</td>
-                          <td style={{ ...td, color: x.status === "new" ? "var(--e-gold)" : "var(--e-text-2)" }}>{x.status === "new" ? "New" : x.status === "taken" ? "Taken" : "Skipped"}</td>
-                          <td style={{ ...td, textAlign: "right", display: "flex", gap: 6, justifyContent: "flex-end" }}>
-                            <span onClick={() => applySetup(x)} style={btn(UP)} title="Fill the order ticket with this setup">Use</span>
-                            {x.status !== "taken" && <span onClick={() => markSetup(x, "taken")} style={btn("#8fa3ad")}>Took it</span>}
-                            {x.status === "new" && <span onClick={() => markSetup(x, "dismissed")} style={btn("#e0463f")}>Skip</span>}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                )}
-              </div>
             )}
             {bottomTab === "News" && <div style={{ padding: "6px 12px" }}><ElionNews rows={8} /></div>}
             {bottomTab === "Market" && (

@@ -134,3 +134,16 @@ def test_backtest_pays_the_spread(client):
     pulse = {"balance": 1, "equity": 1, "positions": [], "quotes": [{"symbol": "SYN", "bid": 100.0, "ask": 100.25}]}
     assert client.post("/events/positions", json=pulse, headers=h).status_code == 200
     assert abs(setups.spread_of("SYN") - 0.25) < 1e-9
+
+
+def test_backtest_trades_carry_chart_points(client):
+    acc = client.post("/accounts", json={"name": "R", "platform": "mt4", "kind": "robot"}).json()["id"]
+    h = {"X-API-Key": client.post(f"/accounts/{acc}/robot-key").json()["api_key"]}
+    _feed(client, h, synth())
+    r = client.post("/setups/backtest", json={"symbol": "SYN", "params": {"hidden": 0, "session": 0, "junk": 5}}).json()
+    assert r["params"]["hidden"] == 0 and "junk" not in r["params"] and r["closed"] > 0
+    t = r["trades"][0]
+    assert t["prev_pb_time"] < t["pb_time"] <= t["time"] < t["entry_time"] <= t["exit_time"]
+    assert t["level_time"] < t["pb_time"] and t["exit_price"] in (t["sl"], t["tp"])
+    assert client.get("/robot/symbols").json()[0]["symbol"] == "SYN"
+    assert setups.settings()["params"]["hidden"] == 1      # trial params never touch the live robot

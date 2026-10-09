@@ -13,6 +13,11 @@ import { FIB_EXT_LEVELS, FIB_LEVELS, TimeMap, drawState, type Drawing, type DPoi
 interface XY { x: number; y: number }
 
 /** Canvas layer that renders user drawings on top of the candles and answers hit-tests. */
+/** decimals for prices in drawing labels (2 gold, 3 JPY pairs, 5 most forex); set by the Chart */
+let DP = 2;
+export const setDrawPrecision = (n: number) => { DP = n; };
+const fp = (v: number) => v.toFixed(DP);
+
 export class DrawingsPrimitive implements ISeriesPrimitive<Time> {
   private chart: IChartApi | null = null;
   private series: ISeriesApi<"Candlestick"> | null = null;
@@ -75,7 +80,7 @@ export class DrawingsPrimitive implements ISeriesPrimitive<Time> {
     switch (d.type) {
       case "hray":
         line(ctx, a, { x: W, y: a.y });
-        tag(ctx, d.color, d.points[0].price.toFixed(2), W - 4, a.y, "right");
+        tag(ctx, d.color, fp(d.points[0].price), W - 4, a.y, "right");
         break;
       case "channel": {
         if (!b) break;
@@ -114,7 +119,7 @@ export class DrawingsPrimitive implements ISeriesPrimitive<Time> {
         break;
       case "hline": {
         line(ctx, { x: 0, y: a.y }, { x: W, y: a.y });
-        tag(ctx, d.color, d.points[0].price.toFixed(2), W - 4, a.y, "right");
+        tag(ctx, d.color, fp(d.points[0].price), W - 4, a.y, "right");
         break;
       }
       case "vline":
@@ -148,7 +153,7 @@ export class DrawingsPrimitive implements ISeriesPrimitive<Time> {
             line(ctx, { x: x1, y }, { x: x2, y });
             ctx.setLineDash([]);
             ctx.textAlign = "left";
-            ctx.fillText(`${lv} (${price.toFixed(2)})`, x1 + 4, y - 3);
+            ctx.fillText(`${lv} (${fp(price)})`, x1 + 4, y - 3);
           });
           ctx.setLineDash([3, 4]);
           ctx.globalAlpha = 0.5;
@@ -170,7 +175,7 @@ export class DrawingsPrimitive implements ISeriesPrimitive<Time> {
           ctx.strokeRect(a.x, a.y, b.x - a.x, b.y - a.y);
           ctx.setLineDash([]);
           const pct = (dp / p1.price) * 100;
-          tag(ctx, col, `${dp >= 0 ? "+" : ""}${dp.toFixed(2)} (${pct.toFixed(2)}%) · ${bars} bars`, (a.x + b.x) / 2, dp >= 0 ? Math.min(a.y, b.y) - 12 : Math.max(a.y, b.y) + 12, "center");
+          tag(ctx, col, `${dp >= 0 ? "+" : ""}${fp(dp)} (${pct.toFixed(2)}%) · ${bars} bars`, (a.x + b.x) / 2, dp >= 0 ? Math.min(a.y, b.y) - 12 : Math.max(a.y, b.y) + 12, "center");
         }
         break;
       case "extended":
@@ -197,14 +202,14 @@ export class DrawingsPrimitive implements ISeriesPrimitive<Time> {
             ctx.setLineDash([]);
             tag(ctx, d.color, `${deg.toFixed(1)}°`, a.x + 40, a.y - (deg >= 0 ? 12 : -12), "left");
           } else {
-            tag(ctx, d.color, `${dp >= 0 ? "+" : ""}${dp.toFixed(2)} (${((dp / p1.price) * 100).toFixed(2)}%) · ${bars} bars · ${deg.toFixed(0)}°`, b.x + 8, b.y, "left");
+            tag(ctx, d.color, `${dp >= 0 ? "+" : ""}${fp(dp)} (${((dp / p1.price) * 100).toFixed(2)}%) · ${bars} bars · ${deg.toFixed(0)}°`, b.x + 8, b.y, "left");
           }
         }
         break;
       case "crossline":
         line(ctx, { x: 0, y: a.y }, { x: W, y: a.y });
         line(ctx, { x: a.x, y: 0 }, { x: a.x, y: H });
-        tag(ctx, d.color, d.points[0].price.toFixed(2), W - 4, a.y, "right");
+        tag(ctx, d.color, fp(d.points[0].price), W - 4, a.y, "right");
         break;
       case "arrow":
         if (b) {
@@ -236,7 +241,7 @@ export class DrawingsPrimitive implements ISeriesPrimitive<Time> {
             line(ctx, { x: x1, y }, { x: x2, y });
             ctx.setLineDash([]);
             ctx.textAlign = "left";
-            ctx.fillText(`${lv} (${price.toFixed(2)})`, x1 + 4, y - 3);
+            ctx.fillText(`${lv} (${fp(price)})`, x1 + 4, y - 3);
           }
         } else if (b) line(ctx, a, b);
         break;
@@ -282,9 +287,9 @@ export class DrawingsPrimitive implements ISeriesPrimitive<Time> {
           line(ctx, { x: xe, y: a.y }, { x: x2, y: a.y });
           const tgt = Math.abs(pt.price - pe.price), stp = Math.abs(ps.price - pe.price);
           const mid = (xe + x2) / 2;
-          tag(ctx, "#26a69a", `Target ${pt.price.toFixed(2)} (${tgt.toFixed(2)}, ${((tgt / pe.price) * 100).toFixed(2)}%)`, mid, yt + (d.type === "long" ? -12 : 12), "center");
-          tag(ctx, "#ef5350", `Stop ${ps.price.toFixed(2)} (${stp.toFixed(2)}, ${((stp / pe.price) * 100).toFixed(2)}%)`, mid, ys + (d.type === "long" ? 12 : -12), "center");
-          tag(ctx, "#cfd8dc", `${d.type === "long" ? "Long" : "Short"} ${pe.price.toFixed(2)} · R:R ${stp ? (tgt / stp).toFixed(2) : "—"}`, mid, a.y, "center");
+          tag(ctx, "#26a69a", `Target ${fp(pt.price)} (${fp(tgt)}, ${((tgt / pe.price) * 100).toFixed(2)}%)`, mid, yt + (d.type === "long" ? -12 : 12), "center");
+          tag(ctx, "#ef5350", `Stop ${fp(ps.price)} (${fp(stp)}, ${((stp / pe.price) * 100).toFixed(2)}%)`, mid, ys + (d.type === "long" ? 12 : -12), "center");
+          tag(ctx, "#cfd8dc", `${d.type === "long" ? "Long" : "Short"} ${fp(pe.price)} · R:R ${stp ? (tgt / stp).toFixed(2) : "—"}`, mid, a.y, "center");
         }
         break;
       case "pricerange":
@@ -301,7 +306,7 @@ export class DrawingsPrimitive implements ISeriesPrimitive<Time> {
           if (d.type === "pricerange") {
             line(ctx, { x: a.x, y: a.y }, { x: b.x, y: a.y }); line(ctx, { x: a.x, y: b.y }, { x: b.x, y: b.y });
             arrowV(ctx, (a.x + b.x) / 2, a.y, b.y);
-            tag(ctx, col, `${dp >= 0 ? "+" : ""}${dp.toFixed(2)} (${((dp / p1.price) * 100).toFixed(2)}%)`, (a.x + b.x) / 2, Math.min(a.y, b.y) - 12, "center");
+            tag(ctx, col, `${dp >= 0 ? "+" : ""}${fp(dp)} (${((dp / p1.price) * 100).toFixed(2)}%)`, (a.x + b.x) / 2, Math.min(a.y, b.y) - 12, "center");
           } else {
             line(ctx, { x: a.x, y: a.y }, { x: a.x, y: b.y }); line(ctx, { x: b.x, y: a.y }, { x: b.x, y: b.y });
             const secs = Math.abs(p2.time - p1.time);
@@ -341,7 +346,7 @@ export class DrawingsPrimitive implements ISeriesPrimitive<Time> {
         }
         break;
       case "pricelabel":
-        tag(ctx, d.color, d.points[0].price.toFixed(2), a.x + 6, a.y - 14, "left");
+        tag(ctx, d.color, fp(d.points[0].price), a.x + 6, a.y - 14, "left");
         ctx.beginPath(); ctx.arc(a.x, a.y, 3, 0, Math.PI * 2); ctx.fill();
         break;
       case "arrowup":
