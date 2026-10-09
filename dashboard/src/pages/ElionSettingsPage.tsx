@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { ElionSidebar } from "../components/ElionChrome";
 import { ACCENTS, beep, ensureNotifyPermission, LANDING_ROUTES, notifyUser, notifySupported, resetSettings, TZ_OPTIONS, useSettings, type ElionSettings } from "../lib/elionSettings";
 import { setLang, t } from "../lib/i18n";
-import { journalApi } from "../lib/journalApi";
+import { journalApi, type TgNotify } from "../lib/journalApi";
 import { setDefaultReplaySpeed, setDefaultTf, useMaxPerDay } from "../lib/prefs";
 import { SPEEDS } from "../lib/useReplay";
 import { useApp } from "../state/AppContext";
@@ -147,6 +147,8 @@ export default function ElionSettingsPage() {
   const { active, activeId, trades, refreshTrades, refreshAccounts } = j;
   const [cap, setCap] = useMaxPerDay();
   const [st, patch] = useSettings();
+  const [tg, setTg] = useState<TgNotify | null>(null);
+  useEffect(() => { journalApi.notifySettings().then(setTg).catch(() => setTg(null)); }, []);
   const fileRef = useRef<HTMLInputElement>(null);
   const [importing, setImporting] = useState(false);
   const [tab, setTab] = useState("General");
@@ -311,12 +313,23 @@ export default function ElionSettingsPage() {
     ] },
   ];
 
+  const tgRow = (label: string, k: keyof Omit<TgNotify, "configured">, extra: Row = {}) => {
+    const on = !!tg?.[k];
+    return base({ label, toggle: true, track: on ? acc : "#3a474b", knob: on ? "14px" : "2px",
+      onToggle: () => journalApi.saveNotify({ [k]: !on }).then(setTg).catch((e) => flash((e as Error).message, false)), ...extra });
+  };
+  const testTelegram = () => journalApi.testNotify().then(() => flash("Test message sent to Telegram.")).catch((e) => flash((e as Error).message, false));
+
   const bottomCards: Card[] = [
     { icon: "notifications", title: "Notification Settings", rows: [
       base({ label: "Browser Notifications", toggle: true, track: st.notify ? acc : "#3a474b", knob: st.notify ? "14px" : "2px", onToggle: toggleNotify }),
       T("Trade Opened", "nExec"), T("Trade Closed (TP / SL hit)", "nClose"), T("Session Start (London / NY / Tokyo)", "nSess"),
       T("High-Impact USD News (15 min ahead)", "nNews"),
-      note("Alerts fire while ELION is open in a browser tab. Email alerts aren't available.", { sep: true }),
+      note("Browser alerts fire while ELION is open in a tab.", { sep: true }),
+      tgRow("Telegram Alerts (Elias OS bot)", "enabled", { sep: true }),
+      tgRow("Telegram: Position Opened", "opens"), tgRow("Telegram: Closed (SL / TP hit, P&L)", "closes"), tgRow("Telegram: Order Changes & Failures", "orders"),
+      B("Telegram Test Message", "Send", testTelegram, { w: "74px" }),
+      note(tg == null ? "Loading…" : tg.configured ? "Telegram alerts come from the journal server — they arrive even with no browser open." : "Elias OS bot isn't paired yet — open the bot in Telegram and send /start.", { sep: true }),
     ], footer: "Test Notification", footerIcon: "notifications", onFooter: testNotification },
     { icon: "palette", title: "Appearance", rows: [
       S("Color Theme", "colorTheme", ["ELION Dark", "ELION Midnight"], { w: "126px" }),

@@ -6,6 +6,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 os.environ["JOURNAL_NO_BRIDGE"] = "1"
+os.environ["JOURNAL_NO_NOTIFY"] = "1"
 
 
 @pytest.fixture()
@@ -187,3 +188,33 @@ def test_pending_orders_and_quotes(client):
     th.join()
     assert seen[0]["direction"] == "sell_stop" and seen[0]["entry"] == 4170
     assert seen[1]["direction"] == "cancel" and seen[1]["target"] == "88"
+
+
+def test_alerts_fire_once_on_open_and_close(client, monkeypatch):
+    import time
+    from datetime import datetime, timezone
+    from journal import notify
+    sent = []
+    monkeypatch.setattr(notify, "send", lambda kind, text: sent.append((kind, text)))
+    acc = _account(client)
+    h = {"X-API-Key": client.post(f"/accounts/{acc}/robot-key").json()["api_key"]}
+    now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    t = {"ticket": "501", "symbol": "XAUUSD", "direction": "sell", "volume": 0.1, "open_time": now, "open_price": 4190,
+         "stop_loss": 4195, "take_profit": 4180, "profit": 3, "status": "open"}
+    client.post("/events/trade", json=t, headers=h)
+    client.post("/events/trade", json=t, headers=h)  # periodic re-sync: no second alert
+    closed = {**t, "status": "closed", "close_time": now, "close_price": 4180, "profit": 100}
+    client.post("/events/trade", json=closed, headers=h)
+    client.post("/events/trade", json=closed, headers=h)
+    assert [k for k, _ in sent] == ["opens", "closes"]
+    assert "Take Profit hit" in sent[1][1] and "+100.00" in sent[1][1]
+    # old history backfilled by the EA stays silent
+    old = {**closed, "ticket": "400", "open_time": "2020-01-01T00:00:00Z", "close_time": "2020-01-01T01:00:00Z"}
+    client.post("/events/trade", json=old, headers=h)
+    assert len(sent) == 2
+
+
+def test_notify_settings_roundtrip(client):
+    assert client.put("/notify/settings", json={"opens": False}).json()["opens"] is False
+    s = client.get("/notify/settings").json()
+    assert s["opens"] is False and s["closes"] is True and "configured" in s

@@ -154,6 +154,15 @@ export interface LivePending {
   tp: number | null;
 }
 
+/** Telegram trade alerts, sent by the journal server through the Elias OS bot. */
+export interface TgNotify {
+  configured: boolean;
+  enabled: boolean;
+  opens: boolean;
+  closes: boolean;
+  orders: boolean;
+}
+
 export interface LiveQuote {
   symbol: string;
   bid: number;
@@ -411,6 +420,9 @@ export const journalApi = {
   positions: (id: number) => call<LivePositions>(`/accounts/${id}/positions`),
   modifyPosition: (id: number, ticket: string, sl: number | null, tp: number | null) =>
     call<{ ticket: string }>(`/accounts/${id}/positions/${ticket}/modify`, json("POST", { sl, tp })),
+  notifySettings: () => call<TgNotify>("/notify/settings"),
+  saveNotify: (p: Partial<Omit<TgNotify, "configured">>) => call<TgNotify>("/notify/settings", json("PUT", p)),
+  testNotify: () => call<{ ok: boolean }>("/notify/test", json("POST", {})),
   cancelOrder: (id: number, ticket: string) => call<{ ticket: string }>(`/accounts/${id}/positions/${ticket}/cancel`, json("POST", {})),
   closePosition: (id: number, ticket: string) => call<{ ticket: string; price: number }>(`/accounts/${id}/positions/${ticket}/close`, json("POST", {})),
   saveNotes: (tradeId: number, n: Notes) => call<{ ok: boolean }>(`/trades/${tradeId}/notes`, json("PUT", n)),

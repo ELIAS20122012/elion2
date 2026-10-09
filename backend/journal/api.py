@@ -13,13 +13,14 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
-from . import ai, auth, bridge, db, engine, parsers, robot, signals
+from . import ai, auth, bridge, db, engine, notify, parsers, robot, signals
 
 @asynccontextmanager
 async def lifespan(_app):
     db.init()
     signals.init()
     robot.init()
+    notify.init()
     stop = threading.Event()
     if not os.environ.get("JOURNAL_NO_BRIDGE"):  # tests drive the watcher by hand
         engine.boot()  # MT engine starts OFF: no terminal is launched until Start is pressed on the Connection page
@@ -796,6 +797,32 @@ def cancel_order(account_id: int, ticket: str):
         return robot.cancel(account_id, ticket)
     except robot.OrderFailed as e:
         raise HTTPException(409, str(e))
+
+
+class NotifyIn(BaseModel):
+    enabled: bool | None = None
+    opens: bool | None = None
+    closes: bool | None = None
+    orders: bool | None = None
+
+
+@app.get("/notify/settings")
+def notify_settings():
+    """Telegram trade alerts (sent through the Elias OS bot): on/off switches + whether the bot is reachable."""
+    return notify.status()
+
+
+@app.put("/notify/settings")
+def notify_save(b: NotifyIn):
+    notify.save_settings({k: v for k, v in b.model_dump().items() if v is not None})
+    return notify.status()
+
+
+@app.post("/notify/test")
+def notify_test():
+    if not notify.test():
+        raise HTTPException(409, "Telegram is not reachable — is the Elias OS bot set up and paired (/start in Telegram)?")
+    return {"ok": True}
 
 
 @app.post("/events/positions")

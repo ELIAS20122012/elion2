@@ -13,7 +13,7 @@ from datetime import datetime
 
 from pydantic import BaseModel, Field
 
-from . import db
+from . import db, notify
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS robot_keys (
@@ -182,11 +182,18 @@ def trade(account_id: int, t: TradeIn) -> dict:
     }
     with db.db() as con:
         _touch(con, account_id, "trade")
+        before = con.execute("SELECT close_time FROM trades WHERE account_id=? AND ticket=?", (account_id, str(t.ticket))).fetchone()
         ins, _ = db.upsert_trades(con, account_id, [row], "ea")
         if closed:
             db.close_excursions(con, account_id, t.ticket)
         else:
             db.track_floating(con, account_id, t.ticket, t.profit)
+    # alerts only on a real change, and only for recent events (no flood when an EA backfills old history)
+    recent = lambda ts: ts is not None and abs(time.time() - ts) < 6 * 3600  # noqa: E731  (EA times are broker time, up to a few hours off UTC)
+    if closed and (before is None or before["close_time"] is None) and recent(row["close_time"]):
+        notify.position_closed(account_id, row)
+    elif not closed and before is None and recent(row["open_time"]):
+        notify.position_opened(account_id, row)
     return {"ok": True, "created": bool(ins)}
 
 
@@ -429,4 +436,7 @@ def order_result(account_id: int, order_id: int, b: OrderResultIn) -> dict:
     with db.db() as con:
         con.execute("UPDATE robot_orders SET status=?, ticket=?, price=?, error=? WHERE id=? AND account_id=?",
                     ("filled" if b.ok else "failed", b.ticket, b.price, b.error, order_id, account_id))
+        o = con.execute("SELECT * FROM robot_orders WHERE id=? AND account_id=?", (order_id, account_id)).fetchone()
+    if o:
+        notify.order_done(account_id, dict(o), b.ok, b.ticket, b.price, b.error)
     return {"ok": True}
