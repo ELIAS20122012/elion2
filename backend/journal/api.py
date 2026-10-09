@@ -13,7 +13,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
-from . import ai, alerts, auth, bridge, db, engine, notify, parsers, robot, signals
+from . import ai, alerts, auth, bridge, db, engine, notify, parsers, robot, setups, signals
 
 @asynccontextmanager
 async def lifespan(_app):
@@ -22,6 +22,7 @@ async def lifespan(_app):
     robot.init()
     notify.init()
     alerts.init()
+    setups.init()
     stop = threading.Event()
     if not os.environ.get("JOURNAL_NO_BRIDGE"):  # tests drive the watcher by hand
         engine.boot()  # MT engine starts OFF: no terminal is launched until Start is pressed on the Connection page
@@ -818,6 +819,39 @@ def alerts_move(aid: int, m: alerts.AlertMove):
     return r
 
 
+@app.get("/setups")
+def setups_list(symbol: str | None = None, limit: int = 50):
+    """Level Continuation suggestions the robot found (never orders)."""
+    return setups.listing(symbol, limit)
+
+
+@app.get("/setups/settings")
+def setups_settings():
+    return setups.settings()
+
+
+@app.put("/setups/settings")
+def setups_save(b: setups.SettingsIn):
+    return setups.save_settings(b)
+
+
+class SetupStatusIn(BaseModel):
+    status: str = Field(pattern="^(new|taken|dismissed)$")
+
+
+@app.post("/setups/{sid}/status")
+def setups_status(sid: int, b: SetupStatusIn):
+    r = setups.set_status(sid, b.status)
+    if not r:
+        raise HTTPException(404, "No such setup.")
+    return r
+
+
+@app.get("/setups/backtest")
+def setups_backtest(symbol: str = "XAUUSD", count: int = 20000):
+    return setups.backtest(symbol, None, max(500, min(count, 20000)))
+
+
 @app.delete("/alerts/{aid}", status_code=204)
 def alerts_delete(aid: int):
     alerts.delete(aid)
@@ -829,6 +863,7 @@ class NotifyIn(BaseModel):
     opens: bool | None = None
     closes: bool | None = None
     orders: bool | None = None
+    setups: bool | None = None
 
 
 @app.get("/notify/settings")

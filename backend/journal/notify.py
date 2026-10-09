@@ -23,19 +23,22 @@ CREATE TABLE IF NOT EXISTS notify_settings (
     opens INTEGER NOT NULL DEFAULT 1,       -- new position (dashboard, MT4 or a pending order that filled)
     closes INTEGER NOT NULL DEFAULT 1,      -- position closed, with SL/TP hit and P&L
     orders INTEGER NOT NULL DEFAULT 1,      -- dashboard orders: SL/TP changes, pending placed/cancelled, failures
-    alerts INTEGER NOT NULL DEFAULT 1       -- price alerts reached
+    alerts INTEGER NOT NULL DEFAULT 1,      -- price alerts reached
+    setups INTEGER NOT NULL DEFAULT 1       -- robot found a Level Continuation setup (suggestion)
 );
 INSERT OR IGNORE INTO notify_settings (id) VALUES (1);
 """
 
-KINDS = ("enabled", "opens", "closes", "orders", "alerts")
+KINDS = ("enabled", "opens", "closes", "orders", "alerts", "setups")
 
 
 def init() -> None:
     with db.db() as con:
         con.executescript(SCHEMA)
-        if "alerts" not in {r[1] for r in con.execute("PRAGMA table_info(notify_settings)")}:
-            con.execute("ALTER TABLE notify_settings ADD COLUMN alerts INTEGER NOT NULL DEFAULT 1")
+        have = {r[1] for r in con.execute("PRAGMA table_info(notify_settings)")}
+        for col in ("alerts", "setups"):
+            if col not in have:
+                con.execute(f"ALTER TABLE notify_settings ADD COLUMN {col} INTEGER NOT NULL DEFAULT 1")
 
 
 def settings() -> dict:

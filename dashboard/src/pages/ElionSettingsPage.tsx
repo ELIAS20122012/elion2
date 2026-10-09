@@ -327,7 +327,7 @@ export default function ElionSettingsPage() {
       T("High-Impact USD News (15 min ahead)", "nNews"),
       note("Browser alerts fire while ELION is open in a tab.", { sep: true }),
       tgRow("Telegram Alerts (Elias OS bot)", "enabled", { sep: true }),
-      tgRow("Telegram: Position Opened", "opens"), tgRow("Telegram: Closed (SL / TP hit, P&L)", "closes"), tgRow("Telegram: Order Changes & Failures", "orders"), tgRow("Telegram: Price Alerts", "alerts"),
+      tgRow("Telegram: Position Opened", "opens"), tgRow("Telegram: Closed (SL / TP hit, P&L)", "closes"), tgRow("Telegram: Order Changes & Failures", "orders"), tgRow("Telegram: Price Alerts", "alerts"), tgRow("Telegram: Robot Setups (Level Continuation)", "setups"),
       B("Telegram Test Message", "Send", testTelegram, { w: "74px" }),
       note(tg == null ? "Loading…" : tg.configured ? "Telegram alerts come from the journal server — they arrive even with no browser open." : "Elias OS bot isn't paired yet — open the bot in Telegram and send /start.", { sep: true }),
     ], footer: "Test Notification", footerIcon: "notifications", onFooter: testNotification },

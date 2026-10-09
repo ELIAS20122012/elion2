@@ -162,6 +162,34 @@ export interface TgNotify {
   closes: boolean;
   orders: boolean;
   alerts: boolean;
+  setups: boolean;
+}
+
+/** Level Continuation setup found by the server robot on live MT4 candles — a suggestion, never an order. */
+export interface Setup {
+  id: number;
+  symbol: string;
+  direction: "buy" | "sell";
+  bar_time: number;
+  entry: number;
+  sl: number;
+  tp: number;
+  level: number | null;
+  created_at: number;
+  status: "new" | "taken" | "dismissed";
+}
+
+export interface SetupBacktest {
+  symbol: string;
+  bars: number;
+  from: number | null;
+  to: number | null;
+  closed: number;
+  wins: number;
+  winrate: number | null;
+  total_r: number;
+  open: number;
+  trades: { time: number; direction: string; entry: number; sl: number; tp: number; r: number | null; bars: number }[];
 }
 
 export interface PriceAlert {
@@ -440,6 +468,11 @@ export const journalApi = {
   addAlert: (symbol: string, price: number, current: number | null, note?: string) => call<PriceAlert>("/alerts", json("POST", { symbol, price, current, note })),
   moveAlert: (id: number, price: number, current: number | null) => call<PriceAlert>(`/alerts/${id}`, json("PUT", { price, current })),
   deleteAlert: (id: number) => call<void>(`/alerts/${id}`, { method: "DELETE" }),
+  setups: (symbol?: string) => call<Setup[]>(`/setups${symbol ? `?symbol=${encodeURIComponent(symbol)}` : ""}`),
+  setupStatus: (id: number, status: Setup["status"]) => call<Setup>(`/setups/${id}/status`, json("POST", { status })),
+  setupSettings: () => call<{ enabled: boolean; params: Record<string, number> }>("/setups/settings"),
+  saveSetupSettings: (p: { enabled?: boolean; params?: Record<string, number> }) => call<{ enabled: boolean; params: Record<string, number> }>("/setups/settings", json("PUT", p)),
+  setupBacktest: (symbol: string) => call<SetupBacktest>(`/setups/backtest?symbol=${encodeURIComponent(symbol)}`),
   notifySettings: () => call<TgNotify>("/notify/settings"),
   saveNotify: (p: Partial<Omit<TgNotify, "configured">>) => call<TgNotify>("/notify/settings", json("PUT", p)),
   testNotify: () => call<{ ok: boolean }>("/notify/test", json("POST", {})),

@@ -13,7 +13,7 @@ from datetime import datetime
 
 from pydantic import BaseModel, Field
 
-from . import alerts, db, notify
+from . import alerts, db, notify, setups
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS robot_keys (
@@ -248,6 +248,7 @@ def save_candles(account_id: int, b: CandlesIn) -> dict:
         con.executemany("INSERT OR REPLACE INTO robot_candles (symbol, time, open, high, low, close, volume) VALUES (?,?,?,?,?,?,?)", rows)
         con.execute("DELETE FROM robot_candles WHERE symbol=? AND time < (SELECT time FROM robot_candles WHERE symbol=? ORDER BY time DESC LIMIT 1 OFFSET ?)",
                     (b.symbol, b.symbol, KEEP_CANDLES))
+    setups.scan_in_background(b.symbol)  # suggestions only: stores + Telegram, never an order
     return {"ok": True, "saved": len(rows)}
 
 
