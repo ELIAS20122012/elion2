@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useMemo, useState, type ReactNode
 import { aggregate, loadJson, type Candle, type Overlay, type Trade } from "../lib/data";
 import { loadDrawings, saveDrawings, uid, type Drawing, type ToolId } from "../lib/drawings";
 import type { IndicatorInstance } from "../lib/indicators";
+import { getDefaultTf } from "../lib/prefs";
 import { useLive } from "../lib/useLive";
 import { useReplay } from "../lib/useReplay";
 
@@ -22,7 +23,7 @@ function useAppState() {
   const [all, setAll] = useState<Candle[]>([]);
   const [trades, setTrades] = useState<Trade[]>([]);
   const [error, setError] = useState<string | null>(null);
-  const [tfSec, setTfSec] = useState<number>(60);
+  const [tfSec, setTfSec] = useState<number>(getDefaultTf);
   // chart layers survive a page reload; the rule being taught (divergence) is ON unless Elias turned it off
   const [layers, setLayers] = useState<Record<string, boolean>>(() => {
     try {

@@ -1,4 +1,7 @@
-"""Read closed and open positions of an MT5 account (read-only).
+"""Read closed and open positions of an MT5 account, and (since the Trade page's Place Order button went
+live) send real market orders. `send_order` is the only function here that is not read-only: it places a
+real TRADE_ACTION_DEAL against the broker. There is deliberately no size/SL cap or confirmation step in
+here - the caller (the API layer) sends exactly the order it was given.
 
 Each account may point at its own terminal (`terminal_path`), so a demo terminal and a live terminal can both be
 logged in at once and the journal reads each one.
@@ -9,6 +12,8 @@ import threading
 from datetime import datetime, timezone
 
 import MetaTrader5 as mt5
+
+from . import engine
 
 FUTURE_MARGIN = 86400  # seconds; see the note in _fetch about the broker clock running ahead of UTC
 
@@ -44,6 +49,7 @@ def find_terminals() -> list[dict]:  # filesystem only; does not touch MT5
 
 def fetch(expected_login: str | None, days: int = 365, terminal_path: str | None = None) -> tuple[list[dict], dict]:
     """Returns (trades, account_info). Closed positions come from deals, open ones from positions_get."""
+    engine.require(SyncError)
     with MT5_LOCK:
         return _fetch(expected_login, days, terminal_path)
 
@@ -93,5 +99,88 @@ def _fetch(expected_login: str | None, days: int, terminal_path: str | None) -> 
                 "sl": p.sl or None, "tp": p.tp or None, "commission": 0, "swap": p.swap, "profit": p.profit,
             })
         return trades, {"balance": acc.balance, "equity": acc.equity, "currency": acc.currency, "server": acc.server}
+    finally:
+        mt5.shutdown()
+
+
+TF_NAMES = {60: "M1", 300: "M5", 900: "M15", 1800: "M30", 3600: "H1", 14400: "H4", 86400: "D1"}
+
+
+def fetch_candles(expected_login: str | None, terminal_path: str | None, symbol: str, tf_sec: int, count: int) -> list[list[float]]:
+    """Latest `count` candles from the broker's own history: [time, open, high, low, close, tick_volume] (time = broker clock)."""
+    if tf_sec not in TF_NAMES:
+        raise SyncError(f"تایم‌فریم {tf_sec} پشتیبانی نمی‌شود.")
+    engine.require(SyncError)
+    with MT5_LOCK:
+        ok = mt5.initialize(path=terminal_path) if terminal_path else mt5.initialize()
+        if not ok:
+            raise SyncError(f"اتصال به MT5 ممکن نشد ({mt5.last_error()}). ترمینال MT5 باز و لاگین باشد.")
+        try:
+            acc = mt5.account_info()
+            if acc is None:
+                raise SyncError("MT5 لاگین نیست.")
+            if expected_login and str(acc.login) != str(expected_login):
+                raise SyncError(f"این ترمینال روی حساب {acc.login} است، نه {expected_login}.")
+            if not mt5.symbol_select(symbol, True):
+                raise SyncError(f"نماد {symbol} در این بروکر پیدا نشد.")
+            rates = mt5.copy_rates_from_pos(symbol, getattr(mt5, f"TIMEFRAME_{TF_NAMES[tf_sec]}"), 0, count)
+            if rates is None or len(rates) == 0:
+                raise SyncError(f"بروکر برای {symbol} داده‌ای نداد ({mt5.last_error()}).")
+            return [[int(r["time"]), float(r["open"]), float(r["high"]), float(r["low"]), float(r["close"]), float(r["tick_volume"])] for r in rates]
+        finally:
+            mt5.shutdown()
+
+
+class OrderError(Exception):
+    pass
+
+
+def send_order(expected_login: str | None, terminal_path: str | None, symbol: str, direction: str, volume: float,
+                sl: float | None, tp: float | None, comment: str | None) -> dict:
+    """Places a real market order (buy/sell) on the terminal for this account. Not read-only."""
+    engine.require(OrderError)
+    with MT5_LOCK:
+        return _send_order(expected_login, terminal_path, symbol, direction, volume, sl, tp, comment)
+
+
+def _send_order(expected_login, terminal_path, symbol, direction, volume, sl, tp, comment):
+    ok = mt5.initialize(path=terminal_path) if terminal_path else mt5.initialize()
+    if not ok:
+        raise OrderError(f"اتصال به MT5 ممکن نشد ({mt5.last_error()}). ترمینال MT5 باز و لاگین باشد" + (f" ({terminal_path})." if terminal_path else "."))
+    try:
+        acc = mt5.account_info()
+        if acc is None:
+            raise OrderError("MT5 لاگین نیست.")
+        if expected_login and str(acc.login) != str(expected_login):
+            raise OrderError(f"این ترمینال روی حساب {acc.login} است، نه {expected_login}. سفارش ارسال نشد.")
+        if not mt5.symbol_select(symbol, True):
+            raise OrderError(f"نماد {symbol} در Market Watch پیدا/فعال نشد.")
+        tick = mt5.symbol_info_tick(symbol)
+        if tick is None or not tick.ask or not tick.bid:
+            raise OrderError(f"قیمت لحظه‌ای {symbol} در دسترس نیست.")
+        order_type = mt5.ORDER_TYPE_BUY if direction == "buy" else mt5.ORDER_TYPE_SELL
+        price = tick.ask if direction == "buy" else tick.bid
+        request = {
+            "action": mt5.TRADE_ACTION_DEAL,
+            "symbol": symbol,
+            "volume": volume,
+            "type": order_type,
+            "price": price,
+            "deviation": 20,
+            "magic": 990321,
+            "comment": (comment or "robot-trading")[:31],
+            "type_time": mt5.ORDER_TIME_GTC,
+            "type_filling": mt5.ORDER_FILLING_IOC,
+        }
+        if sl:
+            request["sl"] = sl
+        if tp:
+            request["tp"] = tp
+        result = mt5.order_send(request)
+        if result is None:
+            raise OrderError(f"سفارش ارسال نشد ({mt5.last_error()}).")
+        if result.retcode != mt5.TRADE_RETCODE_DONE:
+            raise OrderError(f"بروکر سفارش را رد کرد: {result.comment} (retcode {result.retcode}).")
+        return {"ticket": result.order, "price": result.price, "volume": result.volume, "retcode": result.retcode}
     finally:
         mt5.shutdown()

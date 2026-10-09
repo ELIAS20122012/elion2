@@ -1,5 +1,8 @@
 import type { Candle } from "./data";
+import { detectDivergences } from "./detectors/divergence";
 import { atr, ema } from "./indicators";
+import { getDivParams } from "./prefs";
+import { levelContinuation } from "./levelContinuation";
 import type { JTrade, NewTrade } from "./journalApi";
 
 export interface ParamDef { key: string; label: string; def: number; step?: number; min?: number }
@@ -21,6 +24,56 @@ export interface Strategy {
  * backtest page and its results flow through the same journal and analysis as any account.
  */
 export const STRATEGIES: Strategy[] = [
+  {
+    // Main setup from the Rules page (Playbook + Checklist); exact rules and assumptions in levelContinuation.ts
+    id: "level-continuation",
+    name: "Level Continuation — ستاپ اصلی",
+    description: "روند تایم بالا + لول از ساختار قبلی + پولبک به لول + دایورجنس مخفی مکدی + کراس مکدی برای ورود. حد ضرر پشت آخرین سوینگ، حد سود با R:R.",
+    ready: true,
+    params: [
+      { key: "rr", label: "R:R", def: 2, step: 0.5, min: 0.5 },
+      { key: "htfMin", label: "تایم روند (دقیقه، 0 = خاموش)", def: 60, step: 15, min: 0 },
+      { key: "swingN", label: "سوینگ: کندل هر طرف", def: 3, min: 1 },
+      { key: "tol", label: "فاصله‌ی پولبک تا لول (×ATR)", def: 0.5, step: 0.1, min: 0 },
+      { key: "crossWithin", label: "کراس تا چند کندل بعد از پولبک", def: 10, min: 1 },
+      { key: "slBuf", label: "فاصله‌ی حد ضرر از سوینگ (×ATR)", def: 0.2, step: 0.1, min: 0 },
+      { key: "hidden", label: "دایورجنس مخفی لازم (1/0)", def: 1, min: 0 },
+      { key: "session", label: "فقط لندن/نیویورک (1/0)", def: 1, min: 0 },
+      { key: "buy", label: "خرید (1/0)", def: 1, min: 0 },
+      { key: "sell", label: "فروش (1/0)", def: 1, min: 0 },
+    ],
+    signals: (c, p) => levelContinuation(c, p),
+  },
+  {
+    // Elias's saved rule (rules/divergence-regular-high.md), detected exactly as the chart does.
+    // Entry/SL/TP are NOT in the rule yet; the ones below are assumptions he can change on the page.
+    id: "elias-divergence",
+    name: "سیستم الیاس — دایورجنس مکدی",
+    description: "دایورجنس معمولی (قانون ذخیره‌شده) + کراس مکدی. ورود: کندل بعد از کراس. حد ضرر: پشت سقف/کف دوم. حد سود: R:R.",
+    ready: true,
+    params: [
+      { key: "rr", label: "نسبت سود به ضرر (R:R)", def: 2, step: 0.5, min: 0.5 },
+      { key: "slBuf", label: "فاصله‌ی حد ضرر از سقف/کف (×ATR)", def: 0.2, step: 0.1, min: 0 },
+      { key: "atrN", label: "دوره‌ی ATR", def: 14 },
+      { key: "buy", label: "خرید روی دایورجنس کف (1/0)", def: 1, min: 0 },
+      { key: "sell", label: "فروش روی دایورجنس سقف (1/0)", def: 1, min: 0 },
+    ],
+    signals: (c, p) => {
+      const a = atr(c, p.atrN);
+      const out: Signal[] = [];
+      for (const d of detectDivergences(c, getDivParams()).divergences) {
+        const i = Math.max(d.cross, d.confirmedIndex); // decided on this candle's close; entry is the next open
+        if (i >= c.length - 1 || !Number.isFinite(a[i])) continue;
+        const buy = d.side === "low";
+        if (buy ? !p.buy : !p.sell) continue;
+        const sl = buy ? d.b.price - a[i] * p.slBuf : d.b.price + a[i] * p.slBuf;
+        const risk = buy ? c[i].close - sl : sl - c[i].close;
+        if (!(risk > 0)) continue; // price already beyond the stop: no valid trade
+        out.push({ index: i, direction: buy ? "buy" : "sell", sl, tp: buy ? c[i].close + risk * p.rr : c[i].close - risk * p.rr });
+      }
+      return out.sort((x, y) => x.index - y.index);
+    },
+  },
   {
     id: "ema-cross",
     name: "تقاطع EMA — نمونه‌ی فنی",

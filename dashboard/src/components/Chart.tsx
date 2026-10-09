@@ -17,7 +17,7 @@ import {
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { Candle, Overlay, OverlayMarker, Trade } from "../lib/data";
 import { fmtPrice } from "../lib/data";
-import { TOOLS, TimeMap, uid, type DPoint, type Drawing, type ToolId } from "../lib/drawings";
+import { TOOLS, TimeMap, drawState, uid, type DPoint, type Drawing, type ToolId } from "../lib/drawings";
 import { INDICATOR_BY_ID, type IndicatorInstance, type IndicatorOutput } from "../lib/indicators";
 import { DrawingsPrimitive } from "./DrawingsPrimitive";
 import Icon from "./Icon";
@@ -55,7 +55,31 @@ interface Props {
   focus?: { time: number; nonce: number } | null;
   /** MT5's "Chart shift": the last candle sits ~20% of the width in from the right edge */
   shift?: boolean;
+  /** grid lines on/off (Settings → Show Grid); on by default */
+  showGrid?: boolean;
+  levels?: Level[];
+  /** a draggable level was released at a new price */
+  onLevelMove?: (id: string, price: number) => void;
+  /** live positions are drawn as levels, so skip the journal's own open-trade lines */
+  hideTradeLines?: boolean;
 }
+
+/** A horizontal price line; draggable ones behave like MT4's SL/TP lines. */
+export interface Level {
+  id: string;
+  price: number;
+  color: string;
+  label: string;
+  draggable?: boolean;
+  dashed?: boolean;
+  /** money at a given price, shown in the line title while dragging (e.g. -50.0$) */
+  pnlAt?: (price: number) => number;
+}
+
+const levelTitle = (l: Level, price: number) => {
+  const v = l.pnlAt?.(price);
+  return `${l.label} ${price.toFixed(2)}${v != null && Number.isFinite(v) ? `  ${v >= 0 ? "+" : ""}${v.toFixed(1)}$` : ""}`;
+};
 
 interface Drag { id: string; kind: "point" | "body"; idx: number; startLogical: number; startPrice: number; orig: DPoint[] }
 interface Menu { x: number; y: number; id: string | null }
@@ -80,6 +104,9 @@ export default function Chart(props: Props) {
   const pending = useRef<DPoint[]>([]);
   const drag = useRef<Drag | null>(null);
   const volRef = useRef<ISeriesApi<"Histogram"> | null>(null);
+  const levelLines = useRef<Map<string, ReturnType<ISeriesApi<"Candlestick">["createPriceLine"]>>>(new Map());
+  const levelDrag = useRef<{ id: string; price: number; start: number } | null>(null);
+  const [levelVer, setLevelVer] = useState(0);
 
   const map = useMemo(() => new TimeMap(candles, tfSec), [candles, tfSec]);
   // latest values for event handlers created once
@@ -92,6 +119,11 @@ export default function Chart(props: Props) {
     [candles, visible, tfSec],
   );
 
+  useEffect(() => {
+    const on = props.showGrid !== false;
+    chartRef.current?.applyOptions({ grid: { vertLines: { visible: on }, horzLines: { visible: on } } });
+  }, [props.showGrid, candles.length > 0]);
+
   /* ---- create chart once ---- */
   useEffect(() => {
     const chart = createChart(host.current!, {
@@ -103,7 +135,7 @@ export default function Chart(props: Props) {
         attributionLogo: true,
         panes: { separatorColor: C.border, separatorHoverColor: "rgba(224,179,84,0.3)" },
       },
-      grid: { vertLines: { color: C.grid }, horzLines: { color: C.grid } },
+      grid: { vertLines: { color: C.grid, visible: props.showGrid !== false }, horzLines: { color: C.grid, visible: props.showGrid !== false } },
       crosshair: { mode: CrosshairMode.Normal },
       rightPriceScale: { borderColor: C.border, scaleMargins: { top: 0.08, bottom: 0.08 } },
       timeScale: { borderColor: C.border, timeVisible: true, secondsVisible: false, rightOffset: props.shift === false ? 0 : 12 },
@@ -134,7 +166,7 @@ export default function Chart(props: Props) {
     chart.subscribeCrosshairMove((p) => {
       setLegend((p.seriesData.get(series) as Candle | undefined) ?? null);
       const { tool: t, color: col } = live.current;
-      if (t === "cursor" || pending.current.length === 0 || !p.point) return;
+      if (t === "cursor" || t === "eraser" || pending.current.length === 0 || !p.point) return;
       const pt = pointAt(p.point.x, p.point.y);
       if (pt) setPreview({ id: "preview", type: t, points: [...pending.current, pt], color: col });
     });
@@ -142,13 +174,15 @@ export default function Chart(props: Props) {
     chart.subscribeClick((p) => {
       if (!p.point) return;
       const cur = live.current;
-      if (cur.tool === "cursor") {
+      if (cur.tool === "cursor" || cur.tool === "eraser") {
+        if (drawState.hidden) return;
         const W = host.current!.clientWidth;
         let best: { id: string; d: number } | null = null;
         for (const d of cur.drawings) {
           const dist = prim.distance(d, p.point.x, p.point.y, W);
           if (dist < 8 && (!best || dist < best.d)) best = { id: d.id, d: dist };
         }
+        if (cur.tool === "eraser") { if (best) cur.onDelete(best.id); return; }
         cur.onSelect(best?.id ?? null);
         return;
       }
@@ -158,7 +192,17 @@ export default function Chart(props: Props) {
       pending.current = [...pending.current, pt];
       if (pending.current.length < need) return;
       const d: Drawing = { id: uid(), type: cur.tool as Drawing["type"], points: pending.current, color: cur.color };
-      if (d.type === "text") {
+      if (d.type === "long" || d.type === "short") {
+        // one click like TradingView: entry here, target 2R away, 30 bars wide
+        const e = pending.current[0];
+        const risk = e.price * 0.0025;
+        const vr = chart.timeScale().getVisibleLogicalRange();
+        const span = vr ? Math.max(8, Math.round((vr.to - vr.from) * 0.12)) : 30; // ~12% of the visible width, like TradingView
+        const end = cur.map.logicalToTime(cur.map.timeToLogical(e.time) + span);
+        const sgn = d.type === "long" ? 1 : -1;
+        d.points = [e, { time: end, price: e.price + sgn * risk * 2 }, { time: end, price: e.price - sgn * risk }];
+      }
+      if (d.type === "text" || d.type === "callout") {
         const text = window.prompt("متن:");
         if (!text) {
           pending.current = [];
@@ -169,6 +213,7 @@ export default function Chart(props: Props) {
       pending.current = [];
       setPreview(null);
       cur.onAdd(d);
+      if (drawState.stay) return; // "Stay in drawing mode"
       cur.onSelect(d.id);
       cur.onTool("cursor");
     });
@@ -196,6 +241,7 @@ export default function Chart(props: Props) {
     };
     const hitTest = (x: number, y: number) => {
       const cur = live.current;
+      if (drawState.hidden) return null;
       const W = el.clientWidth;
       const sel = cur.drawings.find((d) => d.id === cur.selectedId);
       if (sel) {
@@ -209,9 +255,29 @@ export default function Chart(props: Props) {
       }
       return best ? { d: best.d, idx: -1 } : null;
     };
+    const levelAt = (y: number) => {
+      let best: { l: Level; d: number } | null = null;
+      for (const l of live.current.levels ?? []) {
+        if (!l.draggable) continue;
+        const ly = series.priceToCoordinate(l.price);
+        if (ly == null) continue;
+        const d = Math.abs(ly - y);
+        if (d < 7 && (!best || d < best.d)) best = { l, d };
+      }
+      return best?.l ?? null;
+    };
     const onDown = (e: PointerEvent) => {
       if (e.button !== 0 || live.current.tool !== "cursor") return;
       const { x, y } = local(e);
+      const lv = levelAt(y);
+      if (lv) {
+        e.stopPropagation();
+        e.preventDefault();
+        levelDrag.current = { id: lv.id, price: lv.price, start: lv.price };
+        chart.applyOptions({ handleScroll: false, handleScale: false });
+        el.setPointerCapture(e.pointerId);
+        return;
+      }
       if (x > el.clientWidth - 70) return; // price scale area
       const hit = hitTest(x, y);
       if (!hit) return;
@@ -221,15 +287,30 @@ export default function Chart(props: Props) {
       e.stopPropagation();
       e.preventDefault();
       live.current.onSelect(hit.d.id);
+      if (drawState.locked) return; // "Lock all drawings": select, never move
       drag.current = { id: hit.d.id, kind: hit.idx >= 0 ? "point" : "body", idx: hit.idx, startLogical: logical as number, startPrice: price, orig: hit.d.points.map((p) => ({ ...p })) };
       chart.applyOptions({ handleScroll: false, handleScale: false });
       el.setPointerCapture(e.pointerId);
     };
     const onMove = (e: PointerEvent) => {
       const { x, y } = local(e);
+      const ld = levelDrag.current;
+      if (ld) {
+        const p = series.coordinateToPrice(y);
+        const l = (live.current.levels ?? []).find((v) => v.id === ld.id);
+        const line = levelLines.current.get(ld.id);
+        if (p == null || !l || !line) return;
+        ld.price = Math.round(p * 100) / 100;
+        line.applyOptions({ price: ld.price, title: levelTitle(l, ld.price) });
+        return;
+      }
       const g = drag.current;
       if (!g) {
-        if (live.current.tool === "cursor") el.classList.toggle("hover-move", x <= el.clientWidth - 70 && !!hitTest(x, y));
+        if (live.current.tool === "cursor") {
+          const onLevel = !!levelAt(y);
+          el.style.cursor = onLevel ? "ns-resize" : "";
+          el.classList.toggle("hover-move", !onLevel && x <= el.clientWidth - 70 && !!hitTest(x, y));
+        }
         return;
       }
       const cur = live.current;
@@ -248,6 +329,15 @@ export default function Chart(props: Props) {
       }
     };
     const onUp = (e: PointerEvent) => {
+      const ld = levelDrag.current;
+      if (ld) {
+        levelDrag.current = null;
+        chart.applyOptions({ handleScroll: true, handleScale: true });
+        if (el.hasPointerCapture(e.pointerId)) el.releasePointerCapture(e.pointerId);
+        if (ld.price !== ld.start) live.current.onLevelMove?.(ld.id, ld.price);
+        setLevelVer((v) => v + 1); // redraw from props (the parent decides where the line really is)
+        return;
+      }
       if (!drag.current) return;
       drag.current = null;
       chart.applyOptions({ handleScroll: true, handleScale: true });
@@ -278,6 +368,7 @@ export default function Chart(props: Props) {
       el.removeEventListener("pointerup", onUp);
       el.removeEventListener("contextmenu", onCtx);
       chart.remove();
+      levelLines.current.clear();
       chartRef.current = seriesRef.current = markersRef.current = primRef.current = volRef.current = null;
       lineSeries.current.clear();
       built.current = [];
@@ -298,7 +389,15 @@ export default function Chart(props: Props) {
     const reload = p.tf !== tfSec || p.first !== candles[0].time || candles.length < p.len || candles.length - p.len > 1;
     if (reload) {
       series.setData(candles);
-      if (p.tf !== tfSec || p.len === 0) chartRef.current?.timeScale().scrollToRealTime();
+      if (p.tf !== tfSec) {
+        // A timeframe switch changes how many bars there are (e.g. thousands of M1 vs a handful of D1), but
+        // the chart keeps whatever bar spacing (zoom) the user had - scrollToRealTime() only pans, it does not
+        // re-zoom. Left alone, the old spacing crams the new, much sparser bar count into a sliver at the
+        // right edge. fitContent() picks a spacing that actually shows the new timeframe's bars.
+        chartRef.current?.timeScale().fitContent();
+      } else if (p.len === 0) {
+        chartRef.current?.timeScale().scrollToRealTime();
+      }
     } else {
       series.update(candles[candles.length - 1]);
     }
@@ -343,9 +442,21 @@ export default function Chart(props: Props) {
   }, [candles, showVolume, hasVolume]);
 
   /* ---- drawings layer ---- */
+  const [dsVer, setDsVer] = useState(0);
+  useEffect(() => {
+    const f = () => setDsVer((v) => v + 1);
+    drawState.subs.add(f);
+    return () => { drawState.subs.delete(f); };
+  }, []);
   useEffect(() => {
     primRef.current?.set(map, drawings, preview, selectedId);
-  }, [map, drawings, preview, selectedId]);
+  }, [map, drawings, preview, selectedId, dsVer]);
+  useEffect(() => {
+    // TradingView's cursor styles: cross (crosshair lines), dot (no lines), arrow (plain pointer)
+    const c = drawState.cursor;
+    chartRef.current?.applyOptions({ crosshair: { mode: CrosshairMode.Normal, vertLine: { visible: c === "cross", labelVisible: c !== "arrow" }, horzLine: { visible: c === "cross", labelVisible: c !== "arrow" } } });
+    if (host.current) host.current.style.cursor = tool === "eraser" ? "not-allowed" : c === "arrow" ? "default" : c === "dot" ? "crosshair" : "";
+  }, [dsVer, tool, candles.length > 0]);
 
   /* ---- indicators: (re)build series when the set changes ---- */
   const structureKey = visible.map((i) => `${i.uid}:${i.id}:${JSON.stringify(i.params)}`).join("|");
@@ -427,7 +538,7 @@ export default function Chart(props: Props) {
     if (!series) return;
     priceLines.current.forEach((l) => series.removePriceLine(l));
     priceLines.current = [];
-    if (!showTrades) return;
+    if (!showTrades || props.hideTradeLines) return;
     const last = candles[candles.length - 1]?.time ?? 0;
     for (const t of trades) {
       if (t.open_time > last || !(t.close_time == null || t.close_time > last)) continue;
@@ -436,7 +547,21 @@ export default function Chart(props: Props) {
       if (t.stop_loss) priceLines.current.push(series.createPriceLine({ price: t.stop_loss, color: C.down, lineStyle: LineStyle.Dotted, lineWidth: 1, title: `SL ${tag}` }));
       if (t.take_profit) priceLines.current.push(series.createPriceLine({ price: t.take_profit, color: C.up, lineStyle: LineStyle.Dotted, lineWidth: 1, title: `TP ${tag}` }));
     }
-  }, [candles, trades, showTrades]);
+  }, [candles, trades, showTrades, props.hideTradeLines]);
+
+  /* ---- price levels: live positions' entry/SL/TP and the order draft (draggable like MT4) ---- */
+  useEffect(() => {
+    const series = seriesRef.current;
+    if (!series || levelDrag.current) return; // never yank a line out from under the mouse
+    levelLines.current.forEach((l) => series.removePriceLine(l));
+    levelLines.current.clear();
+    for (const l of props.levels ?? []) {
+      levelLines.current.set(l.id, series.createPriceLine({
+        price: l.price, color: l.color, lineWidth: l.draggable ? 2 : 1,
+        lineStyle: l.dashed ? LineStyle.Dashed : LineStyle.Solid, axisLabelVisible: true, title: levelTitle(l, l.price),
+      }));
+    }
+  }, [props.levels, levelVer, candles.length > 0]);
 
   /* ---- rule overlay lines (from taught rules) ---- */
   useEffect(() => {

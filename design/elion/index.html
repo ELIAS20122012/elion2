@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Elion Trading</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script>window.__resources={"https://unpkg.com/react@18.3.1/umd/react.production.min.js":"vendor/react.production.min.js","https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js":"vendor/react-dom.production.min.js"};</script>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;1,500&amp;family=Manrope:wght@400;500;600;700&amp;display=swap"></link><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,300,0,0"></link><script src="vendor/topojson-client.min.js"></script><style>body{margin:0;background:#081013}a{color:#e9d7b0;text-decoration:none}a:hover{color:#fff3d9}</style></helmet>
+<div style="min-height:100vh;min-width:1200px;background:radial-gradient(ellipse at 50% 0%,#0d1a1e 0%,#081013 70%);display:grid;grid-template-columns:72px minmax(0,1fr);font-family:Manrope,sans-serif;color:#dfe5e3;font-size:13px">
+
+<aside style="border-right:1px solid #152328;display:flex;flex-direction:column;align-items:center;padding:14px 0 18px;gap:6px">
+  <div style="width:44px;height:44px;display:grid;place-items:center;margin-bottom:14px"><div style="width:22px;height:22px;border:1.5px solid #e9d7b0;transform:rotate(45deg);display:grid;place-items:center"><div style="width:8px;height:8px;background:#e9d7b0"></div></div></div>
+  <div style="width:54px;padding:10px 0 8px;border-radius:12px;background:linear-gradient(180deg,#1b2a2e,#121e22);border:1px solid rgba(233,215,176,.35);display:flex;flex-direction:column;align-items:center;gap:4px;color:#f3e6c8"><span style="font-family:'Material Symbols Outlined';font-size:24px;line-height:1;font-variation-settings:'FILL' 1">home</span><span style="font-size:11px">Home</span></div>
+  <sc-for list="{{ nav }}" as="n" hint-placeholder-count="6">
+    <a href="{{ n.href }}" style="width:54px;padding:10px 0 8px;border-radius:12px;display:flex;flex-direction:column;align-items:center;gap:4px;color:#9aa6a4;cursor:pointer" style-hover="color:#e9d7b0;background:rgba(233,215,176,.05)"><span style="font-family:'Material Symbols Outlined';font-size:24px;line-height:1">{{ n.icon }}</span><span style="font-size:11px">{{ n.label }}</span></a>
+  </sc-for>
+  <div style="flex:1"></div>
+  <div style="font-size:11px;line-height:1.55;color:#8e9896;text-align:left;width:48px">Better Traders Build Better Lives.</div>
+  <div style="font-size:10px;color:#6f7b79;text-align:center;margin-top:28px;letter-spacing:.04em">ELION OS<br>v2.1</div>
+</aside>
+
+<main style="padding:12px 14px 14px;display:flex;flex-direction:column;gap:12px;min-width:0">
+  <header style="display:flex;align-items:center;gap:22px;height:44px">
+    <div style="display:flex;flex-direction:column;gap:2px"><div style="font-family:'Cormorant Garamond',serif;font-size:24px;letter-spacing:.2em;color:#f3e6c8;line-height:1">ELION</div><div style="font-size:9px;letter-spacing:.42em;color:#aeb7b5">TRADING</div></div>
+    <div style="font-size:11px;letter-spacing:.1em;color:#aeb7b5">DISCIPLINE BUILDS FREEDOM</div>
+    <div style="flex:1;display:flex;justify-content:center"><div style="width:min(100%,380px);height:36px;border-radius:18px;border:1px solid #1f2f34;background:#0c171a;display:flex;align-items:center;gap:8px;padding:0 8px 0 14px;color:#7f8b89"><span style="font-family:'Material Symbols Outlined';font-size:18px">search</span><span style="flex:1;font-size:11px">Search trades, charts, instruments, or ask Elion...</span><span style="font-size:10px;border:1px solid #2a3a3f;border-radius:5px;padding:2px 6px">Ctrl K</span></div></div>
+    <div style="display:flex;flex-direction:column;gap:2px;font-size:11px"><div style="display:flex;align-items:center;gap:6px;color:#dfe5e3"><span style="width:6px;height:6px;border-radius:50%;background:#3ec495;box-shadow:0 0 6px #3ec495"></span>London Session • Live</div><div style="color:#8e9896">{{ clock }}</div></div>
+    <div style="position:relative;color:#e9d7b0"><span style="font-family:'Material Symbols Outlined';font-size:24px;font-variation-settings:'FILL' 1">notifications</span><span style="position:absolute;top:2px;right:1px;width:7px;height:7px;border-radius:50%;background:#e05a4e"></span></div>
+    <div style="display:flex;align-items:center;gap:10px"><div style="width:36px;height:36px;border-radius:50%;background:#ecdcb8;color:#1a1409;display:grid;place-items:center;font-weight:700;font-size:13px">EF</div><div style="display:flex;flex-direction:column;gap:2px"><div style="font-size:13px;font-weight:600">Elias Farahani</div><div style="font-size:10px;color:#8e9896">Trader | Build the Edge</div></div><span style="font-family:'Material Symbols Outlined';font-size:18px;color:#8e9896">expand_more</span></div>
+    <div onClick="{{ toggleTheme }}" style="width:52px;height:26px;border-radius:13px;border:1px solid #2a3a3f;background:#0c171a;position:relative;cursor:pointer"><div style="position:absolute;top:2px;left:{{ knobLeft }};width:20px;height:20px;border-radius:50%;background:#ecdcb8;display:grid;place-items:center;transition:left .25s"><span style="font-family:'Material Symbols Outlined';font-size:14px;color:#1a1409">{{ themeIcon }}</span></div></div>
+  </header>
+
+  <div style="display:grid;grid-template-columns:322fr 150fr 148fr 90fr 112fr 112fr 192fr;gap:10px;height:64px">
+    <div style="border-radius:12px;border:1px solid #1d2c31;background:linear-gradient(180deg,#0f1b1f,#0b1518);display:flex;align-items:center;gap:12px;padding:0 14px;min-width:0">
+      <div style="width:38px;height:38px;border-radius:50%;background:radial-gradient(circle at 40% 35%,#6b5634,#2b2213);border:1px solid rgba(233,215,176,.5);display:grid;place-items:center;color:#ecdcb8;font-size:10px;font-weight:700">Au</div>
+      <div style="display:flex;flex-direction:column;gap:2px;flex-shrink:0"><div style="font-size:11px;font-weight:600;color:#aeb7b5">XAUUSD</div><div style="display:flex;align-items:baseline;gap:6px;white-space:nowrap"><span style="font-size:18px;font-weight:600">{{ price }}</span><span style="font-size:11px;color:#3ec495">{{ chg }}</span><span style="font-size:11px;color:#3ec495">{{ chgPct }}</span></div></div>
+      <div style="position:relative;flex:1;min-width:60px;height:34px"><canvas ref="{{ sparkRef }}" style="position:absolute;inset:0;width:100%;height:100%;display:block"></canvas></div>
+    </div>
+    <div style="border-radius:12px;border:1px solid #1d2c31;background:linear-gradient(180deg,#0f1b1f,#0b1518);padding:10px 14px;display:flex;flex-direction:column;justify-content:center;gap:4px"><div style="font-size:10px;letter-spacing:.06em;color:#aeb7b5">LIVE ACCOUNT</div><div style="display:flex;align-items:baseline;gap:8px"><span style="font-size:18px;font-weight:600">$1,611.42</span><span style="font-size:11px;color:#3ec495">+6.3%</span></div></div>
+    <div style="border-radius:12px;border:1px solid #1d2c31;background:linear-gradient(180deg,#0f1b1f,#0b1518);padding:10px 14px;display:flex;flex-direction:column;justify-content:center;gap:4px"><div style="font-size:10px;letter-spacing:.06em;color:#aeb7b5">DAILY P&amp;L</div><div style="display:flex;align-items:baseline;gap:8px"><span style="font-size:18px;font-weight:600;color:#3ec495">+$95.40</span><span style="font-size:11px;color:#3ec495">+2.1%</span></div></div>
+    <div style="border-radius:12px;border:1px solid #1d2c31;background:linear-gradient(180deg,#0f1b1f,#0b1518);padding:10px 14px;display:flex;flex-direction:column;justify-content:center;gap:4px"><div style="font-size:10px;letter-spacing:.06em;color:#aeb7b5">TRADES</div><div style="font-size:18px;font-weight:600">3 / 5</div></div>
+    <div style="border-radius:12px;border:1px solid #1d2c31;background:linear-gradient(180deg,#0f1b1f,#0b1518);padding:10px 14px;display:flex;flex-direction:column;justify-content:center;gap:6px"><div style="font-size:10px;letter-spacing:.06em;color:#aeb7b5">MT5</div><div style="display:flex;align-items:center;gap:7px;font-size:12px"><span style="width:8px;height:8px;border-radius:50%;background:#3ec495;box-shadow:0 0 6px #3ec495"></span>Connected</div></div>
+    <div style="border-radius:12px;border:1px solid #1d2c31;background:linear-gradient(180deg,#0f1b1f,#0b1518);padding:10px 14px;display:flex;flex-direction:column;justify-content:center;gap:6px"><div style="font-size:10px;letter-spacing:.06em;color:#aeb7b5">AI SYSTEM</div><div style="display:flex;align-items:center;gap:7px;font-size:12px"><span style="width:8px;height:8px;border-radius:50%;background:#3ec495;box-shadow:0 0 6px #3ec495"></span>Online</div></div>
+    <div style="border-radius:12px;border:1px solid #1d2c31;background:linear-gradient(180deg,#0f1b1f,#0b1518);padding:0 14px;display:flex;align-items:center;gap:12px"><span style="font-family:'Material Symbols Outlined';font-size:34px;color:#3ec495">verified_user</span><div style="flex:1;display:flex;flex-direction:column;gap:3px"><div style="font-size:10px;letter-spacing:.06em;color:#aeb7b5">RISK STATUS</div><div style="font-size:13px;font-weight:500">Normal</div></div><span style="font-family:'Material Symbols Outlined';font-size:20px;color:#aeb7b5">expand_more</span></div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:282fr 520fr 365fr;grid-template-rows:max(460px, calc((100vw - 110px) * 0.37));gap:12px;align-items:stretch">
+    <div style="display:flex;flex-direction:column;gap:12px;min-width:0;contain:size">
+      <div style="flex:1.35;border-radius:12px;border:1px solid #1d2c31;background:linear-gradient(180deg,#0f1b1f,#0b1518);padding:14px 14px 12px;display:flex;flex-direction:column;gap:12px">
+        <div style="display:flex;justify-content:space-between;align-items:center"><div style="font-size:14px;font-weight:600">Trader State</div><div style="display:flex;align-items:center;gap:6px;font-size:11px;padding:3px 10px;border-radius:10px;background:#15252a"><span style="width:6px;height:6px;border-radius:50%;background:#3ec495"></span>Live</div></div>
+        <div style="flex:1;display:flex;align-items:center;gap:12px">
+          <div style="width:104px;height:104px;flex-shrink:0;border-radius:50%;background:conic-gradient(#e2cc9f {{ discDeg }},#1b2a2e 0);display:grid;place-items:center;box-shadow:0 0 24px rgba(233,215,176,.12)"><div style="width:88px;height:88px;border-radius:50%;background:#0d181b;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px"><div style="font-size:24px;font-weight:600">87%</div><div style="font-size:9px;letter-spacing:.08em;color:#aeb7b5">DISCIPLINE</div></div></div>
+          <div style="flex:1;display:flex;flex-direction:column;gap:12px;min-width:0">
+            <sc-for list="{{ bars }}" as="b" hint-placeholder-count="3">
+              <div style="display:flex;flex-direction:column;gap:6px"><div style="display:flex;justify-content:space-between;gap:6px;font-size:11px;white-space:nowrap"><span style="color:#c8cfcd">{{ b.label }}</span><span>{{ b.value }}</span></div><div style="height:6px;border-radius:3px;background:#1b2a2e;overflow:hidden"><div style="height:100%;width:{{ b.w }};border-radius:3px;background:#e9d7b0"></div></div></div>
+            </sc-for>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;border:1px solid #22343a;background:#0d181b"><span style="font-family:'Cormorant Garamond',serif;font-size:30px;line-height:.6;color:#e9d7b0;height:14px">“</span><span style="font-family:'Cormorant Garamond',serif;font-style:italic;font-size:14px;color:#dfe5e3">“Discipline today, freedom tomorrow.”</span></div>
+      </div>
+      <div style="flex:1;border-radius:12px;border:1px solid #1d2c31;background:linear-gradient(180deg,#0f1b1f,#0b1518);padding:12px 14px;display:flex;flex-direction:column;gap:6px">
+        <div style="display:flex;align-items:center;gap:8px"><div style="font-size:14px;font-weight:600;white-space:nowrap">Alerts &amp; Notifications</div><div style="width:18px;height:18px;border-radius:50%;background:#ecdcb8;color:#1a1409;font-size:10px;font-weight:700;display:grid;place-items:center">3</div><div style="flex:1"></div><a href="#" style="font-size:11px;color:#c8cfcd;display:flex;align-items:center;gap:4px;white-space:nowrap">View all <span style="font-family:'Material Symbols Outlined';font-size:14px">arrow_forward</span></a></div>
+        <sc-for list="{{ alerts }}" as="a" hint-placeholder-count="3">
+          <div style="flex:1;display:flex;align-items:center;gap:10px;border-top:1px solid #16252a;padding:2px 0"><div style="width:28px;height:28px;border-radius:50%;background:{{ a.bg }};display:grid;place-items:center;flex-shrink:0"><span style="font-family:'Material Symbols Outlined';font-size:16px;color:#fff;font-variation-settings:'FILL' 1">{{ a.icon }}</span></div><div style="flex:1;min-width:0"><div style="font-size:11.5px;color:#e6ebe9">{{ a.title }}</div><div style="font-size:10.5px;color:#8e9896;margin-top:2px">{{ a.time }}</div></div><span style="font-family:'Material Symbols Outlined';font-size:18px;color:#6f7b79">chevron_right</span></div>
+        </sc-for>
+      </div>
+    </div>
+
+    <div style="min-width:0;min-height:0;height:100%">
+      <dc-import name="ElionAICard" hint-size="100%,100%" style="display:block;width:100%;height:100%"></dc-import>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:12px;min-width:0;contain:size">
+      <div style="flex:2.6;border-radius:12px;border:1px solid #1d2c31;background:linear-gradient(180deg,#0f1b1f,#0b1518);padding:12px 14px;display:flex;flex-direction:column;gap:6px;min-height:0">
+        <div style="display:flex;justify-content:space-between;align-items:center"><div style="font-size:14px;font-weight:600">Market Intelligence</div><div style="display:flex;align-items:center;gap:10px;padding:4px 8px 4px 12px;border-radius:8px;border:1px solid #22343a;font-size:11px"><span style="font-weight:600">XAUUSD</span><span style="color:#8e9896">M5</span><span style="font-family:'Material Symbols Outlined';font-size:16px;color:#8e9896">expand_more</span></div></div>
+        <div style="display:flex;align-items:baseline;gap:10px"><div style="font-size:22px;font-weight:600">{{ price }}</div><div style="display:flex;gap:8px;font-size:11px;color:#3ec495"><span>{{ chg }}</span><span>{{ chgPct }}</span></div></div>
+        <div style="position:relative;flex:1;min-height:0"><canvas ref="{{ candleRef }}" style="position:absolute;inset:0;width:100%;height:100%;display:block"></canvas></div>
+        <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px">
+          <div style="border-radius:8px;border:1px solid #1d2c31;background:#0d181b;padding:7px 9px;display:flex;flex-direction:column;gap:3px"><div style="font-size:10px;color:#aeb7b5">Trend</div><div style="font-size:11px;color:#3ec495;display:flex;align-items:center;gap:2px"><span style="font-family:'Material Symbols Outlined';font-size:13px">north_east</span>Bullish</div></div>
+          <div style="border-radius:8px;border:1px solid #1d2c31;background:#0d181b;padding:7px 9px;display:flex;flex-direction:column;gap:3px"><div style="font-size:10px;color:#aeb7b5">Momentum</div><div style="font-size:11px">Strengthening</div></div>
+          <div style="border-radius:8px;border:1px solid #1d2c31;background:#0d181b;padding:7px 9px;display:flex;flex-direction:column;gap:3px"><div style="font-size:10px;color:#aeb7b5">Next Level</div><div style="font-size:11px;display:flex;align-items:center;gap:2px"><span style="font-family:'Material Symbols Outlined';font-size:13px;color:#3ec495">north_east</span>4328.50</div></div>
+          <div style="border-radius:8px;border:1px solid #1d2c31;background:#0d181b;padding:7px 9px;display:flex;flex-direction:column;gap:3px"><div style="font-size:10px;color:#aeb7b5">AI Confidence</div><div style="display:flex;align-items:center;gap:6px"><div style="width:18px;height:18px;border-radius:50%;background:conic-gradient(#e2cc9f 259deg,#1b2a2e 0);display:grid;place-items:center"><div style="width:12px;height:12px;border-radius:50%;background:#0d181b"></div></div><span style="font-size:12px;font-weight:600">72%</span></div></div>
+        </div>
+      </div>
+      <div style="flex:1;border-radius:12px;border:1px solid #1d2c31;background:linear-gradient(180deg,#0f1b1f,#0b1518);padding:12px 14px;display:flex;flex-direction:column;gap:6px;min-height:0">
+        <div style="display:flex;justify-content:space-between;align-items:center"><div style="font-size:14px;font-weight:600">Account Overview</div><a href="#" style="font-size:11px;color:#c8cfcd;display:flex;align-items:center;gap:4px">View details <span style="font-family:'Material Symbols Outlined';font-size:14px">arrow_forward</span></a></div>
+        <div style="flex:1;display:flex;gap:12px;min-height:0"><div style="display:flex;flex-direction:column;gap:2px"><div style="font-size:10px;color:#aeb7b5">Equity</div><div style="display:flex;align-items:baseline;gap:10px"><span style="font-size:19px;font-weight:600">$1,611.42</span><span style="font-size:11px;color:#3ec495">+6.3%</span></div></div><div style="position:relative;flex:1;min-width:0"><canvas ref="{{ acctRef }}" style="position:absolute;inset:0;width:100%;height:100%;display:block"></canvas></div></div>
+        <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px">
+          <div><div style="font-size:10px;color:#aeb7b5">Balance</div><div style="font-size:12px;margin-top:3px">$1,520.00</div></div>
+          <div><div style="font-size:10px;color:#aeb7b5">Margin</div><div style="font-size:12px;margin-top:3px">$120.50</div></div>
+          <div><div style="font-size:10px;color:#aeb7b5">Free Margin</div><div style="font-size:12px;margin-top:3px">$1,490.92</div></div>
+          <div><div style="font-size:10px;color:#aeb7b5">Margin Level</div><div style="font-size:12px;margin-top:3px">1,238%</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:390fr 355fr 422fr;grid-template-rows:228px;gap:12px;height:228px">
+    <div style="border-radius:12px;border:1px solid #1d2c31;background:linear-gradient(180deg,#0f1b1f,#0b1518);padding:12px 14px;display:flex;flex-direction:column;gap:10px;min-width:0;min-height:0;overflow:hidden">
+      <div style="display:flex;justify-content:space-between;align-items:center"><div style="font-size:14px;font-weight:600">Performance</div><div style="display:flex;border-radius:8px;background:#0d181b;border:1px solid #1d2c31;padding:2px">
+        <sc-for list="{{ perfTabs }}" as="t" hint-placeholder-count="4"><div onClick="{{ t.on }}" style="padding:4px 12px;border-radius:6px;font-size:11px;cursor:pointer;background:{{ t.bg }};color:{{ t.fg }};font-weight:{{ t.fw }}">{{ t.label }}</div></sc-for>
+      </div></div>
+      <div style="display:grid;grid-template-columns:1.1fr 1.1fr 1fr .8fr;gap:8px">
+        <div><div style="font-size:10px;color:#aeb7b5">P&amp;L</div><div style="font-size:18px;font-weight:600;color:#3ec495;margin-top:3px">+$95.40</div><div style="font-size:10px;color:#3ec495">+2.1%</div></div>
+        <div><div style="font-size:10px;color:#aeb7b5">Win Rate</div><div style="display:flex;align-items:center;gap:8px;margin-top:4px"><div style="width:30px;height:30px;border-radius:50%;background:conic-gradient(#e2cc9f 238deg,#1b2a2e 0);display:grid;place-items:center"><div style="width:20px;height:20px;border-radius:50%;background:#0d181b"></div></div><span style="font-size:14px;font-weight:600">66%</span></div></div>
+        <div><div style="font-size:10px;color:#aeb7b5">Profit Factor</div><div style="font-size:18px;font-weight:600;margin-top:3px">2.8</div></div>
+        <div><div style="font-size:10px;color:#aeb7b5">Trades</div><div style="font-size:18px;font-weight:600;margin-top:3px">3</div><div style="font-size:10px;color:#aeb7b5">2W / 1L</div></div>
+      </div>
+      <div style="position:relative;flex:1;min-height:0"><canvas ref="{{ perfRef }}" style="position:absolute;inset:0;width:100%;height:100%;display:block"></canvas></div>
+    </div>
+
+    <div style="border-radius:12px;border:1px solid #1d2c31;background:linear-gradient(180deg,#0f1b1f,#0b1518);padding:12px 14px;display:flex;flex-direction:column;gap:6px;min-width:0;min-height:0;overflow:hidden">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><div style="font-size:14px;font-weight:600">Recent Trades</div><a href="#" style="font-size:11px;color:#c8cfcd;display:flex;align-items:center;gap:4px;white-space:nowrap">View all <span style="font-family:'Material Symbols Outlined';font-size:14px">arrow_forward</span></a></div>
+      <div style="display:grid;grid-template-columns:.8fr 1.2fr 1fr 1fr 1fr 1fr;font-size:11px;color:#aeb7b5;padding-bottom:6px;border-bottom:1px solid #16252a"><span>Time</span><span>Pair</span><span>Type</span><span>Entry</span><span>Exit</span><span style="text-align:right">P&amp;L</span></div>
+      <sc-for list="{{ trades }}" as="r" hint-placeholder-count="4">
+        <div style="flex:1;display:grid;grid-template-columns:.8fr 1.2fr 1fr 1fr 1fr 1fr;align-items:center;font-size:11px;border-bottom:1px solid #121f23"><span>{{ r.time }}</span><span>XAUUSD</span><span><span style="display:inline-block;padding:3px 9px;border-radius:5px;font-size:10.5px;background:{{ r.tbg }};color:{{ r.tfg }}">{{ r.type }}</span></span><span>{{ r.entry }}</span><span>{{ r.exit }}</span><span style="text-align:right;font-weight:600;color:{{ r.pc }}">{{ r.pnl }}</span></div>
+      </sc-for>
+    </div>
+
+    <div style="border-radius:12px;border:1px solid #1d2c31;background:linear-gradient(180deg,#0f1b1f,#0b1518);padding:12px 14px;display:flex;flex-direction:column;gap:8px;min-width:0;min-height:0;overflow:hidden">
+      <div style="display:flex;justify-content:space-between;align-items:center"><div style="font-size:14px;font-weight:600">Session Activity</div><div style="display:flex;border-radius:8px;background:#0d181b;border:1px solid #1d2c31;padding:2px">
+        <sc-for list="{{ sessTabs }}" as="t" hint-placeholder-count="3"><div onClick="{{ t.on }}" style="padding:4px 16px;border-radius:6px;font-size:11px;cursor:pointer;background:{{ t.bg }};color:{{ t.fg }};font-weight:{{ t.fw }}">{{ t.label }}</div></sc-for>
+      </div></div>
+      <div style="flex:1;display:flex;gap:10px;min-height:0">
+        <div style="position:relative;flex:1;min-width:0"><canvas ref="{{ mapRef }}" style="position:absolute;inset:0;width:100%;height:100%;display:block"></canvas></div>
+        <div style="width:150px;display:flex;flex-direction:column;justify-content:center;gap:14px;padding:10px 12px;border-radius:10px;border:1px solid #1d2c31;background:#0d181b">
+          <sc-for list="{{ sessions }}" as="s" hint-placeholder-count="3">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:6px"><div style="font-size:12px;color:{{ s.nameColor }}">{{ s.name }}</div><div style="display:flex;flex-direction:column;align-items:flex-end;gap:3px"><div style="display:flex;align-items:center;gap:4px;font-size:10.5px;color:{{ s.color }}"><span style="width:6px;height:6px;border-radius:50%;box-sizing:border-box;border:1px solid {{ s.color }};background:{{ s.dot }}"></span>{{ s.status }}</div><div style="font-size:10px;color:#6f7b79">{{ s.hours }}</div></div></div>
+          </sc-for>
+        </div>
+      </div>
+      <div style="text-align:right;font-family:'Cormorant Garamond',serif;font-style:italic;font-size:14px;color:#dfe5e3">“Global Markets. A Larger You.”</div>
+    </div>
+  </div>
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { price: 4339.82, now: new Date(), perf: 'Today', sess: 'London', dark: true };
+  els = {};
+  ref = k => el => { if (el) this.els[k] = el; };
+  sparkRef = this.ref('spark'); candleRef = this.ref('candle'); acctRef = this.ref('acct'); perfRef = this.ref('perf'); mapRef = this.ref('map');
+  componentDidMount() {
+    let seed = 7; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+    let p = 4322.4; this.candles = [];
+    for (let i = 0; i < 62; i++) { const o = p; p += (rnd() - .42) * 1.4 + Math.sin(i / 6) * .15; const c = p; this.candles.push({ o, c, h: Math.max(o, c) + rnd() * .9, l: Math.min(o, c) - rnd() * .9, v: .2 + rnd() * .8 }); }
+    const last = this.candles[this.candles.length - 1]; last.c = 4339.82; last.h = Math.max(last.h, last.c + .2);
+    this.spark = Array.from({ length: 30 }, (_, i) => i * .9 + Math.sin(i * 1.3) * 2 + rnd() * 2);
+    this.acct = Array.from({ length: 36 }, (_, i) => i * .8 + Math.sin(i * .9) * 2.2 + rnd() * 2);
+    let v = 0; this.perfPts = Array.from({ length: 49 }, (_, i) => (v += (rnd() - .35) * 6, i === 48 ? 95.4 : Math.max(-8, v * (i / 48) + i * 1.3)));
+    fetch('vendor/land-110m.json').then(r => r.json()).then(t => { this.topo = t; this.landCache = null; this.drawAll(); }).catch(() => {});
+    this.iv = setInterval(() => {
+      const lc = this.candles[this.candles.length - 1];
+      const np = Math.round((this.state.price + (Math.random() - .48) * .35) * 100) / 100;
+      lc.c = np; lc.h = Math.max(lc.h, np); lc.l = Math.min(lc.l, np);
+      this.setState({ price: np, now: new Date() }, () => this.drawAll());
+    }, 1000);
+    this.ro = new ResizeObserver(() => { this.landCache = null; this.drawAll(); });
+    setTimeout(() => { Object.values(this.els).forEach(e => this.ro.observe(e)); this.drawAll(); }, 0);
+  }
+  componentWillUnmount() { clearInterval(this.iv); this.ro && this.ro.disconnect(); }
+  prep(el) {
+    if (!el || !el.clientWidth) return null;
+    const d = Math.min(devicePixelRatio || 1, 2), w = el.clientWidth, h = el.clientHeight;
+    if (el.width !== Math.round(w * d) || el.height !== Math.round(h * d)) { el.width = Math.round(w * d); el.height = Math.round(h * d); }
+    const ctx = el.getContext('2d'); ctx.setTransform(d, 0, 0, d, 0, 0); ctx.clearRect(0, 0, w, h); return { ctx, w, h };
+  }
+  area(ctx, pts, x0, y0, w, h, min, max, color, fillA) {
+    const X = i => x0 + i / (pts.length - 1) * w, Y = v => y0 + h - (v - min) / (max - min) * h;
+    ctx.beginPath(); pts.forEach((v, i) => i ? ctx.lineTo(X(i), Y(v)) : ctx.moveTo(X(i), Y(v)));
+    ctx.strokeStyle = color; ctx.lineWidth = 1.4; ctx.stroke();
+    if (fillA) { ctx.lineTo(X(pts.length - 1), y0 + h); ctx.lineTo(x0, y0 + h); ctx.closePath(); const g = ctx.createLinearGradient(0, y0, 0, y0 + h); g.addColorStop(0, fillA); g.addColorStop(1, 'rgba(0,0,0,0)'); ctx.fillStyle = g; ctx.fill(); }
+    return { X, Y };
+  }
+  drawAll() {
+    if (!this.candles) return;
+    const F = '10px Manrope, sans-serif';
+    let s = this.prep(this.els.spark);
+    if (s) this.area(s.ctx, this.spark, 2, 4, s.w - 4, s.h - 8, Math.min(...this.spark), Math.max(...this.spark), '#3ec495', null);
+    s = this.prep(this.els.acct);
+    if (s) this.area(s.ctx, this.acct, 0, 4, s.w, s.h - 6, Math.min(...this.acct) - 4, Math.max(...this.acct), '#e2cc9f', 'rgba(226,204,159,.28)');
+    s = this.prep(this.els.candle);
+    if (s) {
+      const { ctx, w, h } = s, R = 46, top = 6, VB = Math.round(h * .14), ph = h - VB - 22, min = 4318, max = 4347, cw = (w - R) / this.candles.length;
+      const Y = v => top + ph - (v - min) / (max - min) * ph;
+      ctx.font = F; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+      for (let v = 4320; v <= 4345; v += 5) { ctx.strokeStyle = 'rgba(200,215,210,.06)'; ctx.beginPath(); ctx.moveTo(0, Y(v)); ctx.lineTo(w - R, Y(v)); ctx.stroke(); ctx.fillStyle = '#8e9896'; ctx.fillText(v, w - R + 8, Y(v)); }
+      this.candles.forEach((c, i) => {
+        const x = i * cw + cw / 2, up = c.c >= c.o, col = up ? '#3ec495' : '#cdb88f';
+        ctx.strokeStyle = col; ctx.beginPath(); ctx.moveTo(x, Y(c.h)); ctx.lineTo(x, Y(c.l)); ctx.stroke();
+        ctx.fillStyle = col; const y1 = Y(Math.max(c.o, c.c)); ctx.fillRect(x - cw * .32, y1, cw * .64, Math.max(1, Y(Math.min(c.o, c.c)) - y1));
+        ctx.fillStyle = 'rgba(62,196,149,.28)'; const vh = c.v * VB; ctx.fillRect(x - cw * .32, h - 16 - vh, cw * .64, vh);
+      });
+      const lp = this.state.price, ly = Y(lp);
+      ctx.setLineDash([2, 3]); ctx.strokeStyle = 'rgba(233,215,176,.5)'; ctx.beginPath(); ctx.moveTo(0, ly); ctx.lineTo(w - R, ly); ctx.stroke(); ctx.setLineDash([]);
+      ctx.fillStyle = '#ecdcb8'; ctx.beginPath(); ctx.roundRect(w - R + 1, ly - 9, R - 1, 18, 4); ctx.fill(); ctx.fillStyle = '#1a1409'; ctx.font = '600 10px Manrope, sans-serif'; ctx.fillText(lp.toFixed(2), w - R + 4, ly);
+      ctx.font = F; ctx.fillStyle = '#8e9896'; ctx.textAlign = 'center';
+      ['10:00', '12:00', '14:00', '16:00', '18:00'].forEach((t, i) => ctx.fillText(t, 14 + i * (w - R - 28) / 4, h - 5));
+    }
+    s = this.prep(this.els.perf);
+    if (s) {
+      const { ctx, w, h } = s, R = 34, B = 16, min = -110, max = 210, pw = w - R, ph = h - B;
+      const Y = v => ph - (v - min) / (max - min) * ph;
+      ctx.font = F; ctx.textBaseline = 'middle';
+      [200, 100, 0, -100].forEach(v => { ctx.fillStyle = '#8e9896'; ctx.textAlign = 'left'; ctx.fillText(v, pw + 6, Y(v)); });
+      ctx.setLineDash([2, 3]); ctx.strokeStyle = 'rgba(200,215,210,.12)'; ctx.beginPath(); ctx.moveTo(0, Y(0)); ctx.lineTo(pw, Y(0)); ctx.stroke(); ctx.setLineDash([]);
+      const span = pw * (12 / 14);
+      const { X, Y: Y2 } = this.area(ctx, this.perfPts, 4, 0, span - 4, ph, min, max, '#e2cc9f', 'rgba(62,196,149,.3)');
+      const lx = X(this.perfPts.length - 1), ly = Y2(95.4);
+      ctx.fillStyle = '#ecdcb8'; ctx.beginPath(); ctx.arc(lx, ly, 3.5, 0, 7); ctx.fill();
+      ctx.beginPath(); ctx.roundRect(lx - 22, ly - 26, 44, 18, 4); ctx.fill(); ctx.fillStyle = '#1a1409'; ctx.textAlign = 'center'; ctx.font = '600 10px Manrope, sans-serif'; ctx.fillText('+95.40', lx, ly - 17);
+      ctx.font = F; ctx.fillStyle = '#8e9896';
+      ['06:00', '08:00', '10:00', '12:00', '14:00', '16:00', '18:00', '20:00'].forEach((t, i) => ctx.fillText(t, 14 + i * (pw - 20) / 7, h - 5));
+    }
+    s = this.prep(this.els.map);
+    if (s) this.drawMap(s);
+  }
+  drawMap({ ctx, w, h }) {
+    const L0 = -135, L1 = 160, A0 = 78, A1 = -52;
+    const px = lon => (lon - L0) / (L1 - L0) * w, py = lat => (A0 - lat) / (A0 - A1) * h;
+    if (this.topo && window.topojson) {
+      if (!this.landCache || this.landCache.w !== w || this.landCache.h !== h) {
+        const off = document.createElement('canvas'); off.width = w; off.height = h; const o = off.getContext('2d');
+        const land = topojson.feature(this.topo, this.topo.objects.land);
+        o.fillStyle = '#fff'; o.beginPath();
+        const polys = land.features ? land.features.flatMap(f => f.geometry.type === 'Polygon' ? [f.geometry.coordinates] : f.geometry.coordinates) : (land.geometry.type === 'Polygon' ? [land.geometry.coordinates] : land.geometry.coordinates);
+        polys.forEach(poly => poly.forEach(ring => ring.forEach(([lo, la], i) => i ? o.lineTo(px(lo), py(la)) : o.moveTo(px(lo), py(la)))));
+        o.fill('evenodd');
+        const data = o.getImageData(0, 0, w, h).data, dots = [];
+        for (let y = 2; y < h; y += 4.2) for (let x = 2; x < w; x += 4.2) if (data[(Math.floor(y) * w + Math.floor(x)) * 4 + 3] > 0) dots.push([x, y]);
+        this.landCache = { w, h, dots };
+      }
+      ctx.fillStyle = 'rgba(190,205,200,.32)';
+      this.landCache.dots.forEach(([x, y]) => { ctx.beginPath(); ctx.arc(x, y, 1.05, 0, 7); ctx.fill(); });
+    }
+    const cities = { 'New York': [-74, 40.7], London: [-0.1, 51.5], Tokyo: [139.7, 35.7] };
+    const P = n => [px(cities[n][0]), py(cities[n][1])];
+    const arc = (a, b) => { const [x1, y1] = P(a), [x2, y2] = P(b); ctx.beginPath(); ctx.moveTo(x1, y1); ctx.quadraticCurveTo((x1 + x2) / 2, Math.min(y1, y2) - Math.abs(x2 - x1) * .28, x2, y2); ctx.strokeStyle = 'rgba(236,220,184,.55)'; ctx.lineWidth = 1; ctx.stroke(); };
+    arc('New York', 'London'); arc('London', 'Tokyo');
+    Object.keys(cities).forEach(n => {
+      const [x, y] = P(n), on = n === this.state.sess;
+      if (on) { const g = ctx.createRadialGradient(x, y, 0, x, y, 16); g.addColorStop(0, 'rgba(236,220,184,.6)'); g.addColorStop(1, 'rgba(0,0,0,0)'); ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y, 16, 0, 7); ctx.fill(); }
+      ctx.strokeStyle = '#ecdcb8'; ctx.lineWidth = 1.2; ctx.beginPath(); ctx.arc(x, y, on ? 5 : 3.5, 0, 7); ctx.stroke();
+      ctx.fillStyle = on ? '#ecdcb8' : '#0d181b'; ctx.beginPath(); ctx.arc(x, y, 2, 0, 7); ctx.fill();
+    });
+  }
+  renderVals() {
+    const st = this.state, p = st.price, ch = p - 4327.36;
+    const d = st.now, pad = n => String(n).padStart(2, '0');
+    const tab = (list, cur, key) => list.map(l => ({ label: l, on: () => this.setState({ [key]: l }, () => this.drawAll()), bg: l === cur ? '#ecdcb8' : 'transparent', fg: l === cur ? '#1a1409' : '#c8cfcd', fw: l === cur ? 600 : 400 }));
+    const sess = [['London', 'Active', '07:00 - 16:00'], ['New York', 'Upcoming', '13:00 - 22:00'], ['Tokyo', 'Closed', '00:00 - 09:00']];
+    return {
+      sparkRef: this.sparkRef, candleRef: this.candleRef, acctRef: this.acctRef, perfRef: this.perfRef, mapRef: this.mapRef,
+      price: p.toFixed(2), chg: (ch >= 0 ? '+' : '') + ch.toFixed(2), chgPct: (ch >= 0 ? '+' : '') + (ch / 4327.36 * 100).toFixed(2) + '%',
+      clock: `${d.toLocaleDateString('en-GB', { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' }).replace(',', ',')} | ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`,
+      toggleTheme: () => this.setState(s => ({ dark: !s.dark })), knobLeft: st.dark ? '28px' : '2px', themeIcon: st.dark ? 'dark_mode' : 'light_mode',
+      nav: [['candlestick_chart', 'Trade'], ['menu_book', 'Journal'], ['monitoring', 'Analytics'], ['psychology', 'AI Lab'], ['handyman', 'Tools'], ['settings', 'Settings']].map(([icon, label]) => ({ icon, label, href: label === 'Journal' ? 'journal.dc.html' : '#' })),
+      discDeg: '313deg',
+      bars: [{ label: 'Daily Goal', value: '3 / 5', w: '60%' }, { label: 'Risk Usage', value: '0.8% / 2%', w: '40%' }, { label: 'Rule Compliance', value: '5 / 6', w: '83%' }],
+      alerts: [{ icon: 'warning', bg: '#b3322c', title: 'Possible overtrading detected', time: '2 minutes ago' }, { icon: 'warning', bg: '#c9a56a', title: 'High volatility – London Session', time: '12 minutes ago' }, { icon: 'info', bg: '#3f8fb0', title: 'News: FOMC Statement in 1h', time: '18 minutes ago' }],
+      trades: [['14:12', 'Sell', '4342.10', '4338.50', '+$36.00'], ['11:45', 'Sell', '4338.20', '4335.10', '+$31.00'], ['09:28', 'Buy', '4331.50', '4329.80', '-$17.00'], ['07:15', 'Buy', '4328.30', '4334.10', '+$58.00']].map(([time, type, entry, exit, pnl]) => ({ time, type, entry, exit, pnl, tbg: type === 'Sell' ? '#6e1f1c' : '#1d4a3b', tfg: type === 'Sell' ? '#f3b5ae' : '#a9ecd0', pc: pnl[0] === '-' ? '#e05a4e' : '#3ec495' })),
+      perfTabs: tab(['Today', 'Week', 'Month', 'Custom'], st.perf, 'perf'),
+      sessTabs: tab(['London', 'New York', 'Tokyo'], st.sess, 'sess'),
+      sessions: sess.map(([name, status, hours]) => ({ name, status, hours, nameColor: name === st.sess ? '#f3e6c8' : '#dfe5e3', color: status === 'Active' ? '#3ec495' : '#8e9896', dot: status === 'Active' ? '#3ec495' : 'transparent' }))
+    };
+  }
+}
+</script>
+</body>
+</html>

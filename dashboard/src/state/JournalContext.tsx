@@ -20,6 +20,11 @@ function useJournalState() {
   const [status, setStatus] = useState<BackendStatus>("loading");
   const [detected, setDetected] = useState<Detected[]>([]);
   const [live, setLive] = useState<LiveInfo | null>(null);
+  // the reason the last refresh failed (e.g. an auth gateway intercepting the request), and when data was
+  // last confirmed fresh - so a page can say honestly "this is stale from Xs ago" instead of showing
+  // cached account/balance numbers as if they were still live.
+  const [statusError, setStatusError] = useState<string | null>(null);
+  const [lastOkAt, setLastOkAt] = useState<number | null>(null);
 
   const setActive = useCallback((id: number | null) => {
     setActiveRaw(id);
@@ -36,9 +41,14 @@ function useJournalState() {
       const list = await journalApi.accounts();
       setAccounts(list);
       setStatus("ok");
-      setActiveRaw((cur) => (cur != null && list.some((a) => a.id === cur) ? cur : list[0]?.id ?? null));
-    } catch {
+      setStatusError(null);
+      setLastOkAt(Date.now());
+      // if the active account is gone (deleted/never set), fall back to the newest one, not the oldest
+      // (accounts come back sorted by id ascending) - so a freshly connected account is what shows up.
+      setActiveRaw((cur) => (cur != null && list.some((a) => a.id === cur) ? cur : list[list.length - 1]?.id ?? null));
+    } catch (e) {
       setStatus("down");
+      setStatusError((e as Error).message || null);
     }
   }, []);
 
@@ -90,7 +100,7 @@ function useJournalState() {
     return () => { dead = true; clearInterval(id); };
   }, [activeId, status]);
 
-  return { accounts, active, activeId, setActive, trades, status, detected, live, refreshAccounts, refreshTrades };
+  return { accounts, active, activeId, setActive, trades, status, statusError, lastOkAt, detected, live, refreshAccounts, refreshTrades };
 }
 
 export type JournalState = ReturnType<typeof useJournalState>;

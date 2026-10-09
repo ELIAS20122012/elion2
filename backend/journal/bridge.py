@@ -13,7 +13,7 @@ import re
 import threading
 import time
 
-from . import db
+from . import db, engine
 
 log = logging.getLogger("journal.bridge")
 
@@ -91,15 +91,18 @@ def poll_once(common: str | None = None) -> None:
             continue  # the indicator is mid-write; next pass will get it
 
         with db.db() as con:
-            acc = con.execute("SELECT id FROM accounts WHERE platform='mt4' AND login=?", (login,)).fetchone()
+            acc = con.execute("SELECT id, enabled FROM accounts WHERE platform='mt4' AND login=?", (login,)).fetchone()
             account_id = acc["id"] if acc else None
+            account_enabled = bool(acc["enabled"]) if acc else False
 
             if kind == "open" and data["account"]:
                 with _lock:
+                    # "linked" only means a row exists (so it drops off /detected once added) - disabling it later
+                    # must not make it look "not yet added" again, it should just stop pulling in new trades.
                     LIVE[login] = {**data["account"], "last_seen": mtime, "linked": account_id is not None, "open_count": len(data["open"]),
                                    "floating": round(sum(t["profit"] for t in data["open"]), 2)}
-            if account_id is None or _seen.get((login, kind)) == mtime:
-                continue  # not linked yet (kept for when the user adds the account) or nothing new
+            if account_id is None or not account_enabled or _seen.get((login, kind)) == mtime:
+                continue  # not linked yet, disconnected, or nothing new
 
             if kind == "open":
                 for t in filter(_valid, data["open"]):
@@ -123,6 +126,8 @@ def poll_once(common: str | None = None) -> None:
 def detected() -> list[dict]:
     """MT4 accounts the indicator reports that are not in the journal yet."""
     now = time.time()
+    if not engine.is_on("mt4"):
+        return []
     with _lock:
         return [
             {"platform": "mt4", "login": k, "server": v["server"], "company": v["company"], "balance": v["balance"], "currency": v["currency"],
@@ -137,6 +142,8 @@ def live_status(platform: str, login: str | None) -> dict:
     if not login:
         return {"source": None, "connected": False}
     if platform == "mt4":
+        if not engine.is_on("mt4"):
+            return {"source": "mt4-indicator", "connected": False, "engine_off": True, "last_seen_ago": None}
         with _lock:
             v = LIVE.get(login)
         if not v:
@@ -145,6 +152,8 @@ def live_status(platform: str, login: str | None) -> dict:
         return {"source": "mt4-indicator", "connected": ago < FRESH_SECONDS, "last_seen_ago": round(ago, 1), "balance": v["balance"],
                 "equity": v["equity"], "floating": v["floating"], "open_count": v["open_count"], "server": v["server"]}
     if platform == "mt5":
+        if not engine.is_on("mt5"):
+            return {"source": "mt5-auto", "connected": False, "engine_off": True, "last_seen_ago": None}
         with _lock:
             s = MT5_STATUS.get(login)
         if not s:
@@ -164,6 +173,8 @@ def sync_mt5_once(wait: bool = False) -> None:
     Passes never overlap. The periodic loop skips a busy pass (`wait=False`); a newly added account waits its turn."""
     from . import mt5sync
 
+    if not engine.is_on("mt5"):  # MT5 switch off: never touch MT5 (it would launch a terminal)
+        return
     if not _sync_running.acquire(blocking=wait):
         return
     try:
@@ -174,7 +185,7 @@ def sync_mt5_once(wait: bool = False) -> None:
 
 def _sync_all(mt5sync) -> None:
     with db.db() as con:
-        accounts = con.execute("SELECT id, login, terminal_path FROM accounts WHERE platform='mt5' AND login IS NOT NULL AND kind != 'backtest'").fetchall()
+        accounts = con.execute("SELECT id, login, terminal_path FROM accounts WHERE platform='mt5' AND login IS NOT NULL AND kind != 'backtest' AND enabled=1").fetchall()
         for a in accounts:
             count = con.execute("SELECT COUNT(*) n FROM trades WHERE account_id=?", (a["id"],)).fetchone()["n"]
             try:
@@ -199,7 +210,8 @@ def start(stop: threading.Event) -> list[threading.Thread]:
     def files_loop():
         while not stop.is_set():
             try:
-                poll_once()
+                if engine.is_on("mt4"):  # MT4 switch off: ignore the indicator's files (no new trades imported)
+                    poll_once()
             except Exception:  # keep the watcher alive whatever a single file contains
                 log.exception("poll_once failed")
             stop.wait(1.0)

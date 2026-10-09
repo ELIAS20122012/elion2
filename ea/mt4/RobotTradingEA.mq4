@@ -5,27 +5,34 @@
 //+------------------------------------------------------------------+
 #property strict
 
-input string InpBackendBaseUrl = "https://YOUR-DOMAIN-OR-IP";   // بدون / در انتها -- باید در Tools>Options>Expert Advisors مجاز شود
-input string InpApiKey         = "";                             // کلید API این حساب (از بک‌اند گرفته می‌شود)
+input string InpServerUrl = "https://YOUR-DOMAIN-OR-IP";   // بدون / در انتها -- باید در Tools>Options>Expert Advisors مجاز شود
+input string InpEaKey         = "";                             // کلید API این حساب (از بک‌اند گرفته می‌شود)
 input int    InpHeartbeatSeconds = 30;
 input int    InpSnapshotSeconds  = 60;
 input int    InpTimerSeconds     = 5;
-input int    InpCandleHistoryCount = 600; // تعداد کندل M1 بسته‌شده که برای تحلیل ستاپ فرستاده می‌شود
+input int    InpCandleHistoryCount = 600;
+input int    InpHistoryBars = 20000;    // M1 history sent to the dashboard chart after start (1000 per 2 s)
+input bool   InpSendCandles = false;      // ارسال کندل‌ها برای تحلیل ستاپ (تا وقتی اجرای سفارش خاموش است لازم نیست) // تعداد کندل M1 بسته‌شده که برای تحلیل ستاپ فرستاده می‌شود
 
 string   g_queueFile      = "tradebot_queue.txt";
 datetime g_lastHeartbeat  = 0;
 datetime g_lastSnapshot   = 0;
 datetime g_lastHistorySync = 0;
 datetime g_lastAnalyzedBar = 0;
+datetime g_lastOpenSync   = 0;
+datetime g_lastFeedBar    = 0;
+bool     g_feedInit       = false;
+int      g_backfill       = 0;      // M1 bars of history already sent (oldest last)
+datetime g_lastErrorPrint = 0;
 
 //+------------------------------------------------------------------+
 int OnInit()
 {
-   if(StringLen(InpApiKey) == 0)
-      Print("RobotTradingEA: InpApiKey تنظیم نشده — رویدادها ارسال نمی‌شوند تا این مقدار پر شود.");
+   if(StringLen(InpEaKey) == 0)
+      Print("RobotTradingEA: InpEaKey تنظیم نشده — رویدادها ارسال نمی‌شوند تا این مقدار پر شود.");
 
    g_lastHistorySync = TimeCurrent() - 86400; // یک روز عقب‌تر، تا معاملات بسته‌شده اخیر هم بعد از ری‌استارت گزارش شوند
-   EventSetTimer(InpTimerSeconds);
+   EventSetTimer(2); // سفارش‌های داشبورد هر ۲ ثانیه چک می‌شوند
    return(INIT_SUCCEEDED);
 }
 
@@ -67,10 +74,17 @@ void OnTimer()
       g_lastSnapshot = now;
    }
 
-   SyncOpenOrders();
+   // سبک نگه داشتن MT4: سفارش‌های باز هر InpSnapshotSeconds یک بار، بدون صف محلی (بک‌اند idempotent است)
+   if(now - g_lastOpenSync >= InpSnapshotSeconds)
+   {
+      SyncOpenOrders();
+      g_lastOpenSync = now;
+   }
    SyncClosedOrders();
-   SendSignalEvaluateOnNewBar();
-   RetryQueue();
+   ExecuteDashboardOrders();
+   SendCandleFeed();
+   if(InpSendCandles)
+      SendSignalEvaluateOnNewBar();
 }
 
 //+------------------------------------------------------------------+
@@ -119,6 +133,205 @@ void SendSignalEvaluateOnNewBar()
 //| محل قوانین استراتژی — فعلاً placeholder (نگاه کنید به            |
 //| ea/shared/STRATEGY_NOTES.md برای فاز E)                          |
 //+------------------------------------------------------------------+
+//+------------------------------------------------------------------+
+//| فید قیمت MT4 برای چارت داشبورد: اول ۱۵۰۰ کندل M1، بعد هر ۵ ثانیه  |
+//| آخرین ۳ کندل (کندل در حال تشکیل هم به‌روز می‌شود)                  |
+//+------------------------------------------------------------------+
+void SendCandleFeed()
+{
+   int start = 0, want = 3;
+   bool backfill = g_backfill < InpHistoryBars;
+   if(backfill) { start = g_backfill; want = MathMin(1000, InpHistoryBars - g_backfill); }
+   MqlRates rates[];
+   ArraySetAsSeries(rates, false);
+   int copied = CopyRates(_Symbol, PERIOD_M1, start, want, rates);
+   if(copied <= 0)
+   {
+      if(backfill) g_backfill = InpHistoryBars; // no older bars in this terminal
+      return;
+   }
+   string json = "{\"login\":\"" + IntegerToString(AccountNumber()) + "\",\"symbol\":\"" + JsonEscape(_Symbol) + "\",\"candles\":[";
+   for(int i = 0; i < copied; i++)
+   {
+      if(i > 0) json += ",";
+      json += "{\"time\":\"" + TimeToIso(rates[i].time) + "\",\"open\":" + DoubleToString(rates[i].open, _Digits) +
+              ",\"high\":" + DoubleToString(rates[i].high, _Digits) + ",\"low\":" + DoubleToString(rates[i].low, _Digits) +
+              ",\"close\":" + DoubleToString(rates[i].close, _Digits) + ",\"volume\":" + IntegerToString(rates[i].tick_volume) + "}";
+   }
+   json += "]}";
+   if(PostOrQueue("/events/candles", json))
+   {
+      g_feedInit = true;
+      if(backfill) g_backfill = (copied < want) ? InpHistoryBars : g_backfill + copied;
+   }
+}
+
+//+------------------------------------------------------------------+
+//| سفارش‌هایی که الیاس در داشبورد ELION می‌زند (Place Order)         |
+//| فقط سفارش تازه (کمتر از ۱۵ ثانیه) از سرور می‌آید و یک بار اجرا می‌شود |
+//+------------------------------------------------------------------+
+string JStr(string src, string key)
+{
+   string pat = "\"" + key + "\":";
+   int p = StringFind(src, pat);
+   if(p < 0) return "";
+   p += StringLen(pat);
+   if(StringSubstr(src, p, 1) == "\"")
+   {
+      int e = StringFind(src, "\"", p + 1);
+      return StringSubstr(src, p + 1, e - p - 1);
+   }
+   int e2 = p;
+   while(e2 < StringLen(src) && StringFind(",}]", StringSubstr(src, e2, 1)) < 0) e2++;
+   return StringSubstr(src, p, e2 - p);
+}
+
+string PositionsJson()
+{
+   string json = "{\"login\":\"" + IntegerToString(AccountNumber()) + "\",\"balance\":" + DoubleToString(AccountBalance(), 2) +
+                 ",\"equity\":" + DoubleToString(AccountEquity(), 2) + ",\"positions\":[";
+   int n = 0;
+   for(int i = 0; i < OrdersTotal(); i++)
+   {
+      if(!OrderSelect(i, SELECT_BY_POS, MODE_TRADES)) continue;
+      if(OrderType() != OP_BUY && OrderType() != OP_SELL) continue;
+      int dg = (int)MarketInfo(OrderSymbol(), MODE_DIGITS);
+      bool buy = OrderType() == OP_BUY;
+      if(n++ > 0) json += ",";
+      json += "{\"ticket\":\"" + IntegerToString(OrderTicket()) + "\",\"symbol\":\"" + JsonEscape(OrderSymbol()) +
+              "\",\"direction\":\"" + (buy ? "buy" : "sell") + "\",\"volume\":" + DoubleToString(OrderLots(), 2) +
+              ",\"open_price\":" + DoubleToString(OrderOpenPrice(), dg) + ",\"open_time\":\"" + TimeToIso(OrderOpenTime()) +
+              "\",\"sl\":" + (OrderStopLoss() > 0 ? DoubleToString(OrderStopLoss(), dg) : "null") +
+              ",\"tp\":" + (OrderTakeProfit() > 0 ? DoubleToString(OrderTakeProfit(), dg) : "null") +
+              ",\"price\":" + DoubleToString(buy ? MarketInfo(OrderSymbol(), MODE_BID) : MarketInfo(OrderSymbol(), MODE_ASK), dg) +
+              ",\"profit\":" + DoubleToString(OrderProfit(), 2) + ",\"swap\":" + DoubleToString(OrderSwap(), 2) +
+              ",\"commission\":" + DoubleToString(OrderCommission(), 2) + "}";
+   }
+   json += "],\"pending\":[";
+   n = 0;
+   for(int k = 0; k < OrdersTotal(); k++)
+   {
+      if(!OrderSelect(k, SELECT_BY_POS, MODE_TRADES)) continue;
+      int t = OrderType();
+      if(t == OP_BUY || t == OP_SELL) continue;
+      string tn = (t == OP_BUYLIMIT) ? "buy_limit" : (t == OP_SELLLIMIT) ? "sell_limit" : (t == OP_BUYSTOP) ? "buy_stop" : "sell_stop";
+      int dg2 = (int)MarketInfo(OrderSymbol(), MODE_DIGITS);
+      if(n++ > 0) json += ",";
+      json += "{\"ticket\":\"" + IntegerToString(OrderTicket()) + "\",\"symbol\":\"" + JsonEscape(OrderSymbol()) + "\",\"type\":\"" + tn +
+              "\",\"volume\":" + DoubleToString(OrderLots(), 2) + ",\"price\":" + DoubleToString(OrderOpenPrice(), dg2) +
+              ",\"sl\":" + (OrderStopLoss() > 0 ? DoubleToString(OrderStopLoss(), dg2) : "null") +
+              ",\"tp\":" + (OrderTakeProfit() > 0 ? DoubleToString(OrderTakeProfit(), dg2) : "null") + "}";
+   }
+   json += "],\"quotes\":[";
+   int total = MathMin(SymbolsTotal(true), 40);
+   n = 0;
+   for(int q = 0; q < total; q++)
+   {
+      string sym = SymbolName(q, true);
+      double bid = MarketInfo(sym, MODE_BID), ask = MarketInfo(sym, MODE_ASK);
+      if(bid <= 0) continue;
+      int dg3 = (int)MarketInfo(sym, MODE_DIGITS);
+      double prev = iClose(sym, PERIOD_D1, 1);
+      if(n++ > 0) json += ",";
+      json += "{\"symbol\":\"" + JsonEscape(sym) + "\",\"bid\":" + DoubleToString(bid, dg3) + ",\"ask\":" + DoubleToString(ask, dg3) +
+              ",\"change\":" + (prev > 0 ? DoubleToString((bid - prev) / prev * 100.0, 2) : "null") + "}";
+   }
+   return json + "]}";
+}
+
+double JNum(string resp, string key)
+{
+   string v = JStr(resp, key);
+   return (v == "null" || v == "") ? 0 : StringToDouble(v);
+}
+
+//| هر ۲ ثانیه: پوزیشن‌های باز با سود زنده به داشبورد، و در همان پاسخ دستور بعدی داشبورد |
+void ExecuteDashboardOrders()
+{
+   string resp;
+   if(!HttpPostJson("/events/positions", PositionsJson(), resp))
+      return;
+   if(StringFind(resp, "\"order\":null") >= 0 || StringFind(resp, "\"id\":") < 0)
+      return;
+   string id   = JStr(resp, "id");
+   string sym  = JStr(resp, "symbol");
+   string dir  = JStr(resp, "direction");
+   double vol  = JNum(resp, "volume");
+   double sl   = JNum(resp, "sl");
+   double tp   = JNum(resp, "tp");
+   int target  = (int)StringToInteger(JStr(resp, "target"));
+   string err  = "";
+   int ticket  = -1;
+   double price = 0;
+
+   if(!IsTradeAllowed())
+      err = "AutoTrading is off in MT4 — press the AutoTrading button";
+   else if(dir == "cancel")
+   {
+      if(OrderDelete(target, clrNONE)) ticket = target;
+      else err = "OrderDelete error " + IntegerToString(GetLastError());
+   }
+   else if(dir == "modify" || dir == "close")
+   {
+      if(!OrderSelect(target, SELECT_BY_TICKET) || OrderCloseTime() != 0)
+         err = "Position #" + IntegerToString(target) + " is not open";
+      else
+      {
+         string osym = OrderSymbol();
+         int dg = (int)MarketInfo(osym, MODE_DIGITS);
+         bool ok;
+         RefreshRates();
+         if(dir == "modify")
+         {
+            ok = OrderModify(target, OrderOpenPrice(), sl > 0 ? NormalizeDouble(sl, dg) : 0, tp > 0 ? NormalizeDouble(tp, dg) : 0, 0, clrNONE);
+            if(!ok && GetLastError() == 1) ok = true; // no change
+         }
+         else
+         {
+            price = (OrderType() == OP_BUY) ? MarketInfo(osym, MODE_BID) : MarketInfo(osym, MODE_ASK);
+            ok = OrderClose(target, OrderLots(), NormalizeDouble(price, dg), 30, clrGold);
+         }
+         if(ok) ticket = target;
+         else   err = (dir == "modify" ? "OrderModify" : "OrderClose") + " error " + IntegerToString(GetLastError());
+      }
+   }
+   else if(MarketInfo(sym, MODE_BID) <= 0)
+      err = "Symbol " + sym + " is not available in this terminal";
+   else
+   {
+      int op = -1;
+      if(dir == "buy") op = OP_BUY; else if(dir == "sell") op = OP_SELL;
+      else if(dir == "buy_limit") op = OP_BUYLIMIT; else if(dir == "sell_limit") op = OP_SELLLIMIT;
+      else if(dir == "buy_stop") op = OP_BUYSTOP; else if(dir == "sell_stop") op = OP_SELLSTOP;
+      if(op < 0)
+         err = "Invalid direction";
+      else
+      {
+         int digits = (int)MarketInfo(sym, MODE_DIGITS);
+         bool isBuy = (op == OP_BUY || op == OP_BUYLIMIT || op == OP_BUYSTOP);
+         RefreshRates();
+         price = (op == OP_BUY) ? MarketInfo(sym, MODE_ASK) : (op == OP_SELL) ? MarketInfo(sym, MODE_BID) : JNum(resp, "entry");
+         ticket = OrderSend(sym, op, vol, NormalizeDouble(price, digits), 30,
+                            sl > 0 ? NormalizeDouble(sl, digits) : 0, tp > 0 ? NormalizeDouble(tp, digits) : 0,
+                            "ELION dashboard", 20261009, 0, isBuy ? clrDodgerBlue : clrTomato);
+         if(ticket < 0)
+            err = "OrderSend error " + IntegerToString(GetLastError());
+         else if(OrderSelect(ticket, SELECT_BY_TICKET))
+            price = OrderOpenPrice();
+      }
+   }
+   string body = (ticket >= 0)
+      ? "{\"ok\":true,\"ticket\":\"" + IntegerToString(ticket) + "\",\"price\":" + DoubleToString(price, 5) + "}"
+      : "{\"ok\":false,\"error\":\"" + JsonEscape(err) + "\"}";
+   Print("RobotTradingEA: dashboard ", dir, " #", id, " ", sym, " -> ", ticket >= 0 ? "ok #" + IntegerToString(ticket) : err);
+   HttpPostJson("/events/orders/" + id + "/result", body, resp);
+   if(ticket >= 0)
+   {
+      SyncOpenOrders();   // ژورنال فوراً تغییر را می‌بیند
+      if(dir == "close") SyncClosedOrders();
+   }
+}
+
 bool CheckEntrySignal()
 {
    return false;
@@ -141,6 +354,7 @@ void SendSnapshot()
    double marginLevel = (margin > 0) ? (equity / margin * 100.0) : 0.0;
 
    string json = "{";
+   json += "\"login\":\"" + IntegerToString(AccountNumber()) + "\",";
    json += "\"timestamp\":\"" + TimeToIso(TimeCurrent()) + "\",";
    json += "\"balance\":" + DoubleToString(balance, 2) + ",";
    json += "\"equity\":" + DoubleToString(equity, 2) + ",";
@@ -155,7 +369,7 @@ void SendSnapshot()
 void SendHeartbeat()
 {
    string info = TerminalName() + " / " + AccountServer();
-   string json = "{\"ea_version\":\"1.0-mt4\",\"terminal_info\":\"" + JsonEscape(info) + "\"}";
+   string json = "{\"login\":\"" + IntegerToString(AccountNumber()) + "\",\"ea_version\":\"1.4-mt4\",\"terminal_info\":\"" + JsonEscape(info) + "\"}";
    PostOrQueue("/events/heartbeat", json);
 }
 
@@ -202,7 +416,8 @@ void SyncClosedOrders()
                                     OrderOpenTime(), OrderOpenPrice(), OrderCloseTime(), OrderClosePrice(),
                                     OrderStopLoss(), OrderTakeProfit(), OrderProfit(), OrderCommission(),
                                     OrderSwap(), "closed");
-      PostOrQueue("/events/trade", json);
+      if(!PostOrQueue("/events/trade", json))
+         return; // دفعهٔ بعد دوباره تلاش می‌شود
    }
    g_lastHistorySync = TimeCurrent();
 }
@@ -217,6 +432,7 @@ string BuildTradeJson(string ticket, string symbol, string direction, double vol
                       string status)
 {
    string json = "{";
+   json += "\"login\":\""     + IntegerToString(AccountNumber()) + "\",";
    json += "\"ticket\":\""    + JsonEscape(ticket)  + "\",";
    json += "\"symbol\":\""    + JsonEscape(symbol)   + "\",";
    json += "\"direction\":\"" + direction + "\",";
@@ -253,8 +469,9 @@ string TimeToIso(datetime t)
 
 bool HttpPostJson(string path, string jsonBody, string &responseOut)
 {
-   string url = InpBackendBaseUrl + path;
-   string headers = "Content-Type: application/json\r\nX-API-Key: " + InpApiKey + "\r\n";
+   int timeoutMs = (StringLen(jsonBody) > 4000) ? 15000 : 3000; // first candle batch is larger
+   string url = InpServerUrl + path;
+   string headers = "Content-Type: application/json\r\nX-API-Key: " + InpEaKey + "\r\n";
 
    char data[];
    int len = StringToCharArray(jsonBody, data, 0, WHOLE_ARRAY, CP_UTF8) - 1;
@@ -263,23 +480,29 @@ bool HttpPostJson(string path, string jsonBody, string &responseOut)
    char result[];
    string resultHeaders;
    ResetLastError();
-   int status = WebRequest("POST", url, headers, 5000, data, result, resultHeaders);
+   int status = WebRequest("POST", url, headers, timeoutMs, data, result, resultHeaders);
    if(status == -1)
    {
+      if(TimeLocal() - g_lastErrorPrint < 60) return false; // هر دقیقه حداکثر یک پیام خطا
+      g_lastErrorPrint = TimeLocal();
       Print("RobotTradingEA: خطای WebRequest ", GetLastError(),
             " -- آیا آدرس بک‌اند در Tools > Options > Expert Advisors > Allow WebRequest مجاز شده؟");
       return false;
    }
 
    responseOut = CharArrayToString(result, 0, WHOLE_ARRAY, CP_UTF8);
+   if((status < 200 || status >= 300) && TimeLocal() - g_lastErrorPrint >= 60)
+   {
+      g_lastErrorPrint = TimeLocal();
+      Print("RobotTradingEA: HTTP ", status, " از ", path, " -- ", StringSubstr(responseOut, 0, 120));
+   }
    return (status >= 200 && status < 300);
 }
 
-void PostOrQueue(string path, string json)
+bool PostOrQueue(string path, string json)
 {
    string resp;
-   if(!HttpPostJson(path, json, resp))
-      QueueEvent(path, json);
+   return HttpPostJson(path, json, resp); // صف محلی حذف شد: باعث هنگ MT4 می‌شد
 }
 
 //+------------------------------------------------------------------+

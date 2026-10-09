@@ -62,7 +62,7 @@ export default function AccountBar() {
   );
 }
 
-function AccountDialog({ account, onClose, onSaved }: { account: Account | null; onClose: () => void; onSaved: (id: number | null) => void }) {
+export function AccountDialog({ account, onClose, onSaved, defaultPlatform }: { account: Account | null; onClose: () => void; onSaved: (id: number | null) => void; defaultPlatform?: Platform }) {
   const [terminals, setTerminals] = useState<{ path: string; name: string }[]>([]);
   useEffect(() => {
     journalApi.terminals().then(setTerminals).catch(() => {});
@@ -70,7 +70,7 @@ function AccountDialog({ account, onClose, onSaved }: { account: Account | null;
   const [f, setF] = useState<AccountInput>({
     name: account?.name ?? "",
     terminal_path: account?.terminal_path ?? null,
-    platform: account?.platform ?? "mt5",
+    platform: account?.platform ?? defaultPlatform ?? "mt5",
     kind: account?.kind ?? "manual",
     broker: account?.broker ?? "",
     login: account?.login ?? "",

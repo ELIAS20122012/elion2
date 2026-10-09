@@ -124,3 +124,63 @@
   --text-2: var(--on-surface-2);
   --muted: var(--on-surface-muted);
 }
+
+/* ---- Elion theme (Elias, 2026-09-23): standalone dark theme for the reference-design port at
+   src/pages/ElionPage.tsx and ElionJournalPage.tsx (design/elion/*.dc.html). Not part of the Cherish
+   palette above and never touches it - scoped under .elion-scope on those pages' root element only. */
+.elion-scope {
+  --e-gold: #e9d7b0;
+  --e-gold-2: #ecdcb8;
+  --e-gold-line: rgba(233, 215, 176, 0.35);
+  --e-ivory: #f3e6c8;
+  --e-bg: #081013;
+  --e-bg-2: #0d1a1e;
+  --e-panel: linear-gradient(180deg, #0f1b1f, #0b1518);
+  --e-panel-2: #0d181b;
+  --e-panel-3: #0a1316;
+  --e-panel-4: #0b1518;
+  --e-line: #1d2c31;
+  --e-line-2: #152328;
+  --e-line-3: #16252a;
+  --e-border: #22343a;
+  --e-border-2: #2a3a3f;
+  --e-field: #0c171a;
+  --e-field-line: #1f2f34;
+  --e-text: #dfe5e3;
+  --e-text-2: #aeb7b5;
+  --e-text-3: #c8cfcd;
+  --e-muted: #8e9896;
+  --e-muted-2: #6f7b79;
+  --e-up: #3ec495;
+  --e-down: #e05a4e;
+  /* the analytics screen uses its own, cooler accent pair */
+  --e-up-2: #3ccfb2;
+  --e-down-2: #e0474c;
+  /* and the trade screen a third red */
+  --e-down-3: #e0463f;
+
+  /* Re-skin: the trade page borrows real, shared components (DrawToolbar, IndicatorsBar, DrawingProps,
+     and generic .btn/.modal/.chip-switch chrome) that are styled against the base Cherish tokens below,
+     not --e-*. Overriding those tokens here (scoped to .elion-scope) makes that borrowed chrome render in
+     Elion's gold/dark palette instead of Cherish's green/fern, without touching the shared components or
+     the rest of the app (2026-09-23, Elias asked for the chart tools to match Elion's colors). */
+  --surface-1: var(--e-panel-2);
+  --surface-2: var(--e-panel-3);
+  --surface-3: var(--e-panel-4);
+  --line: var(--e-line);
+  --line-strong: var(--e-border-2);
+  --text: var(--e-text);
+  --text-2: var(--e-text-2);
+  --muted: var(--e-muted);
+  --overlay: rgba(4, 8, 10, 0.74);
+  --gold: var(--e-gold);
+  --gold-2: var(--e-gold-2);
+  --gold-soft: rgba(233, 215, 176, 0.18);
+  --gold-line: var(--e-gold-line);
+  --up: var(--e-up);
+  --up-soft: rgba(62, 196, 149, 0.18);
+  --down: var(--e-down);
+  --down-soft: rgba(224, 90, 78, 0.16);
+  --shadow-1: 0 2px 6px rgba(0, 0, 0, 0.4), 0 1px 2px rgba(0, 0, 0, 0.45);
+  --shadow-2: 0 12px 32px rgba(0, 0, 0, 0.55);
+}

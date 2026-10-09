@@ -22,7 +22,8 @@ CREATE TABLE IF NOT EXISTS accounts (
     initial_balance REAL,
     note TEXT,
     created_at INTEGER NOT NULL,
-    terminal_path TEXT                          -- MT5 only: terminal64.exe this account is read from (lets demo and live run side by side)
+    terminal_path TEXT,                         -- MT5 only: terminal64.exe this account is read from (lets demo and live run side by side)
+    enabled INTEGER NOT NULL DEFAULT 1          -- connect/disconnect: 0 pauses MT5/MT4 auto-sync and reports "not connected"
 );
 CREATE TABLE IF NOT EXISTS trades (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -62,6 +63,21 @@ CREATE TABLE IF NOT EXISTS snapshots (
     balance REAL,
     equity REAL,
     PRIMARY KEY (account_id, time)
+);
+CREATE TABLE IF NOT EXISTS users (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    username TEXT NOT NULL UNIQUE COLLATE NOCASE,
+    password_hash TEXT NOT NULL,               -- bcrypt; the plain password is never stored
+    role TEXT NOT NULL DEFAULT 'viewer',       -- admin (everything) | viewer (read-only, no orders)
+    disabled INTEGER NOT NULL DEFAULT 0,
+    created_at INTEGER NOT NULL,
+    last_login INTEGER
+);
+CREATE TABLE IF NOT EXISTS sessions (
+    token_hash TEXT PRIMARY KEY,               -- sha256 of the cookie value, so the DB holds no usable token
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    created_at INTEGER NOT NULL,
+    expires_at INTEGER NOT NULL
 );
 -- Elias's verdicts on what a taught rule found ("ok" = a real one, "bad" = not one). The rules are tuned from these.
 CREATE TABLE IF NOT EXISTS rule_labels (
@@ -103,6 +119,8 @@ def init():
         acols = {r["name"] for r in con.execute("PRAGMA table_info(accounts)")}
         if "terminal_path" not in acols:
             con.execute("ALTER TABLE accounts ADD COLUMN terminal_path TEXT")
+        if "enabled" not in acols:
+            con.execute("ALTER TABLE accounts ADD COLUMN enabled INTEGER NOT NULL DEFAULT 1")
 
 
 def track_floating(con: sqlite3.Connection, account_id: int, ticket: str, profit: float) -> None:

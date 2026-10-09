@@ -14,3 +14,10 @@ build/
 *.db
 *.db-wal
 *.db-shm
+
+# local state for the hosted mirror: when it was last published and what was in it
+backend/.mirror-publish.json
+backend/snapshot.json
+
+# EA API key (backend/robot_setup.py writes it)
+backend/robot-key.txt

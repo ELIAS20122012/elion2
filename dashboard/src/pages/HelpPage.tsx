@@ -30,7 +30,7 @@ export default function HelpPage() {
 
   return (
     <div className="page wide">
-      <PageHeader title="راهنما" subtitle="آموزش نصب، اتصال حساب‌ها و حل مشکلات رایج. وضعیت زنده‌ی اتصال‌ها در صفحه‌ی «اتصال» است." actions={<Link className="btn" to="/account">رفتن به وضعیت اتصال</Link>} />
+      <PageHeader title="راهنما" subtitle="آموزش نصب، اتصال حساب‌ها و حل مشکلات رایج. وضعیت زنده‌ی اتصال‌ها در صفحه‌ی «اتصال» است." actions={<Link className="btn" to="/account-classic">رفتن به وضعیت اتصال</Link>} />
       <div className="help" ref={top}>
         <nav className="toc" aria-label="موضوعات راهنما">
           {topics.map((t) => (

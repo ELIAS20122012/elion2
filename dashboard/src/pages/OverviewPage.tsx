@@ -97,11 +97,11 @@ export default function OverviewPage() {
 
   /* ---- hub ---- */
   const nodes: HubNode[] = [
-    { id: "data", title: "داده", sub: live.status === "live" ? (marketOpen ? "زنده" : "متصل، بازار ساکن") : "قطع", icon: "activity", state: live.status === "live" ? "on" : "off", to: "/chart" },
-    { id: "rules", title: "قوانین", sub: RULES.length ? `${done} از ${RULES.length} تأیید` : "هنوز تعریف نشده", icon: "book", state: done ? "on" : "soon", to: "/rules" },
+    { id: "data", title: "داده", sub: live.status === "live" ? (marketOpen ? "زنده" : "متصل، بازار ساکن") : "قطع", icon: "activity", state: live.status === "live" ? "on" : "off", to: "/chart-classic" },
+    { id: "rules", title: "قوانین", sub: RULES.length ? `${done} از ${RULES.length} تأیید` : "هنوز تعریف نشده", icon: "book", state: done ? "on" : "soon", to: "/rules-classic" },
     { id: "risk", title: "ریسک", sub: LEVEL_LABEL[pr.level], icon: "shield", state: pr.level === "high" ? "off" : "on" },
-    { id: "journal", title: "ژورنال", sub: `${connected} از ${real.length} حساب زنده`, icon: "notebook", state: real.length && connected === real.length ? "on" : "off", to: "/journal" },
-    { id: "backtest", title: "بک‌تست", sub: `${backtests.length} اجرا`, icon: "flask", state: "on", to: "/backtest" },
+    { id: "journal", title: "ژورنال", sub: `${connected} از ${real.length} حساب زنده`, icon: "notebook", state: real.length && connected === real.length ? "on" : "off", to: "/journal-classic" },
+    { id: "backtest", title: "بک‌تست", sub: `${backtests.length} اجرا`, icon: "flask", state: "on", to: "/backtest-classic" },
     { id: "exec", title: "اجرای ربات", sub: "غیرفعال — فقط دمو", icon: "lock", state: "off" },
     { id: "ai", title: "تحلیل هوشمند", sub: "به‌زودی", icon: "cpu", state: "soon" },
   ];
@@ -188,13 +188,13 @@ export default function OverviewPage() {
             <Hub nodes={nodes} />
           </section>
           <section>
-            <div className="card-head"><h3>حساب‌ها</h3><Link className="btn sm" to="/journal"><Icon name="plus" size={14} />مدیریت</Link></div>
+            <div className="card-head"><h3>حساب‌ها</h3><Link className="btn sm" to="/journal-classic"><Icon name="plus" size={14} />مدیریت</Link></div>
             <div className="acct-grid compact">
               {rows.map(({ account: a, trades: tr, live: lv }) => {
                 const s = summarize(tr);
                 const cv = equityCurve(tr, 0).slice(-40).map((p) => p.equity);
                 return (
-                  <button key={a.id} className="acct-card" onClick={() => { j.setActive(a.id); nav("/journal"); }}>
+                  <button key={a.id} className="acct-card" onClick={() => { j.setActive(a.id); nav("/journal-classic"); }}>
                     <div className="top">
                       <div>
                         <div className="name">{a.name}</div>
@@ -211,7 +211,7 @@ export default function OverviewPage() {
                   </button>
                 );
               })}
-              {rows.length === 0 && <button className="acct-card add" onClick={() => nav("/journal")}><Icon name="plus" size={24} /><span>افزودن حساب</span></button>}
+              {rows.length === 0 && <button className="acct-card add" onClick={() => nav("/journal-classic")}><Icon name="plus" size={24} /><span>افزودن حساب</span></button>}
             </div>
           </section>
         </div>

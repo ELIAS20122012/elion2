@@ -17,6 +17,7 @@
 
 ```text
 start-live.bat            پل قیمت + سرور ژورنال + داشبورد
+trading-setup.cmd         نصب اول روی PC (venv، npm، تسک زمان‌بندی‌شده)
 backup.bat                بکاپ کد (Git bundle) و دیتابیس‌ها در OneDrive\Backups\robot-trading
 dashboard/src/            React + Vite + Lightweight Charts
   modules/registry.tsx    فهرست بخش‌ها؛ بخش جدید = یک فایل در pages/ + یک خط اینجا
@@ -25,11 +26,13 @@ dashboard/src/            React + Vite + Lightweight Charts
 backend/
   mt5_bridge.py           قیمت زنده MT5 (فقط خواندن)
   journal/                api.py, db.py, bridge.py (ثبت خودکار), mt5sync.py, parsers.py
+  journal/robot.py        مسیرهای EA ربات (/events/*) با کلید جدا برای هر حساب؛ سیگنال همیشه خالی (اجرای سفارش خاموش)
+  robot_setup.py          ساخت حساب ربات + کلید EA → robot-key.txt
   tools/simulate_mt4.py   شبیه‌ساز اندیکاتور MT4 برای تست
   tests/                  test_journal.py, test_bridge.py
-  app/                    ⚠ کد قدیمی ربات↔API؛ strategy/ و routers/ بعد از فرمت گم شد (بازسازی می‌شود)
 mt4/JournalBridge.mq4     اندیکاتور فقط‌خواندنی MT4 (اختیاری)
 ea/mt5, ea/mt4            EA ربات (اجرای سفارش عمداً غیرفعال)
+legacy/                   کد قدیمی ربات (backend/app، Docker، تست‌های strategy)؛ جایگزین: journal/robot.py
 ```
 
 ## ثبت خودکار معاملات

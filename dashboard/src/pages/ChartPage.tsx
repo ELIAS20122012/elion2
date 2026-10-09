@@ -134,12 +134,12 @@ export default function ChartPage() {
                     </>
                   ) : (
                     <span className="muted small">
-                      روی این تایم‌فریم دایورجنسی پیدا نشد — <Link to="/rules">تنظیمات قانون را ببینید</Link>
+                      روی این تایم‌فریم دایورجنسی پیدا نشد — <Link to="/rules-classic">تنظیمات قانون را ببینید</Link>
                     </span>
                   )}
                 </div>
               )}
-              <Link className="btn sm" to="/rules" style={{ marginInlineStart: "auto" }}>تنظیمات قوانین ←</Link>
+              <Link className="btn sm" to="/rules-classic" style={{ marginInlineStart: "auto" }}>تنظیمات قوانین ←</Link>
             </>
           )}
           <div className="viewtabs" role="tablist" style={view === "bot" ? undefined : { marginInlineStart: 0 }}>
@@ -151,7 +151,7 @@ export default function ChartPage() {
 
         {view === "tv" && (
           <div className="chart-area tv">
-            <TradingViewWidget symbol={`OANDA:${SYMBOL}`} interval={TV_INTERVAL[s.tfSec] ?? "1"} />
+            <TradingViewWidget key={`${SYMBOL}-${TV_INTERVAL[s.tfSec] ?? "1"}`} symbol={`OANDA:${SYMBOL}`} interval={TV_INTERVAL[s.tfSec] ?? "1"} />
           </div>
         )}
 

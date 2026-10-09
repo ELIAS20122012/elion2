@@ -1,12 +1,19 @@
 import type { Candle } from "./data";
 
-export type ToolId = "cursor" | "trend" | "ray" | "hline" | "hray" | "vline" | "channel" | "rect" | "fib" | "measure" | "text";
+export type ToolId =
+  | "cursor" | "eraser"
+  | "trend" | "ray" | "extended" | "infoline" | "angle" | "hline" | "hray" | "vline" | "crossline" | "arrow"
+  | "channel" | "fib" | "fibext"
+  | "abcd" | "xabcd" | "hs" | "elliott5" | "elliott3"
+  | "long" | "short" | "measure" | "pricerange" | "daterange"
+  | "rect" | "circle" | "ellipse" | "triangle"
+  | "text" | "callout" | "pricelabel" | "arrowup" | "arrowdown" | "flag";
 
 export interface DPoint { time: number; price: number }
 
 export interface Drawing {
   id: string;
-  type: Exclude<ToolId, "cursor">;
+  type: Exclude<ToolId, "cursor" | "eraser">;
   points: DPoint[];
   color: string;
   text?: string;
@@ -15,20 +22,59 @@ export interface Drawing {
 }
 
 export const TOOLS: { id: ToolId; label: string; icon: string; points: number }[] = [
-  { id: "cursor", label: "نشانگر / انتخاب", icon: "cursor", points: 0 },
-  { id: "trend", label: "خط روند", icon: "trend", points: 2 },
-  { id: "ray", label: "نیم‌خط", icon: "ray", points: 2 },
-  { id: "hline", label: "خط افقی", icon: "hline", points: 1 },
-  { id: "hray", label: "نیم‌خط افقی", icon: "hray", points: 1 },
-  { id: "channel", label: "کانال موازی (۳ نقطه)", icon: "channel", points: 3 },
-  { id: "vline", label: "خط عمودی", icon: "vline", points: 1 },
-  { id: "rect", label: "مستطیل", icon: "rect", points: 2 },
-  { id: "fib", label: "فیبوناچی اصلاحی", icon: "fib", points: 2 },
-  { id: "measure", label: "اندازه‌گیر", icon: "measure", points: 2 },
-  { id: "text", label: "متن", icon: "text", points: 1 },
+  { id: "cursor", label: "Cursor", icon: "cursor", points: 0 },
+  { id: "eraser", label: "Eraser", icon: "x", points: 0 },
+  { id: "trend", label: "Trend Line", icon: "trend", points: 2 },
+  { id: "ray", label: "Ray", icon: "ray", points: 2 },
+  { id: "extended", label: "Extended Line", icon: "trend", points: 2 },
+  { id: "infoline", label: "Info Line", icon: "trend", points: 2 },
+  { id: "angle", label: "Trend Angle", icon: "trend", points: 2 },
+  { id: "hline", label: "Horizontal Line", icon: "hline", points: 1 },
+  { id: "hray", label: "Horizontal Ray", icon: "hray", points: 1 },
+  { id: "vline", label: "Vertical Line", icon: "vline", points: 1 },
+  { id: "crossline", label: "Cross Line", icon: "hline", points: 1 },
+  { id: "arrow", label: "Arrow", icon: "ray", points: 2 },
+  { id: "channel", label: "Parallel Channel", icon: "channel", points: 3 },
+  { id: "fib", label: "Fib Retracement", icon: "fib", points: 2 },
+  { id: "fibext", label: "Trend-Based Fib Extension", icon: "fib", points: 3 },
+  { id: "abcd", label: "ABCD Pattern", icon: "trend", points: 4 },
+  { id: "xabcd", label: "XABCD Pattern", icon: "trend", points: 5 },
+  { id: "hs", label: "Head and Shoulders", icon: "trend", points: 7 },
+  { id: "elliott5", label: "Elliott Impulse Wave (12345)", icon: "trend", points: 6 },
+  { id: "elliott3", label: "Elliott Correction Wave (ABC)", icon: "trend", points: 4 },
+  { id: "long", label: "Long Position", icon: "measure", points: 1 },
+  { id: "short", label: "Short Position", icon: "measure", points: 1 },
+  { id: "measure", label: "Date and Price Range", icon: "measure", points: 2 },
+  { id: "pricerange", label: "Price Range", icon: "measure", points: 2 },
+  { id: "daterange", label: "Date Range", icon: "measure", points: 2 },
+  { id: "rect", label: "Rectangle", icon: "rect", points: 2 },
+  { id: "circle", label: "Circle", icon: "rect", points: 2 },
+  { id: "ellipse", label: "Ellipse", icon: "rect", points: 2 },
+  { id: "triangle", label: "Triangle", icon: "rect", points: 3 },
+  { id: "text", label: "Text", icon: "text", points: 1 },
+  { id: "callout", label: "Callout", icon: "text", points: 2 },
+  { id: "pricelabel", label: "Price Label", icon: "tag", points: 1 },
+  { id: "arrowup", label: "Arrow Mark Up", icon: "trend", points: 1 },
+  { id: "arrowdown", label: "Arrow Mark Down", icon: "trend", points: 1 },
+  { id: "flag", label: "Flag Mark", icon: "tag", points: 1 },
 ];
 
+/** Drawing-mode switches shared by the toolbar and the chart (TradingView's bottom-of-toolbar toggles). */
+export type CursorStyle = "cross" | "dot" | "arrow";
+export const drawState = {
+  stay: false,      // keep the tool after finishing a drawing
+  locked: false,    // drawings can't be moved
+  hidden: false,    // drawings not painted
+  cursor: "cross" as CursorStyle,
+  subs: new Set<() => void>(),
+  set(patch: Partial<{ stay: boolean; locked: boolean; hidden: boolean; cursor: CursorStyle }>) {
+    Object.assign(drawState, patch);
+    drawState.subs.forEach((f) => f());
+  },
+};
+
 export const FIB_LEVELS = [0, 0.236, 0.382, 0.5, 0.618, 0.786, 1];
+export const FIB_EXT_LEVELS = [0, 0.382, 0.618, 1, 1.272, 1.618, 2, 2.618];
 
 /** Maps between time and the chart's logical (bar index) axis, extrapolating past both ends. */
 export class TimeMap {

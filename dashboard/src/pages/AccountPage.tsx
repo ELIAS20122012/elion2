@@ -62,7 +62,7 @@ function AccountsCard() {
     <section className="card">
       <div className="card-head">
         <h3>ثبت خودکار حساب‌ها</h3>
-        <Link className="btn sm" to="/journal"><Icon name="plus" size={14} />افزودن حساب</Link>
+        <Link className="btn sm" to="/journal-classic"><Icon name="plus" size={14} />افزودن حساب</Link>
       </div>
       {status !== "ok" ? (
         <p className="err">سرور ژورنال روشن نیست. <Link to="/help?topic=trouble">راهنمای عیب‌یابی</Link></p>

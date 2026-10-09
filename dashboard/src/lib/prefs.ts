@@ -94,6 +94,49 @@ export function useMaxPerDay(): [number, (n: number) => void] {
   return [usePrefValue(getMaxPerDay), setMaxPerDay];
 }
 
+/* ---------- default timeframe + replay speed (used by Settings -> Chart/Backtest cards) ---------- */
+const K_TF = "rt.defaultTf";
+const VALID_TF = [60, 300, 900, 1800, 3600, 14400, 86400];
+
+export function getDefaultTf(): number {
+  try {
+    const n = Number(localStorage.getItem(K_TF));
+    return VALID_TF.includes(n) ? n : 60;
+  } catch {
+    return 60;
+  }
+}
+
+export function setDefaultTf(sec: number): void {
+  try {
+    localStorage.setItem(K_TF, String(sec));
+  } catch {
+    /* not persisted */
+  }
+  window.dispatchEvent(new Event("rt-prefs"));
+}
+
+const K_SPEED = "rt.defaultReplaySpeed";
+const VALID_SPEED = [1, 2, 5, 10, 30];
+
+export function getDefaultReplaySpeed(): number {
+  try {
+    const n = Number(localStorage.getItem(K_SPEED));
+    return VALID_SPEED.includes(n) ? n : 5;
+  } catch {
+    return 5;
+  }
+}
+
+export function setDefaultReplaySpeed(n: number): void {
+  try {
+    localStorage.setItem(K_SPEED, String(n));
+  } catch {
+    /* not persisted */
+  }
+  window.dispatchEvent(new Event("rt-prefs"));
+}
+
 /* ---------- chart shift: like "Chart shift" in MT5 — a single on/off, the last candle sits 20% in from the right edge ---------- */
 const K_SHIFT = "rt.chart.shiftOn";
 

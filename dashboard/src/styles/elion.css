@@ -1,0 +1,157 @@
+@import url("https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,500&family=Manrope:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400&family=Vazirmatn:wght@400;500&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,300,0,0");
+
+/* Reference-design port (design/elion/*.dc.html) - scoped so it never leaks into the rest of the app. */
+.elion-scope, .elion-scope * { box-sizing: border-box; }
+/* index.html is dir="rtl" for the Persian app; the reference design is left-to-right
+   (sidebar left, English labels), so these pages opt back out. Persian fields inside
+   still set their own dir="rtl". */
+/* base.css sets body{line-height:1.6}; the reference design runs on the browser default, so every
+   line that does not set its own was ~25% taller here and tight cards clipped. */
+.elion-scope { font-family: Manrope, sans-serif; direction: ltr; line-height: normal; }
+.elion-scope a { color: var(--e-gold); text-decoration: none; }
+.elion-scope a:hover { color: #fff3d9; }
+/* base.css gives every control min-height:36px and padding:8px 12px, which beats the inline
+   height the reference sets on each field (26-34px). Reset here: the design declares its own
+   height, padding, border and radius on every control it uses. */
+.elion-scope input, .elion-scope select, .elion-scope textarea {
+  font-family: inherit; min-height: 0; padding: 0; border-radius: 0;
+}
+.elion-scope .e-icon { font-family: "Material Symbols Outlined"; line-height: 1; font-weight: 300; user-select: none; }
+.elion-scope .e-icon.fill { font-variation-settings: "FILL" 1; }
+.elion-scope .e-nav-item:hover:not(.on) { color: var(--e-gold) !important; background: rgba(233, 215, 176, 0.05); }
+.elion-scope .e-row:hover { background: rgba(233, 215, 176, 0.04); }
+.elion-scope .e-ghost:hover { background: rgba(233, 215, 176, 0.08); }
+.elion-scope .e-insight:hover { background: rgba(233, 215, 176, 0.03); }
+.elion-scope .e-chip:hover, .elion-scope .e-tool:hover { border-color: rgba(233, 215, 176, 0.5); }
+.elion-scope .e-gold-btn:hover { background: #221f14; }
+.elion-scope .e-btn:hover { border-color: var(--e-gold); }
+.elion-scope select { font-family: Manrope, sans-serif; }
+.elion-scope select option { background: var(--e-panel-2); color: var(--e-text); }
+.elion-scope .e-spin { animation: elionSpin 1s linear infinite; }
+.elion-scope .e-mic-live { animation: elionMicPulse 1.4s ease-out infinite; }
+@keyframes elionSpin { to { transform: rotate(360deg); } }
+@keyframes elionMicPulse {
+  0%   { box-shadow: 0 0 0 0 rgba(90,180,255,.55), 0 0 30px rgba(90,180,255,.35); }
+  70%  { box-shadow: 0 0 0 22px rgba(90,180,255,0), 0 0 30px rgba(90,180,255,.35); }
+  100% { box-shadow: 0 0 0 0 rgba(90,180,255,0), 0 0 30px rgba(90,180,255,.35); }
+}
+.elion-scope .e-place:hover { background: var(--e-ivory); }
+
+/* ---- Persian mode (lib/i18n): text stays inside the designed layout, only its own direction/font change ---- */
+html.lang-fa [data-fa] { font-family: "Vazirmatn", "Manrope", sans-serif !important; letter-spacing: normal !important; text-transform: none !important; font-style: normal !important; }
+html.lang-fa .elion-scope input, html.lang-fa .elion-scope select, html.lang-fa .elion-scope textarea { font-family: "Vazirmatn", "Manrope", sans-serif; }
+html.lang-fa .elion-scope .e-icon { font-family: "Material Symbols Outlined" !important; }
+.e-lang-switch { display: flex; border: 1px solid var(--e-border-2); border-radius: 6px; overflow: hidden; margin-bottom: 10px; }
+.e-lang-switch span { padding: 4px 7px; font-size: 11px; cursor: pointer; color: var(--e-text-3); }
+.e-lang-switch span.on { background: #2a2518; color: var(--e-ivory); }
+
+/* =====================================================================================================
+   Responsive layer. The Elion pages are laid out with inline grids sized for a wide desktop; everything
+   below only ever kicks in under a breakpoint (desktop is untouched), and overrides those inline values
+   with !important because inline styles cannot be overridden any other way.
+   Breakpoints:  <=1280 compact desktop / laptop   <=1024 tablet   <=900 drawer nav   <=640 phone
+   ===================================================================================================== */
+.elion-scope.e-root { min-width: 0; max-width: 100vw; overflow-x: clip; }
+.elion-scope.e-root > main { min-width: 0; }
+.elion-scope img, .elion-scope canvas, .elion-scope svg, .elion-scope video { max-width: 100%; }
+.elion-scope .e-scrollx { overflow-x: auto; -webkit-overflow-scrolling: touch; max-width: 100%; }
+.e-menu-btn, .e-scrim { display: none; }
+
+/* --- laptop: 3-4 column page grids lose their fixed heights and wrap into fluid columns --- */
+@media (max-width: 1280px) {
+  .elion-scope.e-root > main { padding-left: 12px !important; padding-right: 12px !important; }
+  .elion-scope .e-panels, .elion-scope.e-root > main > div[style*="grid-template-columns"]:not(.e-kpis):not(.e-two) {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)) !important;
+    grid-template-rows: none !important; height: auto !important; grid-auto-rows: auto;
+  }
+  .elion-scope .e-kpis {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr)) !important;
+    grid-template-rows: none !important; height: auto !important;
+  }
+  .elion-scope .e-panels > *, .elion-scope.e-root > main > div[style*="grid-template-columns"]:not(.e-kpis):not(.e-two) > * { contain: none !important; min-height: 220px; }
+  .elion-scope .e-kpis > * { min-height: 64px !important; }
+}
+
+/* --- drawer navigation: the rail leaves the grid and slides in from the left --- */
+@media (max-width: 900px) {
+  .elion-scope.e-root { grid-template-columns: minmax(0, 1fr) !important; grid-template-rows: none !important; }
+  .elion-scope.e-root > main { padding-top: 60px !important; grid-column: 1 !important; grid-row: auto !important; }
+  .e-menu-btn {
+    display: grid; place-items: center; position: fixed; top: 10px; left: 10px; z-index: 60; width: 42px; height: 42px;
+    border-radius: 10px; border: 1px solid var(--e-border-2); background: var(--e-panel); color: var(--e-ivory); cursor: pointer; padding: 0;
+  }
+  .e-menu-btn .e-icon { font-size: 24px; }
+  .e-scrim { display: block; position: fixed; inset: 0; background: rgba(0, 0, 0, .55); z-index: 65; }
+  .elion-scope .e-rail {
+    position: fixed !important; top: 0; bottom: 0; left: 0; width: 90px; z-index: 70; grid-row: auto !important;
+    background: var(--e-bg); overflow-y: auto; transform: translateX(-105%); transition: transform .2s ease; box-shadow: none;
+  }
+  .elion-scope .e-rail.open { transform: none; box-shadow: 6px 0 30px rgba(0, 0, 0, .5); }
+}
+
+/* --- tablet / phone: everything stacks, tables scroll sideways, controls get finger-sized --- */
+@media (max-width: 1024px) {
+  .elion-scope .e-panels, .elion-scope.e-root > main > div[style*="grid-template-columns"]:not(.e-kpis):not(.e-two) {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)) !important;
+  }
+  .elion-scope .e-two { grid-template-columns: minmax(0, 1fr) !important; height: auto !important; }
+  .elion-scope .e-two > * { min-width: 0; }
+  .elion-scope .e-hide-md { display: none !important; }
+  .elion-scope.e-root > main > header { height: auto !important; flex-wrap: wrap; row-gap: 8px !important; column-gap: 14px !important; }
+}
+@media (max-width: 640px) {
+  .elion-scope.e-root > main { padding-left: 10px !important; padding-right: 10px !important; gap: 10px !important; }
+  .elion-scope .e-hide-sm { display: none !important; }
+  .elion-scope .e-panels, .elion-scope.e-root > main > div[style*="grid-template-columns"]:not(.e-kpis):not(.e-two) { grid-template-columns: minmax(0, 1fr) !important; }
+  .elion-scope .e-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+  .elion-scope button, .elion-scope select, .elion-scope [role="button"], .elion-scope .e-tool, .elion-scope .e-chip { min-height: 36px; }
+  .elion-scope input, .elion-scope select, .elion-scope textarea { font-size: 16px !important; }
+}
+
+/* tables built from grid rows: the panel scrolls sideways and every row keeps a readable minimum width (--tw) */
+@media (max-width: 1024px) {
+  .elion-scope .e-table { overflow-x: auto !important; -webkit-overflow-scrolling: touch; }
+  .elion-scope .e-table [style*="grid-template-columns"] { min-width: var(--tw, 640px); }
+}
+
+/* rows of tabs/filters/buttons wrap instead of running off the page; footers and full-width bars follow the column */
+@media (max-width: 1280px) {
+  .elion-scope .e-fullw { width: 100% !important; }
+}
+@media (max-width: 1024px) {
+  .elion-scope.e-root > footer { flex-wrap: wrap; gap: 6px 16px !important; padding: 8px 12px !important; height: auto !important; }
+  .elion-scope.e-root > main > div[style*="position: fixed"] { right: 12px !important; left: 12px; }
+}
+
+/* phones/tablets: any single-line flex row (tab strips, toolbars, title + button headers) may wrap instead of being clipped */
+@media (max-width: 900px) {
+  .elion-scope [style*="display: flex"]:not([style*="column"]):not(.e-nowrap) { flex-wrap: wrap; }
+  .elion-scope.e-root > main > header { margin-left: 0 !important; margin-right: 0 !important; padding-left: 0 !important; padding-right: 0 !important; }
+}
+
+@media (max-width: 640px) {
+  /* the global search box in each page header is decorative and cannot fit next to the account/clock cluster */
+  .elion-scope.e-root > main > header > div:has(> div > .e-icon:first-child):not([style*="cursor"]) { display: none !important; }
+}
+
+@media (max-width: 1400px) {
+  .elion-scope.e-root > main > div[style*="display: flex"]:not([style*="column"]), .elion-scope.e-root > main > header { flex-wrap: wrap !important; }
+  .elion-scope.e-root > main > header { margin-left: 0 !important; margin-right: 0 !important; }
+}
+
+/* =====================================================================================================
+   Inner pages (everything except the Home dashboard, which has no .e-inner and is left exactly as it was).
+   Each page's root is a grid [rail | main] and <main> is a flex column, but the working area of every page
+   was drawn at fixed pixel heights for a ~900px-tall reference screen and nothing in <main> was allowed to
+   grow - so on any taller window the leftover height sat as an empty band under the content.
+   Fix: the root is at least one dynamic viewport tall, <main> fills it, and the page's working area
+   (.e-fill - its fixed "height" became a "minHeight") takes the leftover height. Panels inside keep
+   scrolling on their own, as before.
+   ===================================================================================================== */
+.elion-scope.e-root.e-inner { min-height: 100vh; min-height: 100dvh !important; }
+.elion-scope.e-inner > main { min-height: 0; }
+.elion-scope.e-inner > main > .e-fill { flex: 1 0 auto; }
+/* a wrapper around a single card (Settings tabs): the card follows the wrapper's height */
+.elion-scope.e-inner > main > .e-fill-child { display: flex; flex-direction: column; }
+.elion-scope.e-inner > main > .e-fill-child > * { flex: 1 0 auto; }

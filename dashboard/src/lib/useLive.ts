@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import type { UTCTimestamp } from "lightweight-charts";
 import type { Candle } from "./data";
+import { API_BASE } from "./journalApi";
 
 export interface AccountInfo {
   login: number | null;
@@ -14,58 +15,71 @@ export interface AccountInfo {
 
 export type LiveStatus = "off" | "connecting" | "live" | "down";
 
-/** Same-origin WebSocket: the server forwards /live to the local MT5 bridge (see vite.config.ts). */
-const defaultWsUrl = () => `${location.protocol === "https:" ? "wss" : "ws"}://${location.host}/live`;
+/** How often the chart asks the journal server for the newest MT4 bars. */
+const POLL_MS = 5_000;
+/** No new bar for this long (seconds of wall time) = the EA has stopped feeding. */
+const STALE_MS = 3 * 60_000;
+/** Bars fetched on the first load (the server keeps 20,000 M1 bars per symbol). */
+const FULL_COUNT = 20_000;
 
-/** Live M1 candles from the local MT5 bridge (backend/mt5_bridge.py). Only connects while `enabled`. */
-export function useLive(enabled: boolean, url: string = defaultWsUrl()) {
+/**
+ * Live M1 candles from MT4: RobotTradingEA posts them to the journal server (/events/candles),
+ * the chart polls /robot/candles. Replaces the old MT5 WebSocket bridge. Only runs while `enabled`.
+ */
+export function useLive(enabled: boolean, symbol = "XAUUSD") {
   const [candles, setCandles] = useState<Candle[]>([]);
-  const [account, setAccount] = useState<AccountInfo | null>(null);
   const [status, setStatus] = useState<LiveStatus>("off");
+  const [account] = useState<AccountInfo | null>(null);
 
   useEffect(() => {
     if (!enabled) {
       setStatus("off");
       return;
     }
-    let ws: WebSocket | null = null;
-    let timer: ReturnType<typeof setTimeout>;
-    let closed = false;
-
-    const connect = () => {
-      setStatus("connecting");
-      ws = new WebSocket(url);
-      ws.onopen = () => setStatus("live");
-      ws.onmessage = (e) => {
-        const m = JSON.parse(e.data);
-        if (m.type === "history") {
-          setCandles(m.candles.map((c: Candle) => ({ ...c, time: c.time as UTCTimestamp })));
-        } else if (m.type === "candle") {
-          const c = { ...m.candle, time: m.candle.time as UTCTimestamp } as Candle;
-          setCandles((prev) => {
-            const last = prev[prev.length - 1];
-            if (last && last.time === c.time) return [...prev.slice(0, -1), c];
-            if (last && c.time < last.time) return prev;
-            return [...prev, c];
-          });
-        } else if (m.type === "account") {
-          setAccount(m);
+    let dead = false;
+    let lastChange = Date.now();
+    let lastKey = "";
+    let have: Candle[] = [];
+    let polls = 0;
+    setStatus("connecting");
+    const poll = async () => {
+      try {
+        // first load: the full history (~2 weeks of M1); afterwards only the last few minutes, merged in
+        const last = have[have.length - 1];
+        const q = last ? `since=${last.time - 300}&count=1000` : `count=${FULL_COUNT}`;
+        const r = await fetch(`${API_BASE}/robot/candles?symbol=${encodeURIComponent(symbol)}&${q}`, { credentials: "same-origin" });
+        if (!r.ok) throw new Error(String(r.status));
+        const body = (await r.json()) as { candles: Candle[] };
+        if (dead) return;
+        const fresh = body.candles.map((c) => ({ ...c, time: c.time as UTCTimestamp }));
+        let list: Candle[];
+        if (!last) list = fresh;
+        else {
+          const from = fresh.length ? fresh[0].time : Infinity;
+          list = [...have.filter((c) => c.time < from), ...fresh];
         }
-      };
-      ws.onclose = () => {
-        if (closed) return;
-        setStatus("down");
-        timer = setTimeout(connect, 2000);
-      };
-      ws.onerror = () => ws?.close();
+        // a backfill from the EA (older bars arriving later) needs a full reload now and then
+        if (last && ++polls % 60 === 0) { have = []; lastKey = ""; return poll(); }
+        have = list;
+        const tail = list[list.length - 1];
+        const key = tail ? `${tail.time}:${tail.close}` : "";
+        if (key !== lastKey) {
+          lastKey = key;
+          lastChange = Date.now();
+          setCandles(list);
+        }
+        setStatus(list.length && Date.now() - lastChange < STALE_MS ? "live" : "down");
+      } catch {
+        if (!dead) setStatus("down");
+      }
     };
-    connect();
+    poll();
+    const timer = setInterval(poll, POLL_MS);
     return () => {
-      closed = true;
-      clearTimeout(timer);
-      ws?.close();
+      dead = true;
+      clearInterval(timer);
     };
-  }, [enabled, url]);
+  }, [enabled, symbol]);
 
   return { candles, account, status };
 }

@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script>window.__resources={"https://unpkg.com/react@18.3.1/umd/react.production.min.js":"vendor/react.production.min.js","https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js":"vendor/react-dom.production.min.js"};</script>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;1,500&amp;family=Manrope:wght@400;500;600;700&amp;family=Vazirmatn:wght@400;500&amp;display=swap"></link><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,300,0,0"></link><style>body{margin:0;background:#081013}a{color:#e9d7b0;text-decoration:none}a:hover{color:#fff3d9}input,textarea{font-family:inherit}</style></helmet>
+<div style="min-height:100vh;min-width:1440px;background:radial-gradient(ellipse at 50% 0%,#0d1a1e 0%,#081013 70%);display:grid;grid-template-columns:72px minmax(0,1fr);font-family:Manrope,sans-serif;color:#dfe5e3;font-size:13px">
+
+<aside style="border-right:1px solid #152328;display:flex;flex-direction:column;align-items:center;padding:14px 0 18px;gap:6px">
+  <div style="width:44px;height:44px;display:grid;place-items:center;margin-bottom:14px"><div style="width:22px;height:22px;border:1.5px solid #e9d7b0;transform:rotate(45deg);display:grid;place-items:center"><div style="width:8px;height:8px;background:#e9d7b0"></div></div></div>
+  <sc-for list="{{ nav }}" as="n" hint-placeholder-count="7">
+    <a href="{{ n.href }}" style="width:54px;padding:10px 0 8px;border-radius:12px;display:flex;flex-direction:column;align-items:center;gap:4px;color:{{ n.color }};background:{{ n.bg }};border:1px solid {{ n.border }};box-sizing:border-box" style-hover="color:#e9d7b0"><span style="font-family:'Material Symbols Outlined';font-size:24px;line-height:1">{{ n.icon }}</span><span style="font-size:11px">{{ n.label }}</span></a>
+  </sc-for>
+  <div style="flex:1"></div>
+  <div style="font-size:11px;line-height:1.55;color:#8e9896;width:48px">Better Traders Build Better Lives.</div>
+  <div style="font-size:10px;color:#6f7b79;text-align:center;margin-top:28px;letter-spacing:.04em">ELION OS<br>v2.1</div>
+</aside>
+
+<main style="padding:12px 14px 14px;display:flex;flex-direction:column;gap:12px;min-width:0">
+  <header style="display:flex;align-items:center;gap:22px;height:44px">
+    <div style="display:flex;flex-direction:column;gap:2px"><div style="font-family:'Cormorant Garamond',serif;font-size:24px;letter-spacing:.2em;color:#f3e6c8;line-height:1">ELION</div><div style="font-size:9px;letter-spacing:.42em;color:#aeb7b5">TRADING</div></div>
+    <div style="font-size:11px;letter-spacing:.1em;color:#aeb7b5">DISCIPLINE BUILDS FREEDOM</div>
+    <div style="flex:1;display:flex;justify-content:center"><div style="width:min(100%,440px);height:36px;border-radius:18px;border:1px solid #1f2f34;background:#0c171a;display:flex;align-items:center;gap:8px;padding:0 8px 0 14px;color:#7f8b89"><span style="font-family:'Material Symbols Outlined';font-size:18px">search</span><span style="flex:1;font-size:11px">Search trades, setups, notes, or ask Elion...</span><span style="font-size:10px;border:1px solid #2a3a3f;border-radius:5px;padding:2px 6px">Ctrl K</span></div></div>
+    <div style="display:flex;flex-direction:column;gap:2px;font-size:11px"><div style="display:flex;align-items:center;gap:6px"><span style="width:6px;height:6px;border-radius:50%;background:#3ec495;box-shadow:0 0 6px #3ec495"></span>London Session • Live</div><div style="color:#8e9896">{{ clock }}</div></div>
+    <div style="position:relative;color:#e9d7b0"><span style="font-family:'Material Symbols Outlined';font-size:24px;font-variation-settings:'FILL' 1">notifications</span><span style="position:absolute;top:0;right:-3px;min-width:13px;height:13px;border-radius:7px;background:#e05a4e;color:#fff;font-size:8px;font-weight:700;display:grid;place-items:center">3</span></div>
+    <div style="display:flex;align-items:center;gap:10px"><div style="width:36px;height:36px;border-radius:50%;background:#ecdcb8;color:#1a1409;display:grid;place-items:center;font-weight:700">EF</div><div style="display:flex;flex-direction:column;gap:2px"><div style="font-weight:600">Elias Farahani</div><div style="font-size:10px;color:#8e9896">Trader | Build the Edge</div></div><span style="font-family:'Material Symbols Outlined';font-size:18px;color:#8e9896">expand_more</span></div>
+    <div style="width:52px;height:26px;border-radius:13px;border:1px solid #2a3a3f;background:#0c171a;position:relative"><div style="position:absolute;top:2px;left:28px;width:20px;height:20px;border-radius:50%;background:#ecdcb8;display:grid;place-items:center"><span style="font-family:'Material Symbols Outlined';font-size:14px;color:#1a1409">dark_mode</span></div></div>
+  </header>
+
+  <div style="display:grid;grid-template-columns:{{ cols }};gap:12px;align-items:start">
+    <div style="display:flex;flex-direction:column;gap:10px;min-width:0">
+      <div style="display:flex;align-items:center;gap:14px;padding:4px 0">
+        <div style="width:46px;height:46px;border-radius:10px;border:1px solid rgba(233,215,176,.35);background:linear-gradient(180deg,#1b2a2e,#121e22);display:grid;place-items:center;color:#e9d7b0"><span style="font-family:'Material Symbols Outlined';font-size:26px">menu_book</span></div>
+        <div style="flex:1"><div style="font-size:22px;font-weight:600;color:#f3f1ea">Trading Journal</div><div style="font-size:13px;color:#aeb7b5;margin-top:2px">Review. Learn. Improve. Repeat.</div></div>
+        <div style="text-align:right;font-family:'Cormorant Garamond',serif;font-style:italic;font-size:17px;line-height:1.35;color:#dfe5e3">“A journal turns experience into an edge.”<br>— ELION</div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px">
+        <div style="border-radius:12px;border:1px solid #1d2c31;background:linear-gradient(180deg,#0f1b1f,#0b1518);padding:10px;display:flex;align-items:center;gap:10px">
+          <div style="flex:1;display:flex;align-items:center;gap:8px;height:38px;padding:0 10px;border-radius:9px;border:1px solid #22343a;background:#0d181b;white-space:nowrap"><span style="font-family:'Material Symbols Outlined';font-size:18px;color:#c8cfcd">description</span><span style="font-weight:600;white-space:nowrap">Demo - 67311142</span><span style="font-family:'Material Symbols Outlined';font-size:16px;color:#8e9896">expand_more</span><span style="padding:2px 8px;border-radius:9px;background:#1d6b52;color:#a9ecd0;font-size:10px;font-weight:600">LIVE</span><span style="padding:2px 7px;border-radius:5px;border:1px solid #2a3a3f;font-size:10px;color:#c8cfcd">MT5</span></div>
+          <div style="width:38px;height:38px;border-radius:9px;border:1px solid #22343a;display:grid;place-items:center;color:#c8cfcd"><span style="font-family:'Material Symbols Outlined';font-size:20px">settings</span></div>
+        </div>
+        <div style="border-radius:12px;border:1px solid #1d2c31;background:linear-gradient(180deg,#0f1b1f,#0b1518);padding:10px 18px;display:flex;align-items:center;gap:28px;min-width:0">
+          <div><div style="font-size:11px;color:#aeb7b5">Equity</div><div style="font-size:19px;font-weight:600;margin-top:2px">1,611.29</div></div>
+          <div><div style="font-size:11px;color:#aeb7b5">Balance</div><div style="font-size:19px;font-weight:600;margin-top:2px">1,611.29</div></div>
+          <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:#c8cfcd"><span style="width:7px;height:7px;border-radius:50%;background:#3ec495;box-shadow:0 0 6px #3ec495"></span>No open position</div>
+        </div>
+        <div style="border-radius:12px;border:1px solid #1d2c31;background:linear-gradient(180deg,#0f1b1f,#0b1518);padding:10px;display:flex;align-items:center"><a href="#" style="height:38px;padding:0 18px;border-radius:9px;border:1px solid rgba(233,215,176,.35);display:flex;align-items:center;color:#f3e6c8;font-weight:500;white-space:nowrap">Account Settings</a></div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:repeat(6,minmax(0,1fr)) 88px;gap:8px">
+        <div style="border-radius:12px;border:1px solid #1d2c31;background:linear-gradient(180deg,#0f1b1f,#0b1518);padding:10px 12px;display:flex;flex-direction:column;gap:6px;min-width:0">
+          <div style="font-size:11px;color:#c8cfcd">Total Trades</div>
+          <div style="display:flex;align-items:flex-end;gap:6px"><span style="font-size:21px;font-weight:600">44</span><span style="font-size:9px;color:#3ec495;padding-bottom:4px">+25%</span><div style="flex:1"></div><div style="display:flex;align-items:flex-end;gap:2px;height:26px"><sc-for list="{{ bars1 }}" as="b" hint-placeholder-count="5"><div style="width:4px;height:{{ b }};background:rgba(62,196,149,.55);border-radius:1px"></div></sc-for></div></div>
+        </div>
+        <div style="border-radius:12px;border:1px solid #1d2c31;background:linear-gradient(180deg,#0f1b1f,#0b1518);padding:10px 12px;display:flex;flex-direction:column;gap:6px;min-width:0">
+          <div style="font-size:11px;color:#c8cfcd">Net P&amp;L</div>
+          <div style="display:flex;align-items:flex-end;gap:6px"><span style="font-size:20px;font-weight:600;color:#3ec495;white-space:nowrap">+$611.29</span><svg viewBox="0 0 60 26" preserveAspectRatio="none" style="flex:1;min-width:0;height:26px"><path d="{{ pnlArea }}" fill="rgba(62,196,149,.2)"></path><path d="{{ pnlLine }}" fill="none" stroke="#3ec495" stroke-width="1.2"></path></svg></div>
+        </div>
+        <div style="border-radius:12px;border:1px solid #1d2c31;background:linear-gradient(180deg,#0f1b1f,#0b1518);padding:10px 12px;display:flex;align-items:center;gap:6px;min-width:0">
+          <div style="flex:1;display:flex;flex-direction:column;gap:6px"><div style="font-size:11px;color:#c8cfcd">Win Rate</div><div style="font-size:21px;font-weight:600">48%</div></div>
+          <div style="width:34px;height:34px;flex-shrink:0;border-radius:50%;background:conic-gradient(#3ec495 173deg,#1b2a2e 0);display:grid;place-items:center"><div style="width:25px;height:25px;border-radius:50%;background:#0d181b"></div></div>
+        </div>
+        <div style="border-radius:12px;border:1px solid #1d2c31;background:linear-gradient(180deg,#0f1b1f,#0b1518);padding:10px 12px;display:flex;flex-direction:column;gap:6px;min-width:0">
+          <div style="font-size:11px;color:#c8cfcd">Profit Factor</div>
+          <div style="display:flex;align-items:flex-end;gap:6px"><span style="font-size:21px;font-weight:600">1.74</span><div style="flex:1"></div><div style="display:flex;align-items:flex-end;gap:2px;height:26px"><sc-for list="{{ bars2 }}" as="b" hint-placeholder-count="6"><div style="width:4px;height:{{ b }};background:rgba(62,196,149,.55);border-radius:1px"></div></sc-for></div></div>
+        </div>
+        <div style="border-radius:12px;border:1px solid #1d2c31;background:linear-gradient(180deg,#0f1b1f,#0b1518);padding:10px 12px;display:flex;flex-direction:column;gap:6px;min-width:0">
+          <div style="font-size:11px;color:#c8cfcd">Avg. R:R</div>
+          <div style="display:flex;align-items:flex-end;gap:6px"><span style="font-size:21px;font-weight:600;white-space:nowrap">1.5 : 1</span><div style="flex:1"></div><div style="display:flex;align-items:flex-end;gap:2px;height:26px"><sc-for list="{{ bars3 }}" as="b" hint-placeholder-count="5"><div style="width:4px;height:{{ b }};background:rgba(62,196,149,.55);border-radius:1px"></div></sc-for></div></div>
+        </div>
+        <div style="border-radius:12px;border:1px solid #1d2c31;background:linear-gradient(180deg,#0f1b1f,#0b1518);padding:10px 12px;display:flex;align-items:center;gap:6px;min-width:0">
+          <div style="flex:1;display:flex;flex-direction:column;gap:6px;min-width:0"><div style="font-size:11px;color:#c8cfcd;line-height:1.2">Rule Compliance</div><div style="font-size:21px;font-weight:600">87%</div></div>
+          <div style="width:34px;height:34px;flex-shrink:0;border-radius:50%;background:conic-gradient(#3ec495 313deg,#1b2a2e 0);display:grid;place-items:center"><div style="width:25px;height:25px;border-radius:50%;background:#0d181b"></div></div>
+        </div>
+        <div style="border-radius:12px;border:1px solid #1d2c31;background:linear-gradient(180deg,#0f1b1f,#0b1518);padding:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;text-align:center"><span style="font-family:'Material Symbols Outlined';font-size:20px;color:#e9d7b0">calendar_month</span><div style="font-size:10px;color:#c8cfcd">Calendar</div><div style="font-size:10px;color:#8e9896">23 Sep 2026</div></div>
+      </div>
+
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:6px 0">
+        <div style="display:flex;gap:2px;padding:3px;border-radius:10px;border:1px solid #1d2c31;background:#0b1518">
+          <sc-for list="{{ filters }}" as="f" hint-placeholder-count="5"><div onClick="{{ f.on }}" style="display:flex;align-items:center;gap:7px;height:32px;padding:0 10px;border-radius:8px;cursor:pointer;font-size:12px;background:{{ f.bg }};border:1px solid {{ f.border }};color:{{ f.fg }}">{{ f.label }}<span style="padding:1px 6px;border-radius:5px;background:{{ f.cbg }};font-size:10.5px">{{ f.count }}</span></div></sc-for>
+        </div>
+        <div style="display:flex;gap:2px;padding:3px;border-radius:10px;border:1px solid #1d2c31;background:#0b1518">
+          <sc-for list="{{ ranges }}" as="f" hint-placeholder-count="4"><div onClick="{{ f.on }}" style="display:flex;align-items:center;gap:6px;height:32px;padding:0 10px;border-radius:8px;cursor:pointer;font-size:12px;background:{{ f.bg }};color:{{ f.fg }}">{{ f.label }}<span style="font-family:'Material Symbols Outlined';font-size:15px;display:{{ f.iconDisplay }}">calendar_month</span></div></sc-for>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;height:38px;padding:0 12px;border-radius:10px;border:1px solid #1d2c31;background:#0b1518;font-size:12px;cursor:pointer"><span style="font-family:'Material Symbols Outlined';font-size:17px">filter_alt</span>More Filters</div>
+        <div style="flex:1;min-width:140px;display:flex;align-items:center;gap:6px;height:38px;padding:0 12px;border-radius:10px;border:1px solid #1d2c31;background:#0b1518;color:#8e9896"><span style="font-family:'Material Symbols Outlined';font-size:17px">search</span><input value="{{ query }}" onChange="{{ onQuery }}" placeholder="Search trades..." style="flex:1;min-width:0;background:transparent;border:0;outline:0;color:#dfe5e3;font-size:12px"></input></div>
+        <div style="display:flex;align-items:center;gap:6px;height:38px;padding:0 14px;border-radius:10px;border:1px solid rgba(233,215,176,.35);background:#0b1518;font-size:12px;color:#f3e6c8;cursor:pointer"><span style="font-family:'Material Symbols Outlined';font-size:17px">ios_share</span>Export</div>
+        <div style="width:38px;height:38px;border-radius:10px;border:1px solid #1d2c31;background:#0b1518;display:grid;place-items:center"><span style="font-family:'Material Symbols Outlined';font-size:18px">more_vert</span></div>
+      </div>
+
+      <div style="border-radius:12px;border:1px solid #1d2c31;background:linear-gradient(180deg,#0f1b1f,#0b1518);overflow:hidden">
+        <div style="display:grid;grid-template-columns:24px 68px 104px 52px 46px 54px 54px 62px 28px 52px 58px 66px minmax(56px,1fr) 62px 22px;align-items:center;column-gap:4px;padding:0 10px;height:42px;font-size:11px;color:#aeb7b5;border-bottom:1px solid #16252a">
+          <span style="width:13px;height:13px;border-radius:3px;border:1px solid #6f7b79;background:#dfe5e3"></span><span>#</span><span>Date &amp; Time</span><span>Symbol</span><span>Type</span><span>Entry</span><span>Exit</span><span>P&amp;L</span><span>R:R</span><span>Duration</span><span>Session</span><span>Setup</span><span>Tags</span><span>Screenshot</span><span></span>
+        </div>
+        <sc-for list="{{ rows }}" as="r" hint-placeholder-count="14">
+          <div onClick="{{ r.select }}" style="display:grid;grid-template-columns:24px 68px 104px 52px 46px 54px 54px 62px 28px 52px 58px 66px minmax(56px,1fr) 62px 22px;align-items:center;column-gap:4px;padding:0 10px;height:34px;font-size:11px;border-bottom:1px solid #121f23;cursor:pointer;background:{{ r.bg }};box-shadow:{{ r.shadow }}" style-hover="background:rgba(233,215,176,.04)">
+            <span style="width:13px;height:13px;border-radius:3px;border:1px solid #6f7b79"></span>
+            <span>{{ r.id }}</span><span style="white-space:nowrap">{{ r.date }} {{ r.time }}</span><span>XAUUSD</span>
+            <span><span style="display:inline-block;padding:3px 7px;border-radius:4px;font-size:10px;background:{{ r.tbg }};color:{{ r.tfg }}">{{ r.type }}</span></span>
+            <span>{{ r.entry }}</span><span>{{ r.exit }}</span><span style="font-weight:600;color:{{ r.pc }}">{{ r.pnlText }}</span><span>{{ r.rr }}</span><span style="white-space:nowrap">{{ r.dur }}</span><span>{{ r.session }}</span>
+            <span><span style="display:inline-block;padding:3px 8px;border-radius:4px;background:#1a282c;font-size:10.5px">{{ r.setup }}</span></span>
+            <span style="display:flex;gap:4px;overflow:hidden"><sc-for list="{{ r.tagList }}" as="t" hint-placeholder-count="1"><span style="padding:3px 7px;border-radius:4px;font-size:10px;white-space:nowrap;background:{{ t.bg }};color:{{ t.fg }}">{{ t.label }}</span></sc-for></span>
+            <svg viewBox="0 0 64 26" preserveAspectRatio="none" style="width:60px;height:28px;border-radius:3px;border:1px solid #22343a;background:#0a1417"><polyline points="{{ r.thumb }}" fill="none" stroke="{{ r.pc }}" stroke-width="1"></polyline></svg>
+            <span style="font-family:'Material Symbols Outlined';font-size:18px;color:#aeb7b5">more_vert</span>
+          </div>
+        </sc-for>
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 12px;font-size:11px;color:#aeb7b5">
+          <span>{{ showing }}</span>
+          <div style="display:flex;gap:4px;align-items:center">
+            <div onClick="{{ prevPage }}" style="width:28px;height:28px;display:grid;place-items:center;cursor:pointer"><span style="font-family:'Material Symbols Outlined';font-size:18px">chevron_left</span></div>
+            <sc-for list="{{ pages }}" as="p" hint-placeholder-count="4"><div onClick="{{ p.on }}" style="width:28px;height:28px;border-radius:6px;display:grid;place-items:center;cursor:pointer;font-size:12px;background:{{ p.bg }};color:{{ p.fg }};border:1px solid {{ p.border }}">{{ p.n }}</div></sc-for>
+            <div onClick="{{ nextPage }}" style="width:28px;height:28px;display:grid;place-items:center;cursor:pointer"><span style="font-family:'Material Symbols Outlined';font-size:18px">chevron_right</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <sc-if value="{{ detailOpen }}" hint-placeholder-val="{{ true }}">
+    <aside style="border-radius:14px;border:1px solid #1d2c31;background:linear-gradient(180deg,#0f1b1f,#0a1417);padding:14px;display:flex;flex-direction:column;gap:10px;min-width:0">
+      <div style="display:flex;align-items:center;gap:6px"><div style="flex:1;font-size:19px;font-weight:600">Trade Detail</div>
+        <div onClick="{{ prevTrade }}" style="width:28px;height:28px;border-radius:7px;border:1px solid #22343a;display:grid;place-items:center;cursor:pointer"><span style="font-family:'Material Symbols Outlined';font-size:18px">chevron_left</span></div>
+        <div onClick="{{ nextTrade }}" style="width:28px;height:28px;border-radius:7px;border:1px solid #22343a;display:grid;place-items:center;cursor:pointer"><span style="font-family:'Material Symbols Outlined';font-size:18px">chevron_right</span></div>
+        <div onClick="{{ closeDetail }}" style="width:28px;height:28px;display:grid;place-items:center;cursor:pointer"><span style="font-family:'Material Symbols Outlined';font-size:20px">close</span></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px"><span style="font-size:18px;font-weight:600">#{{ d.id }}</span><span style="display:flex;align-items:center;gap:5px;padding:3px 10px;border-radius:6px;font-size:12px;background:{{ d.badgeBg }};color:{{ d.badgeFg }}"><span style="font-family:'Material Symbols Outlined';font-size:15px;font-variation-settings:'FILL' 1">{{ d.badgeIcon }}</span>{{ d.result }}</span></div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="width:28px;height:28px;border-radius:50%;border:1.5px solid #dfe5e3;display:grid;place-items:center"><span style="font-family:'Material Symbols Outlined';font-size:18px">close</span></div>
+        <span style="font-size:15px;font-weight:600">XAUUSD</span><span style="padding:3px 8px;border-radius:4px;font-size:10px;background:{{ d.tbg }};color:{{ d.tfg }}">{{ d.type }}</span>
+        <div style="flex:1"></div>
+        <div style="text-align:right"><div style="font-size:19px;font-weight:600;color:{{ d.pc }}">{{ d.pnlText }}</div><div style="font-size:11px;color:#aeb7b5;margin-top:2px">R:R  {{ d.rr }}</div></div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border-radius:10px;background:#0d181b;border:1px solid #1d2c31;padding:3px">
+        <sc-for list="{{ tabs }}" as="t" hint-placeholder-count="4"><div onClick="{{ t.on }}" style="height:32px;display:grid;place-items:center;font-size:11.5px;border-radius:7px;cursor:pointer;background:{{ t.bg }};color:{{ t.fg }};border-bottom:2px solid {{ t.line }}">{{ t.label }}</div></sc-for>
+      </div>
+
+      <sc-if value="{{ tabOverview }}" hint-placeholder-val="{{ true }}">
+        <div style="border-radius:10px;border:1px solid #1d2c31;background:#0a1316;height:190px;display:flex;flex-direction:column;padding:8px 8px 4px">
+          <div style="display:flex;justify-content:space-between;align-items:center;font-size:10px;color:#aeb7b5"><span>XAUUSD • M5</span><span style="font-family:'Material Symbols Outlined';font-size:16px">open_in_full</span></div>
+          <div style="position:relative;flex:1;min-height:0"><canvas ref="{{ chartRef }}" style="position:absolute;inset:0;width:100%;height:100%;display:block"></canvas></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1.25fr;gap:4px 16px;font-size:11.5px;padding:2px 2px">
+          <div style="display:grid;grid-template-columns:70px 1fr;row-gap:8px"><span style="color:#aeb7b5">Entry</span><span>{{ d.entry }}</span><span style="color:#aeb7b5">Exit</span><span>{{ d.exit }}</span><span style="color:#aeb7b5">SL</span><span>{{ d.sl }}</span><span style="color:#aeb7b5">TP</span><span>{{ d.tp }}</span><span style="color:#aeb7b5">Lot Size</span><span>0.20</span></div>
+          <div style="display:grid;grid-template-columns:78px 1fr;row-gap:8px;align-items:center"><span style="color:#aeb7b5">Date</span><span>{{ d.dateLong }}</span><span style="color:#aeb7b5">Time</span><span>{{ d.timeRange }}</span><span style="color:#aeb7b5">Duration</span><span>{{ d.dur }}</span><span style="color:#aeb7b5">Session</span><span>{{ d.session }}</span><span style="color:#aeb7b5">Setup</span><span>{{ d.setupLong }}</span><span style="color:#aeb7b5">Tags</span><span style="display:flex;gap:4px;align-items:center"><sc-for list="{{ d.tagList }}" as="t" hint-placeholder-count="2"><span style="padding:2px 7px;border-radius:4px;font-size:10px;background:{{ t.bg }};color:{{ t.fg }}">{{ t.label }}</span></sc-for><span style="width:18px;height:18px;border-radius:50%;border:1px solid #2a3a3f;display:grid;place-items:center;font-size:12px">+</span></span></div>
+        </div>
+      </sc-if>
+      <sc-if value="{{ tabShots }}" hint-placeholder-val="{{ false }}">
+        <div style="display:grid;grid-template-columns:1fr;gap:8px">
+          <sc-for list="{{ shots }}" as="s" hint-placeholder-count="3"><div style="border-radius:10px;border:1px solid #1d2c31;background:#0a1316;padding:8px;display:flex;flex-direction:column;gap:6px"><div style="font-size:10.5px;color:#aeb7b5">{{ s.label }}</div><svg viewBox="0 0 64 26" preserveAspectRatio="none" style="width:100%;height:64px"><polyline points="{{ s.pts }}" fill="none" stroke="{{ d.pc }}" stroke-width=".6"></polyline></svg></div></sc-for>
+        </div>
+      </sc-if>
+      <sc-if value="{{ tabAI }}" hint-placeholder-val="{{ false }}">
+        <div style="border-radius:10px;border:1px solid #1d2c31;background:#0a1316;padding:14px;display:flex;flex-direction:column;gap:10px"><div style="display:flex;justify-content:space-between;align-items:center"><span style="font-weight:600">AI Score</span><span style="font-size:22px;font-weight:600;color:{{ d.scoreColor }}">{{ d.score }} <span style="font-size:12px;color:#aeb7b5">/ 10</span></span></div><div style="height:6px;border-radius:3px;background:#1b2a2e;overflow:hidden"><div style="height:100%;width:{{ d.scoreW }};background:{{ d.scoreColor }}"></div></div><div style="font-size:12px;line-height:1.65;color:#c8cfcd;text-wrap:pretty">{{ d.review }}</div></div>
+      </sc-if>
+      <sc-if value="{{ tabEdit }}" hint-placeholder-val="{{ false }}">
+        <div style="border-radius:10px;border:1px solid #1d2c31;background:#0a1316;padding:12px;display:flex;flex-direction:column;gap:8px"><div style="font-size:11px;color:#aeb7b5">Trader Notes</div><textarea dir="rtl" value="{{ d.note }}" onChange="{{ onNote }}" style="height:120px;resize:vertical;background:#0d181b;border:1px solid #22343a;border-radius:8px;color:#dfe5e3;padding:10px;font-family:Vazirmatn,sans-serif;font-size:12px;line-height:1.8;outline:0"></textarea></div>
+      </sc-if>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <div style="border-radius:10px;border:1px solid #1d2c31;background:#0b1619;padding:12px;display:flex;flex-direction:column;gap:7px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2px"><span style="font-size:12.5px;font-weight:600">Rule Compliance</span><span style="font-size:13px;font-weight:600;color:#3ec495">{{ d.ruleScore }}</span></div>
+          <sc-for list="{{ d.rules }}" as="u" hint-placeholder-count="8"><div style="display:flex;align-items:center;gap:7px;font-size:10.5px;color:{{ u.fg }}"><span style="font-family:'Material Symbols Outlined';font-size:15px;color:{{ u.ic }};font-variation-settings:'FILL' 1">{{ u.icon }}</span>{{ u.label }}</div></sc-for>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <div style="flex:1;border-radius:10px;border:1px solid #1d2c31;background:#0b1619;padding:12px;display:flex;flex-direction:column;gap:8px">
+            <div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:12.5px;font-weight:600">Trader Notes</span><span onClick="{{ editNotes }}" style="display:flex;align-items:center;gap:3px;font-size:10.5px;padding:3px 8px;border-radius:6px;border:1px solid #22343a;cursor:pointer"><span style="font-family:'Material Symbols Outlined';font-size:13px">edit</span>Edit</span></div>
+            <div dir="rtl" style="font-family:Vazirmatn,sans-serif;font-size:11.5px;line-height:1.9;color:#dfe5e3;text-wrap:pretty">{{ d.note }}</div>
+          </div>
+          <div style="border-radius:10px;border:1px solid #1d2c31;background:#0b1619;padding:12px;display:flex;flex-direction:column;gap:10px">
+            <div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:12.5px;font-weight:600">Emotion / State</span><span style="font-family:'Material Symbols Outlined';font-size:14px;color:#8e9896">open_in_full</span></div>
+            <div style="display:flex;align-items:center;gap:10px;font-size:11.5px"><div style="width:30px;height:30px;border-radius:50%;background:{{ d.moodBg }};display:grid;place-items:center"><span style="font-family:'Material Symbols Outlined';font-size:18px;color:{{ d.moodFg }}">{{ d.moodIcon }}</span></div><span>{{ d.mood1 }}</span><span style="color:#c8cfcd">{{ d.mood2 }}</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div style="border-radius:10px;border:1px solid #1d2c31;background:#0b1619;padding:12px;display:flex;flex-direction:column;gap:10px">
+        <div style="display:flex;align-items:center;gap:10px"><span style="font-family:'Material Symbols Outlined';font-size:24px;color:#e9d7b0">psychology</span><span style="flex:1;font-size:12.5px;font-weight:600">AI Trade Review</span><span style="display:flex;align-items:center;gap:6px;font-size:15px;font-weight:600;color:{{ d.scoreColor }}"><span style="width:8px;height:8px;border-radius:50%;background:{{ d.scoreColor }}"></span>{{ d.score }}<span style="font-size:12px;color:#aeb7b5;font-weight:400">/ 10</span></span></div>
+        <div style="font-size:11.5px;line-height:1.65;color:#c8cfcd;text-wrap:pretty">{{ d.review }}</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <a href="#" style="height:34px;border-radius:8px;border:1px solid rgba(233,215,176,.35);display:flex;align-items:center;justify-content:center;gap:6px;font-size:11.5px;color:#f3e6c8">Open in Chart <span style="font-family:'Material Symbols Outlined';font-size:15px">open_in_new</span></a>
+          <a href="#" style="height:34px;border-radius:8px;border:1px solid rgba(233,215,176,.35);display:flex;align-items:center;justify-content:center;gap:6px;font-size:11.5px;color:#f3e6c8">View Full Analysis <span style="font-family:'Material Symbols Outlined';font-size:15px">arrow_forward</span></a>
+        </div>
+      </div>
+    </aside>
+    </sc-if>
+  </div>
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { now: new Date(), filter: 'All', range: 'Today', page: 0, sel: '52012085', tab: 'Overview', open: true, query: '', notes: {} };
+  chartRef = el => {
+    if (!el || el === this.chartEl) return;
+    this.chartEl = el; this.cro && this.cro.disconnect();
+    this.cro = new ResizeObserver(() => this.draw()); this.cro.observe(el);
+    requestAnimationFrame(() => this.draw());
+  };
+  constructor(p) {
+    super(p);
+    const base = [
+      ['52012085','16:52','SELL','4339.78','4339.07',63.45,3.1,'1h 18m','London','Level',['TP','Clean']],
+      ['52012084','16:49','SELL','4340.36','4340.17',-3.32,0.4,'2h 24m','London','Fakeout',['SL']],
+      ['52012083','16:44','SELL','4340.93','4340.81',-2.09,0.3,'5h 18m','London','Scalping',['Early']],
+      ['52012082','16:17','SELL','4339.15','4338.94',53.25,2.8,'26m','London','Level',['TP','Good']],
+      ['52012081','15:37','SELL','4332.36','4338.19',101.75,5.1,'7h 42m','London','Level',['TP','Clean']],
+      ['52012080','15:32','SELL','4340.35','4340.67',73.23,3.6,'36m','London','News',['News']],
+      ['52012079','15:32','SELL','4332.29','4340.48',142.94,7.1,'12m','London','Level',['TP','Clean']],
+      ['52012078','15:22','SELL','4339.72','4338.29',-24.95,1.2,'11m','New York','Reversal',['SL']],
+      ['52012077','14:57','SELL','4323.65','4322.09',-68.04,2.0,'9m','New York','Trend',['SL']],
+      ['52012076','14:56','SELL','4322.57','4320.07',-109.05,2.8,'31m','New York','Trend',['SL']],
+      ['52012075','14:54','SELL','4322.45','4318.18',-186.23,4.1,'53m','New York','Trend',['SL','Overtrade']],
+      ['52012074','14:47','BUY','4318.26','4318.47',-3.66,0.5,'4m','New York','Scalping',['Early']],
+      ['52012073','14:46','SELL','4318.70','4318.15',-9.60,0.8,'1m','New York','Scalping',['SL']],
+      ['52012072','14:44','SELL','4320.23','4318.17',-35.94,1.9,'1m','New York','Scalping',['SL']]];
+    let seed = 11; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+    const setups = ['Level', 'Trend', 'Reversal', 'Scalping', 'Fakeout'];
+    let mins = 14 * 60 + 30, day = 22;
+    for (let i = 0; i < 30; i++) {
+      mins -= 8 + Math.floor(rnd() * 50); if (mins < 7 * 60) { mins = 17 * 60; day--; }
+      const type = rnd() < .37 ? 'BUY' : 'SELL', win = rnd() < .47, e = 4300 + rnd() * 40, mv = (1 + rnd() * 5) * (win ? 1 : -1) * (type === 'SELL' ? -1 : 1);
+      const pnl = Math.round((win ? 20 + rnd() * 110 : -(3 + rnd() * 80)) * 100) / 100, su = setups[Math.floor(rnd() * 5)];
+      const d = 1 + Math.floor(rnd() * 90);
+      base.push([String(52012071 - i), `${String(Math.floor(mins / 60)).padStart(2, '0')}:${String(mins % 60).padStart(2, '0')}`, type, e.toFixed(2), (e + mv).toFixed(2), pnl, Math.round((win ? 1 + rnd() * 4 : .3 + rnd() * 2) * 10) / 10, d >= 60 ? `1h ${d - 60}m` : `${d}m`, mins >= 13 * 60 ? 'New York' : 'London', su, win ? (rnd() < .5 ? ['TP', 'Clean'] : ['TP']) : [rnd() < .3 ? 'Early' : 'SL'], day]);
+    }
+    this.trades = base.map(([id, time, type, entry, exit, pnl, rr, dur, session, setup, tags, day = 22]) => {
+      let s2 = +id % 9973; const r2 = () => (s2 = (s2 * 16807) % 2147483647) / 2147483647;
+      let v = 13; const thumb = Array.from({ length: 22 }, (_, i) => `${(i * 64 / 21).toFixed(1)},${(v = Math.max(3, Math.min(23, v + (r2() - .5) * 5 - (pnl > 0 ? .25 : -.25)))).toFixed(1)}`).join(' ');
+      return { id, time, type, entry, exit, pnl, rr, dur, session, setup, tags, day, thumb, date: `2026-09-${day}` };
+    });
+  }
+  componentDidMount() { this.iv = setInterval(() => this.setState({ now: new Date() }), 1000); }
+  componentWillUnmount() { clearInterval(this.iv); this.cro && this.cro.disconnect(); }
+  componentDidUpdate(pp, ps) { if (ps && (ps.sel !== this.state.sel || ps.tab !== this.state.tab || ps.open !== this.state.open)) requestAnimationFrame(() => this.draw()); }
+  filtered() {
+    const { filter, query } = this.state, q = query.trim().toLowerCase();
+    return this.trades.filter(t => (filter === 'All' || (filter === 'Buy' && t.type === 'BUY') || (filter === 'Sell' && t.type === 'SELL') || (filter === 'Win' && t.pnl > 0) || (filter === 'Loss' && t.pnl <= 0)) && (!q || [t.id, t.setup, t.session, ...t.tags].join(' ').toLowerCase().includes(q)));
+  }
+  draw() {
+    try { this._draw(); } catch (err) { console.warn('chart draw', err && err.message); }
+  }
+  _draw() {
+    const el = this.chartEl; if (!el || !el.isConnected || !el.clientWidth) return;
+    const t = this.trades.find(x => x.id === this.state.sel); if (!t) return;
+    const dpr = Math.min(devicePixelRatio || 1, 2), w = el.clientWidth, h = el.clientHeight;
+    if (!h) return; el.width = Math.round(w * dpr); el.height = Math.round(h * dpr); const ctx = el.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    let s = +t.id % 7919 + 3; const rnd = () => (s = (s * 16807) % 2147483647) / 2147483647;
+    const e = +t.entry, x = +t.exit, N = 64, ei = 40, xi = 54, cs = []; let p = e - (x - e) * .6 - 3;
+    for (let i = 0; i < N; i++) {
+      const tgt = i < ei ? e + (p - e) * .0 : x; const drift = i < ei ? (e - p) / (ei - i + 1) : (x - p) / Math.max(1, xi - i + 1);
+      const o = p; p += drift + (rnd() - .5) * 1.2; if (i === ei) p = e; if (i === xi) p = x;
+      cs.push({ o, c: p, h: Math.max(o, p) + rnd() * .7, l: Math.min(o, p) - rnd() * .7 });
+    }
+    const lo = Math.min(...cs.map(c => c.l)) - 1, hi = Math.max(...cs.map(c => c.h)) + 1, R = 36, B = 16, pw = w - R, ph = h - B;
+    const Y = v => (hi - v) / (hi - lo) * ph, cw = pw / N;
+    ctx.font = '9.5px Manrope, sans-serif'; ctx.textBaseline = 'middle'; ctx.fillStyle = '#8e9896';
+    const step = Math.max(1, Math.round((hi - lo) / 5));
+    for (let v = Math.ceil(lo); v <= hi; v += step) { ctx.strokeStyle = 'rgba(200,215,210,.06)'; ctx.beginPath(); ctx.moveTo(0, Y(v)); ctx.lineTo(pw, Y(v)); ctx.stroke(); ctx.fillText(v, pw + 5, Y(v)); }
+    cs.forEach((c, i) => { const cx = i * cw + cw / 2, col = c.c >= c.o ? '#3ec495' : '#e05a4e'; ctx.strokeStyle = col; ctx.beginPath(); ctx.moveTo(cx, Y(c.h)); ctx.lineTo(cx, Y(c.l)); ctx.stroke(); ctx.fillStyle = col; const y1 = Y(Math.max(c.o, c.c)); ctx.fillRect(cx - cw * .3, y1, cw * .6, Math.max(1, Y(Math.min(c.o, c.c)) - y1)); });
+    const ex = ei * cw + cw / 2, xx = xi * cw + cw / 2;
+    ctx.setLineDash([2, 3]); ctx.strokeStyle = 'rgba(233,215,176,.7)'; ctx.beginPath(); ctx.moveTo(0, Y(e)); ctx.lineTo(pw, Y(e)); ctx.stroke(); ctx.beginPath(); ctx.moveTo(ex, Y(e)); ctx.lineTo(xx, Y(x)); ctx.stroke(); ctx.setLineDash([]);
+    ctx.font = '600 12px Manrope, sans-serif'; ctx.textAlign = 'center';
+    ctx.fillStyle = '#ecdcb8'; ctx.fillText('Entry', ex, Y(e) - 12); ctx.fillStyle = '#fff'; ctx.fillText('Exit', xx, Y(Math.max(x, e)) - 22);
+    [[ex, e, '#ecdcb8'], [xx, x, '#fff']].forEach(([a, b, c]) => { ctx.fillStyle = c; ctx.beginPath(); ctx.arc(a, Y(b), 3, 0, 7); ctx.fill(); });
+    ctx.font = '9.5px Manrope, sans-serif'; ctx.fillStyle = '#8e9896';
+    const [hh] = t.time.split(':').map(Number); [0, 1, 2, 3].forEach(k => ctx.fillText(`${String(hh - 2 + k).padStart(2, '0')}:00`, 18 + k * (pw - 36) / 3, h - 5));
+  }
+  renderVals() {
+    const st = this.state, d = st.now, pad = n => String(n).padStart(2, '0');
+    const TS = { TP: ['#1d2c31', '#dfe5e3'], Clean: ['#173c35', '#8fe3c8'], Good: ['#173c35', '#8fe3c8'], SL: ['#4a1a18', '#f3b5ae'], Early: ['#1d2c31', '#dfe5e3'], News: ['#1d2c31', '#dfe5e3'], Overtrade: ['#3a1917', '#f3b5ae'] };
+    const tagList = tags => tags.map(l => ({ label: l, bg: TS[l][0], fg: TS[l][1] }));
+    const fmt = v => (v > 0 ? '+' : '') + v.toFixed(2) + '$';
+    const all = this.trades, list = this.filtered(), per = 14, pages = Math.max(1, Math.ceil(list.length / per)), page = Math.min(st.page, pages - 1);
+    const rows = list.slice(page * per, page * per + per).map(t => ({ ...t, pnlText: fmt(t.pnl), pc: t.pnl > 0 ? '#3ec495' : '#e05a4e', tbg: t.type === 'SELL' ? '#6e1f1c' : '#1d4a3b', tfg: t.type === 'SELL' ? '#f3b5ae' : '#a9ecd0', tagList: tagList(t.tags), bg: t.id === st.sel ? 'rgba(233,215,176,.07)' : 'transparent', shadow: t.id === st.sel ? 'inset 0 0 0 1px rgba(233,215,176,.35)' : 'none', select: () => this.setState({ sel: t.id, open: true }) }));
+    const counts = { All: all.length, Buy: all.filter(t => t.type === 'BUY').length, Sell: all.filter(t => t.type === 'SELL').length, Win: all.filter(t => t.pnl > 0).length, Loss: all.filter(t => t.pnl <= 0).length };
+    const t = all.find(x => x.id === st.sel) || all[0], win = t.pnl > 0, is85 = t.id === '52012085', sell = t.type === 'SELL';
+    const toMin = s => s.split(' ').reduce((a, p) => a + (p.endsWith('h') ? parseInt(p) * 60 : parseInt(p)), 0);
+    const [H, M] = t.time.split(':').map(Number), end = H * 60 + M + toMin(t.dur);
+    const setupLong = { Level: 'Level Continuation', Trend: 'Trend Continuation', Reversal: 'Reversal', Scalping: 'Scalping', Fakeout: 'Fakeout', News: 'News Trade' }[t.setup];
+    const fails = is85 ? [8] : win ? [] : [...(t.tags.includes('Early') ? [5] : []), ...(t.tags.includes('Overtrade') ? [7] : []), 8];
+    const ruleNames = ['Trend direction', 'Valid level', '123 structure', 'MACD confirmation', 'Pullback entry', 'SL below/above swing', 'No overtrading', 'Followed trading plan'];
+    const score = is85 ? 8.5 : win ? Math.min(9.5, 6.8 + t.rr * .3) : Math.max(2.5, 5.2 - fails.length);
+    const defNote = is85 ? 'ورود بعد از پولبک انجام شد. ساختار واضح بود و حجم مناسب بود مدیریت ریسک خوب بود.' : win ? 'ورود طبق پلن انجام شد و مدیریت معامله درست بود.' : 'ورود قبل از تأیید انجام شد. باید منتظر کندل تأیید می‌ماندم.';
+    const review = is85 ? 'Excellent trade. The level was valid, entry was precise and risk management was correct. The only issue is rule #8 (trading plan) – you took a second trade too early.' : win ? `Solid ${setupLong.toLowerCase()} trade. Entry followed the setup rules and the target was respected. Keep position sizing consistent.` : `This trade broke ${fails.length > 1 ? 'rules #' + fails.join(', #') : 'rule #' + fails[0]}. ${t.tags.includes('Overtrade') ? 'It was taken shortly after previous losses – a sign of overtrading.' : 'Wait for confirmation before entering and follow the plan.'}`;
+    const idx = all.indexOf(t);
+    const tabNames = ['Overview', 'Screenshots (3)', 'AI Review', 'Edit'];
+    const tabOf = l => l.split(' ')[0];
+    return {
+      clock: `${d.toLocaleDateString('en-GB', { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' })} | ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`,
+      nav: [['home', 'Home', 'index.html'], ['candlestick_chart', 'Chart', '#'], ['menu_book', 'Journal', '#'], ['monitoring', 'Analytics', '#'], ['psychology', 'AI Lab', '#'], ['handyman', 'Tools', '#'], ['settings', 'Settings', '#']].map(([icon, label, href]) => ({ icon, label, href, color: label === 'Journal' ? '#f3e6c8' : '#9aa6a4', bg: label === 'Journal' ? 'linear-gradient(180deg,#1b2a2e,#121e22)' : 'transparent', border: label === 'Journal' ? 'rgba(233,215,176,.35)' : 'transparent' })),
+      cols: st.open ? 'minmax(0,1fr) 400px' : 'minmax(0,1fr)',
+      bars1: ['30%', '50%', '40%', '75%', '100%'], bars2: ['25%', '40%', '55%', '45%', '80%', '100%'], bars3: ['35%', '55%', '30%', '70%', '95%'],
+      pnlLine: 'M0,22 L8,20 L14,21 L22,16 L28,17 L36,11 L42,12 L50,6 L60,2', pnlArea: 'M0,22 L8,20 L14,21 L22,16 L28,17 L36,11 L42,12 L50,6 L60,2 L60,26 L0,26 Z',
+      filters: ['All', 'Buy', 'Sell', 'Win', 'Loss'].map(l => { const on = l === st.filter; return { label: l, count: counts[l], on: () => this.setState({ filter: l, page: 0 }), bg: on ? '#1b2a2e' : 'transparent', border: on ? 'rgba(233,215,176,.4)' : 'transparent', fg: on ? '#f3e6c8' : '#c8cfcd', cbg: on ? 'rgba(233,215,176,.2)' : '#15252a' }; }),
+      ranges: ['Today', 'This Week', 'This Month', 'Custom'].map(l => ({ label: l, on: () => this.setState({ range: l }), bg: l === st.range ? '#1b2a2e' : 'transparent', fg: l === st.range ? '#f3e6c8' : '#c8cfcd', iconDisplay: l === 'Custom' ? 'inline' : 'none' })),
+      query: st.query, onQuery: e => this.setState({ query: e.target.value, page: 0 }),
+      rows, showing: list.length ? `Showing ${page * per + 1} - ${Math.min(list.length, page * per + per)} of ${list.length} trades` : 'No trades match',
+      pages: Array.from({ length: pages }, (_, i) => ({ n: i + 1, on: () => this.setState({ page: i }), bg: i === page ? '#ecdcb8' : 'transparent', fg: i === page ? '#1a1409' : '#c8cfcd', border: i === page ? '#ecdcb8' : 'transparent' })),
+      prevPage: () => this.setState({ page: Math.max(0, page - 1) }), nextPage: () => this.setState({ page: Math.min(pages - 1, page + 1) }),
+      detailOpen: st.open, closeDetail: () => this.setState({ open: false }),
+      prevTrade: () => this.setState({ sel: all[Math.max(0, idx - 1)].id }), nextTrade: () => this.setState({ sel: all[Math.min(all.length - 1, idx + 1)].id }),
+      chartRef: this.chartRef,
+      tabs: tabNames.map(l => { const on = tabOf(l) === st.tab; return { label: l, on: () => this.setState({ tab: tabOf(l) }), bg: on ? '#16252a' : 'transparent', fg: on ? '#f3e6c8' : '#aeb7b5', line: on ? '#e9d7b0' : 'transparent' }; }),
+      tabOverview: st.tab === 'Overview', tabShots: st.tab === 'Screenshots', tabAI: st.tab === 'AI', tabEdit: st.tab === 'Edit',
+      shots: ['Entry – M5', 'Management – M5', 'Exit – M15'].map((label, i) => ({ label, pts: t.thumb.split(' ').map(p => { const [a, b] = p.split(','); return `${a},${Math.max(1, Math.min(25, +b + (i - 1) * 2)).toFixed(1)}`; }).join(' ') })),
+      editNotes: () => this.setState({ tab: 'Edit' }),
+      onNote: e => { const v = e.target.value; this.setState(s => ({ notes: { ...s.notes, [t.id]: v } })); },
+      d: {
+        id: t.id, result: win ? 'Win' : 'Loss', badgeBg: win ? '#173c35' : '#4a1a18', badgeFg: win ? '#8fe3c8' : '#f3b5ae', badgeIcon: win ? 'check_circle' : 'cancel',
+        type: t.type, tbg: sell ? '#6e1f1c' : '#1d4a3b', tfg: sell ? '#f3b5ae' : '#a9ecd0', pnlText: fmt(t.pnl), pc: win ? '#3ec495' : '#e05a4e', rr: t.rr,
+        entry: t.entry, exit: t.exit, sl: is85 ? '4342.10' : (+t.entry + (sell ? 2.4 : -2.4)).toFixed(2), tp: is85 ? '4332.50' : (+t.entry + (sell ? -7.2 : 7.2)).toFixed(2),
+        dateLong: `${t.day} Sep 2026`, timeRange: `${t.time} - ${pad(Math.floor(end / 60) % 24)}:${pad(end % 60)}`, dur: t.dur, session: t.session, setupLong, tagList: tagList(t.tags),
+        ruleScore: `${8 - fails.length} / 8`, rules: ruleNames.map((n, i) => { const f = fails.includes(i + 1); return { label: `${i + 1}. ${n}`, icon: f ? 'cancel' : 'check_circle', ic: f ? '#e05a4e' : '#3ec495', fg: f ? '#e05a4e' : '#dfe5e3' }; }),
+        note: st.notes[t.id] ?? defNote,
+        moodIcon: win ? 'sentiment_calm' : 'sentiment_stressed', moodBg: win ? '#173c35' : '#3a1917', moodFg: win ? '#8fe3c8' : '#f3b5ae', mood1: win ? 'Calm' : 'Anxious', mood2: win ? 'Focused' : 'Rushed',
+        score: score.toFixed(1), scoreW: score * 10 + '%', scoreColor: score >= 7 ? '#3ec495' : score >= 5 ? '#e2cc9f' : '#e05a4e', review
+      }
+    };
+  }
+}
+</script>
+</body>
+</html>

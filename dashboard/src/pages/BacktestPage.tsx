@@ -49,7 +49,7 @@ export default function BacktestPage() {
       await refreshAccounts();
       setActive(acc.id);
       setMsg({ ok: true, text: "به‌عنوان حساب بک‌تست ذخیره شد." });
-      nav("/analysis");
+      nav("/analysis-classic");
     } catch (e) {
       setMsg({ ok: false, text: (e as Error).message });
     }

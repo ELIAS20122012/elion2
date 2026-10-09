@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Elion Dashboard</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;1,500&family=Manrope:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,300,0,0">
+<script src="https://cdn.jsdelivr.net/npm/topojson-client@3"></script>
+<style>
+  body{margin:0;background:#081013}
+  a{color:#e9d7b0;text-decoration:none}
+  a:hover{color:#fff3d9}
+  .ms{font-family:'Material Symbols Outlined';line-height:1}
+  .ms-fill{font-variation-settings:'FILL' 1}
+  .nav-item:hover{color:#e9d7b0 !important;background:rgba(233,215,176,.05)}
+</style>
+</head>
+<body>
+
+<div style="min-height:100vh;min-width:1200px;background:radial-gradient(ellipse at 50% 0%,#0d1a1e 0%,#081013 70%);display:grid;grid-template-columns:72px minmax(0,1fr);font-family:Manrope,sans-serif;color:#dfe5e3;font-size:13px">
+
+<aside style="border-right:1px solid #152328;display:flex;flex-direction:column;align-items:center;padding:14px 0 18px;gap:6px">
+  <div style="width:44px;height:44px;display:grid;place-items:center;margin-bottom:14px"><div style="width:22px;height:22px;border:1.5px solid #e9d7b0;transform:rotate(45deg);display:grid;place-items:center"><div style="width:8px;height:8px;background:#e9d7b0"></div></div></div>
+  <div style="width:54px;padding:10px 0 8px;border-radius:12px;background:linear-gradient(180deg,#1b2a2e,#121e22);border:1px solid rgba(233,215,176,.35);display:flex;flex-direction:column;align-items:center;gap:4px;color:#f3e6c8"><span class="ms ms-fill" style="font-size:24px">home</span><span style="font-size:11px">Home</span></div>
+  <div id="nav" style="display:contents"></div>
+  <div style="flex:1"></div>
+  <div style="font-size:11px;line-height:1.55;color:#8e9896;text-align:left;width:48px">Better Traders Build Better Lives.</div>
+  <div style="font-size:10px;color:#6f7b79;text-align:center;margin-top:28px;letter-spacing:.04em">ELION OS<br>v2.1</div>
+</aside>
+
+<main style="padding:12px 14px 14px;display:flex;flex-direction:column;gap:12px;min-width:0">
+  <header style="display:flex;align-items:center;gap:22px;height:44px">
+    <div style="display:flex;flex-direction:column;gap:2px"><div style="font-family:'Cormorant Garamond',serif;font-size:24px;letter-spacing:.2em;color:#f3e6c8;line-height:1">ELION</div><div style="font-size:9px;letter-spacing:.42em;color:#aeb7b5">TRADING</div></div>
+    <div style="font-size:11px;letter-spacing:.1em;color:#aeb7b5">DISCIPLINE BUILDS FREEDOM</div>
+    <div style="flex:1;display:flex;justify-content:center"><div style="width:min(100%,380px);height:36px;border-radius:18px;border:1px solid #1f2f34;background:#0c171a;display:flex;align-items:center;gap:8px;padding:0 8px 0 14px;color:#7f8b89"><span class="ms" style="font-size:18px">search</span><span style="flex:1;font-size:11px">Search trades, charts, instruments, or ask Elion...</span><span style="font-size:10px;border:1px solid #2a3a3f;border-radius:5px;padding:2px 6px">Ctrl K</span></div></div>
+    <div style="display:flex;flex-direction:column;gap:2px;font-size:11px"><div style="display:flex;align-items:center;gap:6px;color:#dfe5e3"><span style="width:6px;height:6px;border-radius:50%;background:#3ec495;box-shadow:0 0 6px #3ec495"></span>London Session &bull; Live</div><div id="clock" style="color:#8e9896"></div></div>
+    <div style="position:relative;color:#e9d7b0"><span class="ms ms-fill" style="font-size:24px">notifications</span><span style="position:absolute;top:2px;right:1px;width:7px;height:7px;border-radius:50%;background:#e05a4e"></span></div>
+    <div style="display:flex;align-items:center;gap:10px"><div style="width:36px;height:36px;border-radius:50%;background:#ecdcb8;color:#1a1409;display:grid;place-items:center;font-weight:700;font-size:13px">EF</div><div style="display:flex;flex-direction:column;gap:2px"><div style="font-size:13px;font-weight:600">Elias Farahani</div><div style="font-size:10px;color:#8e9896">Trader | Build the Edge</div></div><span class="ms" style="font-size:18px;color:#8e9896">expand_more</span></div>
+    <div id="themeToggle" style="width:52px;height:26px;border-radius:13px;border:1px solid #2a3a3f;background:#0c171a;position:relative;cursor:pointer"><div id="themeKnob" style="position:absolute;top:2px;left:28px;width:20px;height:20px;border-radius:50%;background:#ecdcb8;display:grid;place-items:center;transition:left .25s"><span id="themeIcon" class="ms" style="font-size:14px;color:#1a1409">dark_mode</span></div></div>
+  </header>
+
+  <div style="display:grid;grid-template-columns:322fr 150fr 148fr 90fr 112fr 112fr 192fr;gap:10px;height:64px">
+    <div style="border-radius:12px;border:1px solid #1d2c31;background:linear-gradient(180deg,#0f1b1f,#0b1518);display:flex;align-items:center;gap:12px;padding:0 14px;min-width:0">
+      <div style="width:38px;height:38px;border-radius:50%;background:radial-gradient(circle at 40% 35%,#6b5634,#2b2213);border:1px solid rgba(233,215,176,.5);display:grid;place-items:center;color:#ecdcb8;font-size:10px;font-weight:700">Au</div>
+      <div style="display:flex;flex-direction:column;gap:2px;flex-shrink:0"><div style="font-size:11px;font-weight:600;color:#aeb7b5">XAUUSD</div><div style="display:flex;align-items:baseline;gap:6px;white-space:nowrap"><span class="js-price" style="font-size:18px;font-weight:600"></span><span class="js-chg" style="font-size:11px;color:#3ec495"></span><span class="js-chgpct" style="font-size:11px;color:#3ec495"></span></div></div>
+      <div style="position:relative;flex:1;min-width:60px;height:34px"><canvas id="cvSpark" style="position:absolute;inset:0;width:100%;height:100%;display:block"></canvas></div>
+    </div>
+    <div style="border-radius:12px;border:1px solid #1d2c31;background:linear-gradient(180deg,#0f1b1f,#0b1518);padding:10px 14px;display:flex;flex-direction:column;justify-content:center;gap:4px"><div style="font-size:10px;letter-spacing:.06em;color:#aeb7b5">LIVE ACCOUNT</div><div style="display:flex;align-items:baseline;gap:8px"><span style="font-size:18px;font-weight:600">$1,611.42</span><span style="font-size:11px;color:#3ec495">+6.3%</span></div></div>
+    <div style="border-radius:12px;border:1px solid #1d2c31;background:linear-gradient(180deg,#0f1b1f,#0b1518);padding:10px 14px;display:flex;flex-direction:column;justify-content:center;gap:4px"><div style="font-size:10px;letter-spacing:.06em;color:#aeb7b5">DAILY P&amp;L</div><div style="display:flex;align-items:baseline;gap:8px"><span style="font-size:18px;font-weight:600;color:#3ec495">+$95.40</span><span style="font-size:11px;color:#3ec495">+2.1%</span></div></div>
+    <div style="border-radius:12px;border:1px solid #1d2c31;background:linear-gradient(180deg,#0f1b1f,#0b1518);padding:10px 14px;display:flex;flex-direction:column;justify-content:center;gap:4px"><div style="font-size:10px;letter-spacing:.06em;color:#aeb7b5">TRADES</div><div style="font-size:18px;font-weight:600">3 / 5</div></div>
+    <div style="border-radius:12px;border:1px solid #1d2c31;background:linear-gradient(180deg,#0f1b1f,#0b1518);padding:10px 14px;display:flex;flex-direction:column;justify-content:center;gap:6px"><div style="font-size:10px;letter-spacing:.06em;color:#aeb7b5">MT5</div><div style="display:flex;align-items:center;gap:7px;font-size:12px"><span style="width:8px;height:8px;border-radius:50%;background:#3ec495;box-shadow:0 0 6px #3ec495"></span>Connected</div></div>
+    <div style="border-radius:12px;border:1px solid #1d2c31;background:linear-gradient(180deg,#0f1b1f,#0b1518);padding:10px 14px;display:flex;flex-direction:column;justify-content:center;gap:6px"><div style="font-size:10px;letter-spacing:.06em;color:#aeb7b5">AI SYSTEM</div><div style="display:flex;align-items:center;gap:7px;font-size:12px"><span style="width:8px;height:8px;border-radius:50%;background:#3ec495;box-shadow:0 0 6px #3ec495"></span>Online</div></div>
+    <div style="border-radius:12px;border:1px solid #1d2c31;background:linear-gradient(180deg,#0f1b1f,#0b1518);padding:0 14px;display:flex;align-items:center;gap:12px"><span class="ms" style="font-size:34px;color:#3ec495">verified_user</span><div style="flex:1;display:flex;flex-direction:column;gap:3px"><div style="font-size:10px;letter-spacing:.06em;color:#aeb7b5">RISK STATUS</div><div style="font-size:13px;font-weight:500">Normal</div></div><span class="ms" style="font-size:20px;color:#aeb7b5">expand_more</span></div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:282fr 520fr 365fr;grid-template-rows:max(460px, calc((100vw - 110px) * 0.37));gap:12px;align-items:stretch">
+    <div style="display:flex;flex-direction:column;gap:12px;min-width:0;contain:size">
+      <div style="flex:1.35;border-radius:12px;border:1px solid #1d2c31;background:linear-gradient(180deg,#0f1b1f,#0b1518);padding:14px 14px 12px;display:flex;flex-direction:column;gap:12px">
+        <div style="display:flex;justify-content:space-between;align-items:center"><div style="font-size:14px;font-weight:600">Trader State</div><div style="display:flex;align-items:center;gap:6px;font-size:11px;padding:3px 10px;border-radius:10px;background:#15252a"><span style="width:6px;height:6px;border-radius:50%;background:#3ec495"></span>Live</div></div>
+        <div style="flex:1;display:flex;align-items:center;gap:12px">
+          <div style="width:104px;height:104px;flex-shrink:0;border-radius:50%;background:conic-gradient(#e2cc9f 313deg,#1b2a2e 0);display:grid;place-items:center;box-shadow:0 0 24px rgba(233,215,176,.12)"><div style="width:88px;height:88px;border-radius:50%;background:#0d181b;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px"><div style="font-size:24px;font-weight:600">87%</div><div style="font-size:9px;letter-spacing:.08em;color:#aeb7b5">DISCIPLINE</div></div></div>
+          <div id="bars" style="flex:1;display:flex;flex-direction:column;gap:12px;min-width:0"></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;border:1px solid #22343a;background:#0d181b"><span style="font-family:'Cormorant Garamond',serif;font-size:30px;line-height:.6;color:#e9d7b0;height:14px">&ldquo;</span><span style="font-family:'Cormorant Garamond',serif;font-style:italic;font-size:14px;color:#dfe5e3">&ldquo;Discipline today, freedom tomorrow.&rdquo;</span></div>
+      </div>
+      <div style="flex:1;border-radius:12px;border:1px solid #1d2c31;background:linear-gradient(180deg,#0f1b1f,#0b1518);padding:12px 14px;display:flex;flex-direction:column;gap:6px">
+        <div style="display:flex;align-items:center;gap:8px"><div style="font-size:14px;font-weight:600;white-space:nowrap">Alerts &amp; Notifications</div><div style="width:18px;height:18px;border-radius:50%;background:#ecdcb8;color:#1a1409;font-size:10px;font-weight:700;display:grid;place-items:center">3</div><div style="flex:1"></div><a href="#" style="font-size:11px;color:#c8cfcd;display:flex;align-items:center;gap:4px;white-space:nowrap">View all <span class="ms" style="font-size:14px">arrow_forward</span></a></div>
+        <div id="alerts" style="display:contents"></div>
+      </div>
+    </div>
+
+    <div style="min-width:0;min-height:0;height:100%">
+      <!-- ==== ElionAICard ==== -->
+      <section id="aicard" style="position:relative;width:100%;height:100%;box-sizing:border-box;container-type:inline-size;overflow:hidden;border-radius:16px;background:#070d10;border:1px solid rgba(233,215,176,.16);box-shadow:inset 0 0 0 1px rgba(0,0,0,.4),0 20px 60px -20px rgba(0,0,0,.8);font-family:Manrope,sans-serif;color:#cfd6d4">
+        <img id="aiFace" src="assets/face.png" alt="" style="position:absolute;inset:-4%;width:108%;height:108%;object-fit:cover;object-position:52% 40%;will-change:transform;transform-origin:52% 45%;filter:saturate(.55) sepia(.25) brightness(.9) contrast(1.05)">
+        <canvas id="aiCanvas" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;mix-blend-mode:screen"></canvas>
+        <div style="position:absolute;inset:0;pointer-events:none;background:linear-gradient(90deg,rgba(7,13,16,.92) 0%,rgba(7,13,16,.55) 26%,transparent 44%,transparent 72%,rgba(7,13,16,.6) 100%)"></div>
+        <div style="position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse at 52% 45%,transparent 50%,rgba(4,8,10,.75) 100%)"></div>
+
+        <div style="position:absolute;left:4.5cqw;top:13.5cqw;display:flex;flex-direction:column;gap:1.6cqw">
+          <div style="font-family:'Cormorant Garamond',serif;font-weight:500;font-size:4.4cqw;letter-spacing:.14em;color:#e9d7b0">ELION AI</div>
+          <div style="font-size:2.05cqw;line-height:1.45;letter-spacing:.06em;color:#c8cfcd">MARKET INTELLIGENCE<br>REAL PERSPECTIVE<br>DISCIPLINED EXECUTION</div>
+        </div>
+
+        <div id="aiSteps" style="position:absolute;left:4.2cqw;top:32cqw;display:flex;flex-direction:column;gap:3cqw">
+          <div style="position:absolute;left:1cqw;top:1.5cqw;bottom:6.5cqw;width:1px;background:rgba(233,215,176,.25)"></div>
+          <div id="aiLine" style="position:absolute;left:1cqw;top:1.5cqw;width:1px;height:0cqw;background:#e9d7b0;transition:height .6s ease"></div>
+        </div>
+
+        <div style="position:absolute;left:4.5cqw;bottom:4.5cqw;font-size:2.05cqw;line-height:1.45;letter-spacing:.06em;color:#aeb7b5">HUMAN DISCIPLINE<br>ARTIFICIAL INTELLIGENCE<br>A SHARPER TOMORROW</div>
+
+        <div style="position:absolute;right:5cqw;top:36cqw;display:flex;flex-direction:column;gap:3cqw">
+          <div style="font-family:'Cormorant Garamond',serif;font-style:italic;font-size:3.3cqw;line-height:1.3;color:#e9d7b0">&ldquo;Same<br>Charts.<br>A Smarter<br>You.&rdquo;</div>
+          <div style="width:5.5cqw;height:1px;background:rgba(233,215,176,.5)"></div>
+        </div>
+
+        <div style="position:absolute;right:1.6cqw;bottom:2.4cqw;display:flex;align-items:center;gap:2cqw;padding:1.4cqw 2.4cqw 1.4cqw 1.4cqw;border-radius:3cqw;background:rgba(8,16,19,.78);border:1px solid rgba(233,215,176,.35);backdrop-filter:blur(6px)">
+          <div style="width:7cqw;height:7cqw;border-radius:50%;border:1px solid rgba(233,215,176,.25);display:grid;place-items:center;background:rgba(20,32,36,.8)">
+            <canvas id="aiWave" style="width:5cqw;height:3cqw"></canvas>
+          </div>
+          <div id="aiStatus" style="font-size:1.75cqw;color:#dfe4e2;min-width:24cqw"></div>
+          <div style="font-size:2.8cqw;color:#e9d7b0;line-height:1">&rarr;</div>
+        </div>
+      </section>
+      <!-- ==== /ElionAICard ==== -->
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:12px;min-width:0;contain:size">
+      <div style="flex:2.6;border-radius:12px;border:1px solid #1d2c31;background:linear-gradient(180deg,#0f1b1f,#0b1518);padding:12px 14px;display:flex;flex-direction:column;gap:6px;min-height:0">
+        <div style="display:flex;justify-content:space-between;align-items:center"><div style="font-size:14px;font-weight:600">Market Intelligence</div><div style="display:flex;align-items:center;gap:10px;padding:4px 8px 4px 12px;border-radius:8px;border:1px solid #22343a;font-size:11px"><span style="font-weight:600">XAUUSD</span><span style="color:#8e9896">M5</span><span class="ms" style="font-size:16px;color:#8e9896">expand_more</span></div></div>
+        <div style="display:flex;align-items:baseline;gap:10px"><div class="js-price" style="font-size:22px;font-weight:600"></div><div style="display:flex;gap:8px;font-size:11px;color:#3ec495"><span class="js-chg"></span><span class="js-chgpct"></span></div></div>
+        <div style="position:relative;flex:1;min-height:0"><canvas id="cvCandle" style="position:absolute;inset:0;width:100%;height:100%;display:block"></canvas></div>
+        <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px">
+          <div style="border-radius:8px;border:1px solid #1d2c31;background:#0d181b;padding:7px 9px;display:flex;flex-direction:column;gap:3px"><div style="font-size:10px;color:#aeb7b5">Trend</div><div style="font-size:11px;color:#3ec495;display:flex;align-items:center;gap:2px"><span class="ms" style="font-size:13px">north_east</span>Bullish</div></div>
+          <div style="border-radius:8px;border:1px solid #1d2c31;background:#0d181b;padding:7px 9px;display:flex;flex-direction:column;gap:3px"><div style="font-size:10px;color:#aeb7b5">Momentum</div><div style="font-size:11px">Strengthening</div></div>
+          <div style="border-radius:8px;border:1px solid #1d2c31;background:#0d181b;padding:7px 9px;display:flex;flex-direction:column;gap:3px"><div style="font-size:10px;color:#aeb7b5">Next Level</div><div style="font-size:11px;display:flex;align-items:center;gap:2px"><span class="ms" style="font-size:13px;color:#3ec495">north_east</span>4328.50</div></div>
+          <div style="border-radius:8px;border:1px solid #1d2c31;background:#0d181b;padding:7px 9px;display:flex;flex-direction:column;gap:3px"><div style="font-size:10px;color:#aeb7b5">AI Confidence</div><div style="display:flex;align-items:center;gap:6px"><div style="width:18px;height:18px;border-radius:50%;background:conic-gradient(#e2cc9f 259deg,#1b2a2e 0);display:grid;place-items:center"><div style="width:12px;height:12px;border-radius:50%;background:#0d181b"></div></div><span style="font-size:12px;font-weight:600">72%</span></div></div>
+        </div>
+      </div>
+      <div style="flex:1;border-radius:12px;border:1px solid #1d2c31;background:linear-gradient(180deg,#0f1b1f,#0b1518);padding:12px 14px;display:flex;flex-direction:column;gap:6px;min-height:0">
+        <div style="display:flex;justify-content:space-between;align-items:center"><div style="font-size:14px;font-weight:600">Account Overview</div><a href="#" style="font-size:11px;color:#c8cfcd;display:flex;align-items:center;gap:4px">View details <span class="ms" style="font-size:14px">arrow_forward</span></a></div>
+        <div style="flex:1;display:flex;gap:12px;min-height:0"><div style="display:flex;flex-direction:column;gap:2px"><div style="font-size:10px;color:#aeb7b5">Equity</div><div style="display:flex;align-items:baseline;gap:10px"><span style="font-size:19px;font-weight:600">$1,611.42</span><span style="font-size:11px;color:#3ec495">+6.3%</span></div></div><div style="position:relative;flex:1;min-width:0"><canvas id="cvAcct" style="position:absolute;inset:0;width:100%;height:100%;display:block"></canvas></div></div>
+        <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px">
+          <div><div style="font-size:10px;color:#aeb7b5">Balance</div><div style="font-size:12px;margin-top:3px">$1,520.00</div></div>
+          <div><div style="font-size:10px;color:#aeb7b5">Margin</div><div style="font-size:12px;margin-top:3px">$120.50</div></div>
+          <div><div style="font-size:10px;color:#aeb7b5">Free Margin</div><div style="font-size:12px;margin-top:3px">$1,490.92</div></div>
+          <div><div style="font-size:10px;color:#aeb7b5">Margin Level</div><div style="font-size:12px;margin-top:3px">1,238%</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:390fr 355fr 422fr;grid-template-rows:228px;gap:12px;height:228px">
+    <div style="border-radius:12px;border:1px solid #1d2c31;background:linear-gradient(180deg,#0f1b1f,#0b1518);padding:12px 14px;display:flex;flex-direction:column;gap:10px;min-width:0;min-height:0;overflow:hidden">
+      <div style="display:flex;justify-content:space-between;align-items:center"><div style="font-size:14px;font-weight:600">Performance</div><div id="perfTabs" style="display:flex;border-radius:8px;background:#0d181b;border:1px solid #1d2c31;padding:2px"></div></div>
+      <div style="display:grid;grid-template-columns:1.1fr 1.1fr 1fr .8fr;gap:8px">
+        <div><div style="font-size:10px;color:#aeb7b5">P&amp;L</div><div style="font-size:18px;font-weight:600;color:#3ec495;margin-top:3px">+$95.40</div><div style="font-size:10px;color:#3ec495">+2.1%</div></div>
+        <div><div style="font-size:10px;color:#aeb7b5">Win Rate</div><div style="display:flex;align-items:center;gap:8px;margin-top:4px"><div style="width:30px;height:30px;border-radius:50%;background:conic-gradient(#e2cc9f 238deg,#1b2a2e 0);display:grid;place-items:center"><div style="width:20px;height:20px;border-radius:50%;background:#0d181b"></div></div><span style="font-size:14px;font-weight:600">66%</span></div></div>
+        <div><div style="font-size:10px;color:#aeb7b5">Profit Factor</div><div style="font-size:18px;font-weight:600;margin-top:3px">2.8</div></div>
+        <div><div style="font-size:10px;color:#aeb7b5">Trades</div><div style="font-size:18px;font-weight:600;margin-top:3px">3</div><div style="font-size:10px;color:#aeb7b5">2W / 1L</div></div>
+      </div>
+      <div style="position:relative;flex:1;min-height:0"><canvas id="cvPerf" style="position:absolute;inset:0;width:100%;height:100%;display:block"></canvas></div>
+    </div>
+
+    <div style="border-radius:12px;border:1px solid #1d2c31;background:linear-gradient(180deg,#0f1b1f,#0b1518);padding:12px 14px;display:flex;flex-direction:column;gap:6px;min-width:0;min-height:0;overflow:hidden">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><div style="font-size:14px;font-weight:600">Recent Trades</div><a href="#" style="font-size:11px;color:#c8cfcd;display:flex;align-items:center;gap:4px;white-space:nowrap">View all <span class="ms" style="font-size:14px">arrow_forward</span></a></div>
+      <div style="display:grid;grid-template-columns:.8fr 1.2fr 1fr 1fr 1fr 1fr;font-size:11px;color:#aeb7b5;padding-bottom:6px;border-bottom:1px solid #16252a"><span>Time</span><span>Pair</span><span>Type</span><span>Entry</span><span>Exit</span><span style="text-align:right">P&amp;L</span></div>
+      <div id="trades" style="display:contents"></div>
+    </div>
+
+    <div style="border-radius:12px;border:1px solid #1d2c31;background:linear-gradient(180deg,#0f1b1f,#0b1518);padding:12px 14px;display:flex;flex-direction:column;gap:8px;min-width:0;min-height:0;overflow:hidden">
+      <div style="display:flex;justify-content:space-between;align-items:center"><div style="font-size:14px;font-weight:600">Session Activity</div><div id="sessTabs" style="display:flex;border-radius:8px;background:#0d181b;border:1px solid #1d2c31;padding:2px"></div></div>
+      <div style="flex:1;display:flex;gap:10px;min-height:0">
+        <div style="position:relative;flex:1;min-width:0"><canvas id="cvMap" style="position:absolute;inset:0;width:100%;height:100%;display:block"></canvas></div>
+        <div id="sessions" style="width:150px;display:flex;flex-direction:column;justify-content:center;gap:14px;padding:10px 12px;border-radius:10px;border:1px solid #1d2c31;background:#0d181b"></div>
+      </div>
+      <div style="text-align:right;font-family:'Cormorant Garamond',serif;font-style:italic;font-size:14px;color:#dfe5e3">&ldquo;Global Markets. A Larger You.&rdquo;</div>
+    </div>
+  </div>
+</main>
+</div>
+
+<script>
+/* ============================ Elion Dashboard ============================ */
+(function () {
+  'use strict';
+
+  var state = { price: 4339.82, now: new Date(), perf: 'Today', sess: 'London', dark: true };
+  var els = {
+    spark:  document.getElementById('cvSpark'),
+    candle: document.getElementById('cvCandle'),
+    acct:   document.getElementById('cvAcct'),
+    perf:   document.getElementById('cvPerf'),
+    map:    document.getElementById('cvMap')
+  };
+  var candles, spark, acct, perfPts, topo, landCache = null;
+
+  /* ---------- static lists ---------- */
+  var NAV = [['candlestick_chart','Trade'],['menu_book','Journal'],['monitoring','Analytics'],
+             ['psychology','AI Lab'],['handyman','Tools'],['settings','Settings']];
+  var BARS = [{label:'Daily Goal',value:'3 / 5',w:'60%'},
+              {label:'Risk Usage',value:'0.8% / 2%',w:'40%'},
+              {label:'Rule Compliance',value:'5 / 6',w:'83%'}];
+  var ALERTS = [{icon:'warning',bg:'#b3322c',title:'Possible overtrading detected',time:'2 minutes ago'},
+                {icon:'warning',bg:'#c9a56a',title:'High volatility – London Session',time:'12 minutes ago'},
+                {icon:'info',bg:'#3f8fb0',title:'News: FOMC Statement in 1h',time:'18 minutes ago'}];
+  var TRADES = [['14:12','Sell','4342.10','4338.50','+$36.00'],
+                ['11:45','Sell','4338.20','4335.10','+$31.00'],
+                ['09:28','Buy','4331.50','4329.80','-$17.00'],
+                ['07:15','Buy','4328.30','4334.10','+$58.00']];
+  var SESSIONS = [['London','Active','07:00 - 16:00'],
+                  ['New York','Upcoming','13:00 - 22:00'],
+                  ['Tokyo','Closed','00:00 - 09:00']];
+
+  var esc = function (s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); };
+
+  /* ---------- one-time render ---------- */
+  document.getElementById('nav').innerHTML = NAV.map(function (n) {
+    var href = n[1] === 'Journal' ? 'Elion%20Journal.dc.html' : '#';
+    return '<a class="nav-item" href="' + href + '" style="width:54px;padding:10px 0 8px;border-radius:12px;display:flex;flex-direction:column;align-items:center;gap:4px;color:#9aa6a4;cursor:pointer">' +
+           '<span class="ms" style="font-size:24px">' + n[0] + '</span>' +
+           '<span style="font-size:11px">' + n[1] + '</span></a>';
+  }).join('');
+
+  document.getElementById('bars').innerHTML = BARS.map(function (b) {
+    return '<div style="display:flex;flex-direction:column;gap:6px">' +
+      '<div style="display:flex;justify-content:space-between;gap:6px;font-size:11px;white-space:nowrap">' +
+        '<span style="color:#c8cfcd">' + b.label + '</span><span>' + b.value + '</span></div>' +
+      '<div style="height:6px;border-radius:3px;background:#1b2a2e;overflow:hidden">' +
+        '<div style="height:100%;width:' + b.w + ';border-radius:3px;background:#e9d7b0"></div></div></div>';
+  }).join('');
+
+  document.getElementById('alerts').innerHTML = ALERTS.map(function (a) {
+    return '<div style="flex:1;display:flex;align-items:center;gap:10px;border-top:1px solid #16252a;padding:2px 0">' +
+      '<div style="width:28px;height:28px;border-radius:50%;background:' + a.bg + ';display:grid;place-items:center;flex-shrink:0">' +
+        '<span class="ms ms-fill" style="font-size:16px;color:#fff">' + a.icon + '</span></div>' +
+      '<div style="flex:1;min-width:0"><div style="font-size:11.5px;color:#e6ebe9">' + esc(a.title) + '</div>' +
+      '<div style="font-size:10.5px;color:#8e9896;margin-top:2px">' + a.time + '</div></div>' +
+      '<span class="ms" style="font-size:18px;color:#6f7b79">chevron_right</span></div>';
+  }).join('');
+
+  document.getElementById('trades').innerHTML = TRADES.map(function (r) {
+    var time = r[0], type = r[1], entry = r[2], exit = r[3], pnl = r[4];
+    var tbg = type === 'Sell' ? '#6e1f1c' : '#1d4a3b';
+    var tfg = type === 'Sell' ? '#f3b5ae' : '#a9ecd0';
+    var pc  = pnl.charAt(0) === '-' ? '#e05a4e' : '#3ec495';
+    return '<div style="flex:1;display:grid;grid-template-columns:.8fr 1.2fr 1fr 1fr 1fr 1fr;align-items:center;font-size:11px;border-bottom:1px solid #121f23">' +
+      '<span>' + time + '</span><span>XAUUSD</span>' +
+      '<span><span style="display:inline-block;padding:3px 9px;border-radius:5px;font-size:10.5px;background:' + tbg + ';color:' + tfg + '">' + type + '</span></span>' +
+      '<span>' + entry + '</span><span>' + exit + '</span>' +
+      '<span style="text-align:right;font-weight:600;color:' + pc + '">' + pnl + '</span></div>';
+  }).join('');
+
+  /* ---------- tabs + sessions (re-render on change) ---------- */
+  function renderTabs(host, list, cur, key, pad) {
+    host.innerHTML = list.map(function (l) {
+      var on = l === cur;
+      return '<div data-v="' + l + '" style="padding:4px ' + pad + 'px;border-radius:6px;font-size:11px;cursor:pointer;background:' +
+        (on ? '#ecdcb8' : 'transparent') + ';color:' + (on ? '#1a1409' : '#c8cfcd') + ';font-weight:' + (on ? 600 : 400) + '">' + l + '</div>';
+    }).join('');
+    Array.prototype.forEach.call(host.children, function (el) {
+      el.onclick = function () { state[key] = el.getAttribute('data-v'); renderDynamic(); drawAll(); };
+    });
+  }
+
+  function renderSessions() {
+    document.getElementById('sessions').innerHTML = SESSIONS.map(function (s) {
+      var name = s[0], status = s[1], hours = s[2];
+      var nameColor = name === state.sess ? '#f3e6c8' : '#dfe5e3';
+      var color = status === 'Active' ? '#3ec495' : '#8e9896';
+      var dot = status === 'Active' ? '#3ec495' : 'transparent';
+      return '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:6px">' +
+        '<div style="font-size:12px;color:' + nameColor + '">' + name + '</div>' +
+        '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:3px">' +
+          '<div style="display:flex;align-items:center;gap:4px;font-size:10.5px;color:' + color + '">' +
+            '<span style="width:6px;height:6px;border-radius:50%;box-sizing:border-box;border:1px solid ' + color + ';background:' + dot + '"></span>' + status + '</div>' +
+          '<div style="font-size:10px;color:#6f7b79">' + hours + '</div></div></div>';
+    }).join('');
+  }
+
+  function renderDynamic() {
+    renderTabs(document.getElementById('perfTabs'), ['Today','Week','Month','Custom'], state.perf, 'perf', 12);
+    renderTabs(document.getElementById('sessTabs'), ['London','New York','Tokyo'], state.sess, 'sess', 16);
+    renderSessions();
+  }
+
+  /* ---------- live values ---------- */
+  function pad2(n) { return String(n).padStart(2, '0'); }
+
+  function renderVals() {
+    var p = state.price, ch = p - 4327.36, d = state.now;
+    var chg = (ch >= 0 ? '+' : '') + ch.toFixed(2);
+    var chgPct = (ch >= 0 ? '+' : '') + (ch / 4327.36 * 100).toFixed(2) + '%';
+    Array.prototype.forEach.call(document.querySelectorAll('.js-price'),  function (e) { e.textContent = p.toFixed(2); });
+    Array.prototype.forEach.call(document.querySelectorAll('.js-chg'),    function (e) { e.textContent = chg; });
+    Array.prototype.forEach.call(document.querySelectorAll('.js-chgpct'), function (e) { e.textContent = chgPct; });
+    document.getElementById('clock').textContent =
+      d.toLocaleDateString('en-GB', { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' }) +
+      ' | ' + pad2(d.getHours()) + ':' + pad2(d.getMinutes()) + ':' + pad2(d.getSeconds());
+  }
+
+  document.getElementById('themeToggle').onclick = function () {
+    state.dark = !state.dark;
+    document.getElementById('themeKnob').style.left = state.dark ? '28px' : '2px';
+    document.getElementById('themeIcon').textContent = state.dark ? 'dark_mode' : 'light_mode';
+  };
+
+  /* ---------- canvas helpers ---------- */
+  function prep(el) {
+    if (!el || !el.clientWidth) return null;
+    var d = Math.min(window.devicePixelRatio || 1, 2), w = el.clientWidth, h = el.clientHeight;
+    if (el.width !== Math.round(w * d) || el.height !== Math.round(h * d)) {
+      el.width = Math.round(w * d); el.height = Math.round(h * d);
+    }
+    var ctx = el.getContext('2d');
+    ctx.setTransform(d, 0, 0, d, 0, 0);
+    ctx.clearRect(0, 0, w, h);
+    return { ctx: ctx, w: w, h: h };
+  }
+
+  function area(ctx, pts, x0, y0, w, h, min, max, color, fillA) {
+    var X = function (i) { return x0 + i / (pts.length - 1) * w; };
+    var Y = function (v) { return y0 + h - (v - min) / (max - min) * h; };
+    ctx.beginPath();
+    pts.forEach(function (v, i) { i ? ctx.lineTo(X(i), Y(v)) : ctx.moveTo(X(i), Y(v)); });
+    ctx.strokeStyle = color; ctx.lineWidth = 1.4; ctx.stroke();
+    if (fillA) {
+      ctx.lineTo(X(pts.length - 1), y0 + h); ctx.lineTo(x0, y0 + h); ctx.closePath();
+      var g = ctx.createLinearGradient(0, y0, 0, y0 + h);
+      g.addColorStop(0, fillA); g.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = g; ctx.fill();
+    }
+    return { X: X, Y: Y };
+  }
+
+  /* ---------- data ---------- */
+  (function seedData() {
+    var seed = 7, rnd = function () { return (seed = (seed * 16807) % 2147483647) / 2147483647; };
+    var p = 4322.4; candles = [];
+    for (var i = 0; i < 62; i++) {
+      var o = p;
+      p += (rnd() - .42) * 1.4 + Math.sin(i / 6) * .15;
+      var c = p;
+      candles.push({ o: o, c: c, h: Math.max(o, c) + rnd() * .9, l: Math.min(o, c) - rnd() * .9, v: .2 + rnd() * .8 });
+    }
+    var last = candles[candles.length - 1];
+    last.c = 4339.82; last.h = Math.max(last.h, last.c + .2);
+    spark = Array.from({ length: 30 }, function (_, i) { return i * .9 + Math.sin(i * 1.3) * 2 + rnd() * 2; });
+    acct  = Array.from({ length: 36 }, function (_, i) { return i * .8 + Math.sin(i * .9) * 2.2 + rnd() * 2; });
+    var v = 0;
+    perfPts = Array.from({ length: 49 }, function (_, i) {
+      v += (rnd() - .35) * 6;
+      return i === 48 ? 95.4 : Math.max(-8, v * (i / 48) + i * 1.3);
+    });
+  })();
+
+  /* ---------- drawing ---------- */
+  function drawAll() {
+    if (!candles) return;
+    var F = '10px Manrope, sans-serif', s;
+
+    s = prep(els.spark);
+    if (s) area(s.ctx, spark, 2, 4, s.w - 4, s.h - 8, Math.min.apply(null, spark), Math.max.apply(null, spark), '#3ec495', null);
+
+    s = prep(els.acct);
+    if (s) area(s.ctx, acct, 0, 4, s.w, s.h - 6, Math.min.apply(null, acct) - 4, Math.max.apply(null, acct), '#e2cc9f', 'rgba(226,204,159,.28)');
+
+    s = prep(els.candle);
+    if (s) {
+      var ctx = s.ctx, w = s.w, h = s.h;
+      var R = 46, top = 6, VB = Math.round(h * .14), ph = h - VB - 22, min = 4318, max = 4347, cw = (w - R) / candles.length;
+      var Y = function (v) { return top + ph - (v - min) / (max - min) * ph; };
+      ctx.font = F; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+      for (var vv = 4320; vv <= 4345; vv += 5) {
+        ctx.strokeStyle = 'rgba(200,215,210,.06)';
+        ctx.beginPath(); ctx.moveTo(0, Y(vv)); ctx.lineTo(w - R, Y(vv)); ctx.stroke();
+        ctx.fillStyle = '#8e9896'; ctx.fillText(vv, w - R + 8, Y(vv));
+      }
+      candles.forEach(function (c, i) {
+        var x = i * cw + cw / 2, up = c.c >= c.o, col = up ? '#3ec495' : '#cdb88f';
+        ctx.strokeStyle = col; ctx.beginPath(); ctx.moveTo(x, Y(c.h)); ctx.lineTo(x, Y(c.l)); ctx.stroke();
+        ctx.fillStyle = col;
+        var y1 = Y(Math.max(c.o, c.c));
+        ctx.fillRect(x - cw * .32, y1, cw * .64, Math.max(1, Y(Math.min(c.o, c.c)) - y1));
+        ctx.fillStyle = 'rgba(62,196,149,.28)';
+        var vh = c.v * VB;
+        ctx.fillRect(x - cw * .32, h - 16 - vh, cw * .64, vh);
+      });
+      var lp = state.price, ly = Y(lp);
+      ctx.setLineDash([2, 3]); ctx.strokeStyle = 'rgba(233,215,176,.5)';
+      ctx.beginPath(); ctx.moveTo(0, ly); ctx.lineTo(w - R, ly); ctx.stroke(); ctx.setLineDash([]);
+      ctx.fillStyle = '#ecdcb8'; ctx.beginPath(); ctx.roundRect(w - R + 1, ly - 9, R - 1, 18, 4); ctx.fill();
+      ctx.fillStyle = '#1a1409'; ctx.font = '600 10px Manrope, sans-serif'; ctx.fillText(lp.toFixed(2), w - R + 4, ly);
+      ctx.font = F; ctx.fillStyle = '#8e9896'; ctx.textAlign = 'center';
+      ['10:00','12:00','14:00','16:00','18:00'].forEach(function (t, i) { ctx.fillText(t, 14 + i * (w - R - 28) / 4, h - 5); });
+    }
+
+    s = prep(els.perf);
+    if (s) {
+      var c2 = s.ctx, w2 = s.w, h2 = s.h;
+      var R2 = 34, B = 16, mn = -110, mx = 210, pw = w2 - R2, ph2 = h2 - B;
+      var Yp = function (v) { return ph2 - (v - mn) / (mx - mn) * ph2; };
+      c2.font = F; c2.textBaseline = 'middle';
+      [200, 100, 0, -100].forEach(function (v) { c2.fillStyle = '#8e9896'; c2.textAlign = 'left'; c2.fillText(v, pw + 6, Yp(v)); });
+      c2.setLineDash([2, 3]); c2.strokeStyle = 'rgba(200,215,210,.12)';
+      c2.beginPath(); c2.moveTo(0, Yp(0)); c2.lineTo(pw, Yp(0)); c2.stroke(); c2.setLineDash([]);
+      var span = pw * (12 / 14);
+      var r = area(c2, perfPts, 4, 0, span - 4, ph2, mn, mx, '#e2cc9f', 'rgba(62,196,149,.3)');
+      var lx = r.X(perfPts.length - 1), ly2 = r.Y(95.4);
+      c2.fillStyle = '#ecdcb8'; c2.beginPath(); c2.arc(lx, ly2, 3.5, 0, 7); c2.fill();
+      c2.beginPath(); c2.roundRect(lx - 22, ly2 - 26, 44, 18, 4); c2.fill();
+      c2.fillStyle = '#1a1409'; c2.textAlign = 'center'; c2.font = '600 10px Manrope, sans-serif';
+      c2.fillText('+95.40', lx, ly2 - 17);
+      c2.font = F; c2.fillStyle = '#8e9896';
+      ['06:00','08:00','10:00','12:00','14:00','16:00','18:00','20:00'].forEach(function (t, i) { c2.fillText(t, 14 + i * (pw - 20) / 7, h2 - 5); });
+    }
+
+    s = prep(els.map);
+    if (s) drawMap(s);
+  }
+
+  function drawMap(o) {
+    var ctx = o.ctx, w = o.w, h = o.h;
+    var L0 = -135, L1 = 160, A0 = 78, A1 = -52;
+    var px = function (lon) { return (lon - L0) / (L1 - L0) * w; };
+    var py = function (lat) { return (A0 - lat) / (A0 - A1) * h; };
+
+    if (topo && window.topojson) {
+      if (!landCache || landCache.w !== w || landCache.h !== h) {
+        var off = document.createElement('canvas'); off.width = w; off.height = h;
+        var oc = off.getContext('2d');
+        var land = topojson.feature(topo, topo.objects.land);
+        oc.fillStyle = '#fff'; oc.beginPath();
+        var polys = land.features
+          ? land.features.reduce(function (acc, f) {
+              return acc.concat(f.geometry.type === 'Polygon' ? [f.geometry.coordinates] : f.geometry.coordinates);
+            }, [])
+          : (land.geometry.type === 'Polygon' ? [land.geometry.coordinates] : land.geometry.coordinates);
+        polys.forEach(function (poly) {
+          poly.forEach(function (ring) {
+            ring.forEach(function (pt, i) { i ? oc.lineTo(px(pt[0]), py(pt[1])) : oc.moveTo(px(pt[0]), py(pt[1])); });
+          });
+        });
+        oc.fill('evenodd');
+        var data = oc.getImageData(0, 0, w, h).data, dots = [];
+        for (var y = 2; y < h; y += 4.2) {
+          for (var x = 2; x < w; x += 4.2) {
+            if (data[(Math.floor(y) * w + Math.floor(x)) * 4 + 3] > 0) dots.push([x, y]);
+          }
+        }
+        landCache = { w: w, h: h, dots: dots };
+      }
+      ctx.fillStyle = 'rgba(190,205,200,.32)';
+      landCache.dots.forEach(function (d) { ctx.beginPath(); ctx.arc(d[0], d[1], 1.05, 0, 7); ctx.fill(); });
+    }
+
+    var cities = { 'New York': [-74, 40.7], 'London': [-0.1, 51.5], 'Tokyo': [139.7, 35.7] };
+    var P = function (n) { return [px(cities[n][0]), py(cities[n][1])]; };
+    var arc = function (a, b) {
+      var A = P(a), B = P(b);
+      ctx.beginPath(); ctx.moveTo(A[0], A[1]);
+      ctx.quadraticCurveTo((A[0] + B[0]) / 2, Math.min(A[1], B[1]) - Math.abs(B[0] - A[0]) * .28, B[0], B[1]);
+      ctx.strokeStyle = 'rgba(236,220,184,.55)'; ctx.lineWidth = 1; ctx.stroke();
+    };
+    arc('New York', 'London'); arc('London', 'Tokyo');
+    Object.keys(cities).forEach(function (n) {
+      var pt = P(n), x = pt[0], y = pt[1], on = n === state.sess;
+      if (on) {
+        var g = ctx.createRadialGradient(x, y, 0, x, y, 16);
+        g.addColorStop(0, 'rgba(236,220,184,.6)'); g.addColorStop(1, 'rgba(0,0,0,0)');
+        ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y, 16, 0, 7); ctx.fill();
+      }
+      ctx.strokeStyle = '#ecdcb8'; ctx.lineWidth = 1.2;
+      ctx.beginPath(); ctx.arc(x, y, on ? 5 : 3.5, 0, 7); ctx.stroke();
+      ctx.fillStyle = on ? '#ecdcb8' : '#0d181b';
+      ctx.beginPath(); ctx.arc(x, y, 2, 0, 7); ctx.fill();
+    });
+  }
+
+  /* ---------- boot ---------- */
+  fetch('https://cdn.jsdelivr.net/npm/world-atlas@2/land-110m.json')
+    .then(function (r) { return r.json(); })
+    .then(function (t) { topo = t; landCache = null; drawAll(); })
+    .catch(function () {});
+
+  setInterval(function () {
+    var lc = candles[candles.length - 1];
+    var np = Math.round((state.price + (Math.random() - .48) * .35) * 100) / 100;
+    lc.c = np; lc.h = Math.max(lc.h, np); lc.l = Math.min(lc.l, np);
+    state.price = np; state.now = new Date();
+    renderVals(); drawAll();
+  }, 1000);
+
+  var ro = new ResizeObserver(function () { landCache = null; drawAll(); });
+  Object.keys(els).forEach(function (k) { if (els[k]) ro.observe(els[k]); });
+
+  renderDynamic();
+  renderVals();
+  setTimeout(drawAll, 0);
+})();
+
+/* ============================== Elion AI Card ============================== */
+(function () {
+  'use strict';
+
+  var PROPS = { intensity: 1, stepSeconds: 2.4, parallax: true };
+
+  var root   = document.getElementById('aicard');
+  var img    = document.getElementById('aiFace');
+  var canvas = document.getElementById('aiCanvas');
+  var wave   = document.getElementById('aiWave');
+  var stepsHost = document.getElementById('aiSteps');
+  var lineEl = document.getElementById('aiLine');
+  var statusEl = document.getElementById('aiStatus');
+
+  var STEPS = [['SCANNING','MARKETS'],['ANALYZING','PATTERNS'],['DETECTING','OPPORTUNITIES'],['VALIDATING','SETUPS']];
+  var STATUSES = ['Scanning XAUUSD, M5…','Analyzing market structure…','Detecting liquidity zones…','Validating setup…'];
+
+  /* no portrait on disk yet -> hide the photo layer and stand in a soft glow */
+  img.addEventListener('error', function () {
+    img.style.display = 'none';
+    root.style.background =
+      'radial-gradient(ellipse at 62% 42%,rgba(120,98,58,.30) 0%,rgba(24,36,40,.55) 42%,#070d10 78%)';
+  });
+
+  /* step rows are appended after the two absolutely-positioned rails */
+  var rows = STEPS.map(function (s) {
+    var el = document.createElement('div');
+    el.style.cssText = 'position:relative;display:flex;align-items:flex-start;gap:3.2cqw';
+    el.innerHTML = '<div class="dot" style="width:2.1cqw;height:2.1cqw;border-radius:50%;box-sizing:border-box;margin-top:.2cqw;border:1px solid rgba(233,215,176,.6);transition:all .4s"></div>' +
+                   '<div class="lbl" style="font-size:2.05cqw;line-height:1.35;letter-spacing:.06em;transition:color .4s">' + s[0] + '<br>' + s[1] + '</div>';
+    stepsHost.appendChild(el);
+    return el;
+  });
+
+  var step = 0, si = 0;
+  function paintSteps() {
+    lineEl.style.height = (step * 8.4) + 'cqw';
+    statusEl.textContent = STATUSES[si];
+    rows.forEach(function (el, i) {
+      var dot = el.querySelector('.dot'), lbl = el.querySelector('.lbl');
+      dot.style.background = i === step ? '#e9d7b0' : i < step ? 'rgba(233,215,176,.45)' : '#0b1417';
+      dot.style.boxShadow  = i === step ? '0 0 1.6cqw rgba(233,215,176,.7)' : 'none';
+      lbl.style.color      = i === step ? '#f3e6c8' : i < step ? '#c8cfcd' : '#8e9896';
+    });
+  }
+  paintSteps();
+  setInterval(function () { step = (step + 1) % 4; si = (si + 1) % 4; paintSteps(); }, PROPS.stepSeconds * 1000);
+
+  /* parallax */
+  var mouse = { x: 0, y: 0, tx: 0, ty: 0 };
+  root.addEventListener('mousemove', function (e) {
+    if (!PROPS.parallax) return;
+    var r = root.getBoundingClientRect();
+    mouse.tx = (e.clientX - r.left) / r.width - .5;
+    mouse.ty = (e.clientY - r.top) / r.height - .5;
+  });
+  root.addEventListener('mouseleave', function () { mouse.tx = 0; mouse.ty = 0; });
+
+  /* motion layer */
+  var ctx = canvas.getContext('2d');
+  var IW = 1536, IH = 1024;
+  var W = 0, H = 0, dpr, map;
+
+  function resize() {
+    dpr = Math.min(window.devicePixelRatio || 1, 2);
+    W = canvas.clientWidth; H = canvas.clientHeight;
+    canvas.width = W * dpr; canvas.height = H * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    var s = Math.max(W / IW, H / IH) * 1.08;
+    map = { s: s, ox: W * .52 - IW * s * .52, oy: H * .4 - IH * s * .4 };
+  }
+  resize();
+
+  var P = function (x, y) { return [map.ox + x * map.s, map.oy + y * map.s]; };
+  var rnd = function (a, b) { return a + Math.random() * (b - a); };
+
+  var nodes = Array.from({ length: 34 }, function () {
+    return { x: rnd(450, 1150), y: rnd(0, IH), vx: rnd(-.12, .12), vy: rnd(-.12, .12), p: rnd(0, 6.28) };
+  });
+  var stars = [[830,238,1],[558,478,.6],[1068,145,.7],[715,350,.4]].map(function (s) {
+    return { x: s[0], y: s[1], r: s[2], p: rnd(0, 6.28) };
+  });
+  var glyphs = '01ABCDEF{}[]<>#$%&*+=/|';
+  var cols = Array.from({ length: 24 }, function (_, i) {
+    return { x: 800 + i * 14, y: rnd(-IH, IH), v: rnd(35, 95), len: Math.floor(rnd(6, 16)), gold: Math.random() < .7 };
+  });
+
+  var t0 = performance.now(), last = t0, raf;
+  var next = function (f) {
+    return document.hidden ? setTimeout(function () { f(performance.now()); }, 50) : requestAnimationFrame(f);
+  };
+
+  function frame(now) {
+    if (canvas.clientWidth && (canvas.clientWidth !== W || canvas.clientHeight !== H)) resize();
+    var t = (now - t0) / 1000, dt = Math.min((now - last) / 1000, .05);
+    last = now;
+    var k = PROPS.intensity;
+    mouse.x += (mouse.tx - mouse.x) * .05;
+    mouse.y += (mouse.ty - mouse.y) * .05;
+    img.style.transform = 'translate(' + (mouse.x * -10) + 'px,' + (mouse.y * -7) + 'px) scale(' + (1 + .03 * Math.sin(t * .2)) + ')';
+
+    if (W) {
+      ctx.clearRect(0, 0, W, H);
+      ctx.save();
+      ctx.translate(mouse.x * -18, mouse.y * -12);
+      ctx.lineWidth = .5;
+
+      nodes.forEach(function (n) {
+        n.x += n.vx; n.y += n.vy;
+        if (n.x < 450 || n.x > 1150) n.vx *= -1;
+        if (n.y < 0 || n.y > IH) n.vy *= -1;
+      });
+      for (var i = 0; i < nodes.length; i++) {
+        for (var j = i + 1; j < nodes.length; j++) {
+          var a = nodes[i], b = nodes[j], d = Math.hypot(a.x - b.x, a.y - b.y);
+          if (d < 170) {
+            var p1 = P(a.x, a.y), p2 = P(b.x, b.y);
+            ctx.strokeStyle = 'rgba(233,215,176,' + ((1 - d / 170) * .18 * k) + ')';
+            ctx.beginPath(); ctx.moveTo(p1[0], p1[1]); ctx.lineTo(p2[0], p2[1]); ctx.stroke();
+          }
+        }
+      }
+      nodes.forEach(function (n) {
+        var p = P(n.x, n.y);
+        ctx.fillStyle = 'rgba(240,225,190,' + ((.4 + .4 * Math.sin(t * 2 + n.p)) * k) + ')';
+        ctx.beginPath(); ctx.arc(p[0], p[1], 1.1, 0, 7); ctx.fill();
+      });
+
+      var fs = Math.max(8, 11 * map.s);
+      ctx.font = fs + 'px ui-monospace,monospace';
+      ctx.textAlign = 'center';
+      cols.forEach(function (col) {
+        col.y += col.v * dt;
+        if (col.y - col.len * 14 > IH) { col.y = rnd(-200, 0); col.gold = Math.random() < .7; }
+        for (var q = 0; q < col.len; q++) {
+          var gy = col.y - q * 14;
+          if (gy < 0 || gy > IH) continue;
+          var p = P(col.x, gy), al = (1 - q / col.len) * .7 * k;
+          ctx.fillStyle = q === 0 ? 'rgba(255,245,225,' + al + ')'
+                        : col.gold ? 'rgba(225,195,140,' + al + ')'
+                                   : 'rgba(110,190,180,' + al + ')';
+          ctx.fillText(glyphs[(Math.floor(t * 8 + q * 7 + col.x)) % glyphs.length], p[0], p[1]);
+        }
+      });
+
+      stars.forEach(function (s) {
+        var p = P(s.x, s.y), x = p[0], y = p[1];
+        var f = (.5 + .5 * Math.sin(t * 1.5 + s.p)) * k, r = 34 * s.r * map.s;
+        var g = ctx.createRadialGradient(x, y, 0, x, y, r);
+        g.addColorStop(0, 'rgba(255,215,150,' + (f * .9) + ')');
+        g.addColorStop(1, 'rgba(0,0,0,0)');
+        ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y, r, 0, 7); ctx.fill();
+      });
+
+      var sy = ((t * .1) % 1.3 - .15) * H;
+      var sg = ctx.createLinearGradient(0, sy - 50, 0, sy + 50);
+      sg.addColorStop(0, 'rgba(0,0,0,0)');
+      sg.addColorStop(.5, 'rgba(233,215,176,' + (.08 * k) + ')');
+      sg.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = sg; ctx.fillRect(W * .3, sy - 50, W * .5, 100);
+      ctx.restore();
+    }
+
+    if (wave.clientWidth) {
+      var ww = wave.clientWidth, wh = wave.clientHeight;
+      if (wave.width !== ww * 2) { wave.width = ww * 2; wave.height = wh * 2; }
+      var x2 = wave.getContext('2d');
+      x2.setTransform(2, 0, 0, 2, 0, 0);
+      x2.clearRect(0, 0, ww, wh);
+      x2.strokeStyle = '#e9d7b0'; x2.lineWidth = 1; x2.beginPath();
+      for (var i2 = 0; i2 <= ww; i2++) {
+        var u = i2 / ww, env = Math.pow(Math.sin(u * Math.PI), 2);
+        var y2 = wh / 2 + env * wh * .42 * Math.sin(u * 22 + t * 7) * (.6 + .4 * Math.sin(u * 5 - t * 3));
+        i2 ? x2.lineTo(i2, y2) : x2.moveTo(i2, y2);
+      }
+      x2.stroke();
+    }
+
+    raf = next(frame);
+  }
+  frame(performance.now());
+})();
+</script>
+</body>
+</html>

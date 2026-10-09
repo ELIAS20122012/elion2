@@ -1,0 +1,7 @@
+# Cloudflare Pages project for the hosted dashboard.
+# `dist` is what `npm run build` produces; `functions/` is picked up automatically and serves /api
+# (see functions/api/[[path]].ts). Set PC_ORIGIN / ACCESS_CLIENT_ID / ACCESS_CLIENT_SECRET as
+# project secrets in the Cloudflare dashboard, not here - they are credentials.
+name = "elion-dashboard"
+pages_build_output_dir = "dist"
+compatibility_date = "2026-09-23"

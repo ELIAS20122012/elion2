@@ -32,13 +32,13 @@ export const GROUPS: { id: NonNullable<ModuleDef["group"]>; label: string }[] = 
  * the page title in the top bar all come from this list.
  */
 export const MODULES: ModuleDef[] = [
-  { id: "overview", path: "/", title: "مرکز فرماندهی", icon: "home", group: "market", element: <OverviewPage /> },
-  { id: "chart", path: "/chart", title: "چارت", icon: "chart", group: "market", element: <ChartPage /> },
-  { id: "journal", path: "/journal", title: "ژورنال", icon: "notebook", group: "trading", element: <JournalPage /> },
-  { id: "analysis", path: "/analysis", title: "آنالیز", icon: "analysis", group: "trading", element: <AnalysisPage /> },
-  { id: "backtest", path: "/backtest", title: "بک‌تست", icon: "flask", group: "trading", element: <BacktestPage /> },
-  { id: "rules", path: "/rules", title: "قوانین", icon: "book", group: "system", element: <RulesPage /> },
-  { id: "account", path: "/account", title: "اتصال", icon: "plug", group: "system", element: <AccountPage /> },
+  { id: "overview", path: "/overview", title: "مرکز فرماندهی", icon: "home", group: "market", element: <OverviewPage /> },
+  { id: "chart", path: "/chart-classic", title: "چارت", icon: "chart", group: "market", element: <ChartPage /> },
+  { id: "journal", path: "/journal-classic", title: "ژورنال", icon: "notebook", group: "trading", element: <JournalPage /> },
+  { id: "analysis", path: "/analysis-classic", title: "آنالیز", icon: "analysis", group: "trading", element: <AnalysisPage /> },
+  { id: "backtest", path: "/backtest-classic", title: "بک‌تست", icon: "flask", group: "trading", element: <BacktestPage /> },
+  { id: "rules", path: "/rules-classic", title: "قوانین", icon: "book", group: "system", element: <RulesPage /> },
+  { id: "account", path: "/account-classic", title: "اتصال", icon: "plug", group: "system", element: <AccountPage /> },
   { id: "help", path: "/help", title: "راهنما", icon: "help", group: "system", element: <HelpPage /> },
-  { id: "settings", path: "/settings", title: "تنظیمات", icon: "sliders", element: <SettingsPage />, footer: true },
+  { id: "settings", path: "/settings-classic", title: "تنظیمات", icon: "sliders", element: <SettingsPage />, footer: true },
 ];

@@ -1,4 +1,4 @@
-import os
+﻿import os
 import tempfile
 
 os.environ["JOURNAL_DB"] = os.path.join(tempfile.mkdtemp(), "test.db")
@@ -84,6 +84,136 @@ def test_api_flow():
 
         assert c.delete(f"/accounts/{acc['id']}").status_code == 204
         assert c.get(f"/accounts/{acc['id']}/trades").status_code == 404
+
+
+def test_connect_disconnect():
+    """The Connection page's real toggle: disabling an account must report 'not connected' right away,
+    without touching MT5/the bridge, and re-enabling must flip it back - all without deleting anything."""
+    with TestClient(app) as c:
+        acc = c.post("/accounts", json={"name": "x", "platform": "mt4", "login": "999", "is_live": True}).json()
+        assert acc["enabled"] is True
+
+        live = c.get(f"/accounts/{acc['id']}/live").json()
+        assert live["connected"] is False and live.get("disabled") is not True  # just never seen the indicator yet
+
+        patched = c.patch(f"/accounts/{acc['id']}", json={"enabled": False}).json()
+        assert patched["enabled"] is False
+        live = c.get(f"/accounts/{acc['id']}/live").json()
+        assert live == {"source": None, "connected": False, "disabled": True}
+
+        # the account and its (would-be) trades are untouched by disconnecting - only re-fetched by GET /accounts
+        assert c.get("/accounts").json()[-1]["id"] == acc["id"]
+
+        patched = c.patch(f"/accounts/{acc['id']}", json={"enabled": True}).json()
+        assert patched["enabled"] is True
+        live = c.get(f"/accounts/{acc['id']}/live").json()
+        assert live.get("disabled") is not True
+
+
+def test_place_order_guards():
+    """Place Order has no size/confirmation limit by design, but it must still refuse the cases where
+    there is no sane terminal to send to: an MT4 account (no execution path) or a disconnected one."""
+    with TestClient(app) as c:
+        order = {"symbol": "XAUUSD", "direction": "buy", "volume": 0.01}
+
+        mt4 = c.post("/accounts", json={"name": "m4", "platform": "mt4", "login": "1"}).json()
+        r = c.post(f"/accounts/{mt4['id']}/order", json=order)
+        assert r.status_code == 409  # MT4 orders go through RobotTradingEA, which is not running here
+
+        mt5acc = c.post("/accounts", json={"name": "m5", "platform": "mt5", "login": "2", "enabled": False}).json()
+        r = c.post(f"/accounts/{mt5acc['id']}/order", json=order)
+        assert r.status_code == 409
+
+
+def test_news_cached_and_error(monkeypatch):
+    from journal import api
+
+    calls = {"n": 0}
+
+    def fake():
+        calls["n"] += 1
+        return [{"time": 1, "title": "CPI", "country": "USD", "impact": "High", "forecast": None, "previous": None, "actual": None}]
+
+    monkeypatch.setattr(api, "_fetch_news", fake)
+    api._news_cache.update({"at": 0.0, "events": [], "error": None})
+    with TestClient(app) as c:
+        r = c.get("/news").json()
+        assert r["events"][0]["title"] == "CPI" and r["stale"] is False
+        c.get("/news")
+        assert calls["n"] == 1  # second call served from the cache
+
+        def boom():
+            raise RuntimeError("down")
+
+        monkeypatch.setattr(api, "_fetch_news", boom)
+        api._news_cache["at"] = 0.0
+        r = c.get("/news").json()  # feed dies: keep serving the last good list, flagged stale
+        assert r["stale"] is True and r["events"]
+        api._news_cache.update({"at": 0.0, "events": [], "error": None})
+        assert c.get("/news").status_code == 502
+
+
+def test_candles_guards():
+    with TestClient(app) as c:
+        m4 = c.post("/accounts", json={"name": "c4", "platform": "mt4", "login": "3"}).json()
+        assert c.get(f"/accounts/{m4['id']}/candles").status_code == 400
+        off = c.post("/accounts", json={"name": "c5", "platform": "mt5", "login": "4", "enabled": False}).json()
+        assert c.get(f"/accounts/{off['id']}/candles").status_code == 409
+        assert c.get("/accounts/99999/candles").status_code == 404
+
+
+def test_engine_gate(monkeypatch):
+    """Switches off (the default): MT5 is never contacted (mt5.initialize() would launch a terminal) and MT4 files are ignored."""
+    from journal import bridge, engine, mt5sync
+
+    monkeypatch.setattr(engine, "start_bridge", lambda: None)
+    monkeypatch.setattr(engine, "stop_bridge", lambda: None)
+    monkeypatch.setattr(engine, "bridge_running", lambda: False)
+    monkeypatch.setattr(engine, "terminals_running", lambda: [])
+    monkeypatch.setattr(engine, "launch_mt4", lambda: [])  # never open a real MT4 terminal from a test
+    monkeypatch.setattr(engine, "close_terminals", lambda platform: None)  # nor close a real one
+    monkeypatch.setattr(bridge, "sync_mt5_once", lambda wait=False: None)  # never let a test launch a real terminal
+    engine._mt5.clear()
+    engine._mt4.clear()
+
+    for call in (lambda: mt5sync.fetch("1", 5, None), lambda: mt5sync.fetch_candles("1", None, "XAUUSD", 300, 100)):
+        try:
+            call()
+        except mt5sync.SyncError as e:
+            assert "MetaTrader 5" in str(e)
+        else:
+            raise AssertionError("MT5 was contacted while its switch was off")
+    try:
+        mt5sync.send_order("1", None, "XAUUSD", "buy", 0.01, None, None, None)
+    except mt5sync.OrderError:
+        pass
+    else:
+        raise AssertionError("order sent while the MT5 switch was off")
+    assert bridge.live_status("mt5", "1")["engine_off"] is True
+    assert bridge.live_status("mt4", "1")["engine_off"] is True
+    assert bridge.detected() == []
+
+    with TestClient(app) as c:
+        s = c.get("/engine").json()
+        assert s["mt5"]["on"] is False and s["mt4"]["on"] is False
+        assert c.post("/engine/mt5/start").json()["mt5"]["on"] is True
+        s = c.get("/engine").json()
+        assert s["mt5"]["on"] is True and s["mt4"]["on"] is False  # independent switches
+        assert c.post("/engine/mt4/start").json()["mt4"]["on"] is True
+        assert bridge.live_status("mt4", "1").get("engine_off") is None
+        assert c.post("/engine/mt5/stop").json()["mt5"]["on"] is False
+        assert c.get("/engine").json()["mt4"]["on"] is True  # stopping MT5 leaves MT4 alone
+        assert c.post("/engine/mt4/stop?close=false").json()["mt4"]["on"] is False
+        assert c.post("/engine/mt6/start").status_code == 422
+
+
+def test_backup():
+    with TestClient(app) as c:
+        r = c.post("/backup").json()
+        assert r["size"] > 0 and r["skipped"] is False
+        d1 = c.post("/backup?daily=true").json()
+        d2 = c.post("/backup?daily=true").json()
+        assert d1["file"] == d2["file"] and d2["skipped"] is True
 
 
 def test_rule_labels_roundtrip():

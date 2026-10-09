@@ -1,4 +1,4 @@
-"""Automatic MT4 capture, driven by fake indicator files (MT4 itself is not needed for these tests)."""
+﻿"""Automatic MT4 capture, driven by fake indicator files (MT4 itself is not needed for these tests)."""
 import os
 import tempfile
 import time
@@ -8,8 +8,16 @@ os.environ["JOURNAL_NO_BRIDGE"] = "1"
 
 from fastapi.testclient import TestClient  # noqa: E402
 
-from journal import bridge  # noqa: E402
+from journal import bridge, engine  # noqa: E402
 from journal.api import app  # noqa: E402
+
+import pytest  # noqa: E402
+
+
+@pytest.fixture(autouse=True)
+def _mt4_switch_on():
+    engine._mt4.set()  # these tests simulate a running MT4 indicator, i.e. the MT4 switch is on
+    yield
 
 LOGIN = "46162031"
 
@@ -115,3 +123,5 @@ def test_partial_or_garbage_files_do_not_crash():
     with open(os.path.join(d, f"journal_open_{LOGIN}.csv"), "w") as f:
         f.write("#v1\nA;broken\nO;1;2\nH;x\n\n")
     bridge.poll_once(d)  # must simply ignore the bad lines
+
+

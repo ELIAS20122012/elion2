@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { Candle } from "./data";
+import { getDefaultReplaySpeed } from "./prefs";
 
 export const SPEEDS = [1, 2, 5, 10, 30] as const;
 
@@ -27,7 +28,7 @@ export function useReplay(all: Candle[], startAt = 150) {
   const [pos, setPos] = useState(startAt); // index of the candle currently forming
   const [stage, setStage] = useState(4); // 1..4 ticks of that candle received
   const [playing, setPlaying] = useState(false);
-  const [speed, setSpeed] = useState<number>(5);
+  const [speed, setSpeed] = useState<number>(getDefaultReplaySpeed);
 
   const done = pos >= all.length - 1 && stage >= 4;
 

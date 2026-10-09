@@ -79,7 +79,7 @@ export default function RulesPage() {
           <section className="card rule-settings">
             <div className="rs-head">
               <h3>تنظیمات قانون ۱: دایورجنس معمولی</h3>
-              <Link className="btn sm primary" to="/chart">دیدن روی چارت ←</Link>
+              <Link className="btn sm primary" to="/chart-classic">دیدن روی چارت ←</Link>
             </div>
             {!on ? (
               <p className="muted">این قانون خاموش است. کلید سمت راست عنوان قانون را روشن کنید.</p>
