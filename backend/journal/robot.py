@@ -251,6 +251,22 @@ def save_candles(account_id: int, b: CandlesIn) -> dict:
     return {"ok": True, "saved": len(rows)}
 
 
+#: symbols the dashboard chart asked for recently → the EA streams their candles too
+_wanted: dict[str, float] = {}
+WANT_FRESH = 90.0
+
+
+def want(symbol: str) -> None:
+    _wanted[symbol] = time.time()
+
+
+def wanted_feed(chart_symbol: str | None = None) -> str:
+    """Most recently viewed symbol (other than the EA's own chart symbol), or ''."""
+    now = time.time()
+    live = [(t, s) for s, t in _wanted.items() if now - t < WANT_FRESH and s != chart_symbol]
+    return max(live)[1] if live else ""
+
+
 def candles(symbol: str, count: int = 3000, since: int | None = None) -> list[dict]:
     """Newest `count` M1 bars, or only bars from `since` on (the chart's cheap incremental poll)."""
     count = max(10, min(count, KEEP_CANDLES))
@@ -374,10 +390,13 @@ class QuoteIn(BaseModel):
     bid: float
     ask: float
     change: float | None = None                # % vs yesterday's close
+    digits: int | None = None
+    pv: float | None = None                    # account money per 1.0 price move per 1 lot (tick value / tick size)
 
 
 class PositionsIn(BaseModel):
     login: str | None = None
+    chart: str | None = None                   # symbol of the MT4 chart the EA runs on
     balance: float | None = None
     equity: float | None = None
     positions: list[PositionIn] = Field(default_factory=list, max_length=500)
@@ -394,7 +413,7 @@ def save_positions(account_id: int, b: PositionsIn) -> dict:
         con.execute("INSERT INTO robot_positions (account_id, time, data) VALUES (?,?,?) "
                     "ON CONFLICT(account_id) DO UPDATE SET time=excluded.time, data=excluded.data",
                     (account_id, time.time(), json.dumps(data)))
-    return {"ok": True, "order": next_order(account_id)}
+    return {"ok": True, "order": next_order(account_id), "feed": wanted_feed(b.chart)}
 
 
 def positions(account_id: int, fresh: float = 20) -> dict:

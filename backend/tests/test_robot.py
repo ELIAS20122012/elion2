@@ -218,3 +218,17 @@ def test_notify_settings_roundtrip(client):
     assert client.put("/notify/settings", json={"opens": False}).json()["opens"] is False
     s = client.get("/notify/settings").json()
     assert s["opens"] is False and s["closes"] is True and "configured" in s
+
+
+def test_chart_symbol_is_requested_from_the_ea(client):
+    from journal import robot
+    robot._wanted.clear()
+    r = client.post("/accounts", json={"name": "MT4", "platform": "mt4", "kind": "manual", "login": "444"})
+    acc = r.json()["id"]
+    h = {"X-API-Key": client.post(f"/accounts/{acc}/robot-key").json()["api_key"]}
+    pulse = {"login": "444", "chart": "XAUUSD", "positions": []}
+    assert client.post("/events/positions", json=pulse, headers=h).json()["feed"] == ""
+    client.get("/robot/candles?symbol=XAUUSD")  # the EA's own symbol: nothing extra to stream
+    assert client.post("/events/positions", json=pulse, headers=h).json()["feed"] == ""
+    client.get("/robot/candles?symbol=EURUSD")
+    assert client.post("/events/positions", json=pulse, headers=h).json()["feed"] == "EURUSD"

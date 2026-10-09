@@ -6,7 +6,9 @@ import { getDefaultTf } from "../lib/prefs";
 import { useLive } from "../lib/useLive";
 import { useReplay } from "../lib/useReplay";
 
+/** Default chart symbol; the live one is `app.symbol` (picked in the Trade page watchlist). */
 export const SYMBOL = "XAUUSD";
+const SYM_KEY = "elion.symbol";
 const IND_KEY = "rt.indicators.v1";
 const EMPTY_OVERLAY: Overlay = { lines: [], markers: [] };
 
@@ -41,14 +43,26 @@ function useAppState() {
   }, [layers]);
   const [mode, setModeRaw] = useState<"live" | "replay">("live");
   const [indicators, setIndicators] = useState<IndicatorInstance[]>(loadIndicators);
-  const [drawings, setDrawings] = useState<Drawing[]>(() => loadDrawings(SYMBOL));
+  const [symbol, setSymbolRaw] = useState<string>(() => { try { return localStorage.getItem(SYM_KEY) || SYMBOL; } catch { return SYMBOL; } });
+  const [drawings, setDrawings] = useState<Drawing[]>(() => loadDrawings(symbol));
   const [tool, setTool] = useState<ToolId>("cursor");
   const [magnet, setMagnet] = useState(true);
   const [color, setColor] = useState("#e0b354");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [showVolume, setShowVolume] = useState(true);
 
-  useEffect(() => saveDrawings(SYMBOL, drawings), [drawings]);
+  // drawings belong to a symbol: save under the current one, load the new one's on a switch
+  const [drawSym, setDrawSym] = useState(symbol);
+  useEffect(() => { if (drawSym === symbol) saveDrawings(symbol, drawings); }, [drawings]); // eslint-disable-line react-hooks/exhaustive-deps
+  const setSymbol = (s: string) => {
+    if (!s || s === symbol) return;
+    saveDrawings(symbol, drawings);
+    setSymbolRaw(s);
+    setDrawSym(s);
+    setDrawings(loadDrawings(s));
+    setSelectedId(null);
+    try { localStorage.setItem(SYM_KEY, s); } catch { /* private mode */ }
+  };
   useEffect(() => {
     try {
       localStorage.setItem(IND_KEY, JSON.stringify(indicators));
@@ -70,7 +84,7 @@ function useAppState() {
   }, []);
 
   const replay = useReplay(all);
-  const live = useLive(mode === "live");
+  const live = useLive(mode === "live", symbol);
   const source = mode === "live" ? live.candles : replay.candles;
   const bars = useMemo(() => aggregate(source.map((c) => ({ ...c })), tfSec), [source, tfSec]);
 
@@ -105,6 +119,7 @@ function useAppState() {
   };
 
   return {
+    symbol, setSymbol,
     error, all, trades, tfSec, setTfSec, layers, setLayers, mode, setMode,
     indicators, setIndicators, drawings, setDrawings, tool, setTool, magnet, setMagnet, color, setColor,
     selectedId, setSelectedId, showVolume, setShowVolume,

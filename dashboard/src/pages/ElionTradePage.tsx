@@ -25,7 +25,7 @@ const CHECKLIST: { title: string; hint: string }[] = [
 ];
 import { sessionsNow } from "../lib/sessions";
 import { SPEEDS } from "../lib/useReplay";
-import { SYMBOL, useApp } from "../state/AppContext";
+import { useApp } from "../state/AppContext";
 import { useAllAccounts } from "../state/useAllAccounts";
 import { useJournal } from "../state/JournalContext";
 import { useLiveAccount } from "../state/useLiveAccount";
@@ -153,6 +153,7 @@ export default function ElionTradePage() {
   };
 
   const { last, change, source, tfSec, setTfSec, all } = app;
+  const sym = app.symbol;
   const tf = TF_OPTIONS.find((o) => o.sec === tfSec)?.label ?? "M5";
   const bullish = change >= 0;
 
@@ -165,14 +166,14 @@ export default function ElionTradePage() {
         ? liveRows
             .filter((r) => r.account.kind !== "backtest")
             .flatMap((r) => r.trades)
-            .filter((t) => t.symbol.toUpperCase().startsWith("XAU"))
+            .filter((t) => t.symbol === sym)
             .map((t) => ({
               ticket: t.ticket, symbol: t.symbol, direction: t.direction, volume: t.volume,
               open_time: t.open_time, open_price: t.open_price, close_time: t.close_time, close_price: t.close_price,
               stop_loss: t.sl, take_profit: t.tp, profit: +(t.profit + t.commission + t.swap).toFixed(2), status: t.close_time ? "closed" : "open",
             }))
         : app.trades,
-    [app.mode, liveRows, app.trades],
+    [app.mode, liveRows, app.trades, sym],
   );
 
   const today = last ? Math.floor(last.time / 86400) : Math.floor(Date.now() / 86400000);
@@ -213,14 +214,12 @@ export default function ElionTradePage() {
   const dir = side === "SELL" ? "sell" : "buy";
   const balance = orderRow?.live?.balance ?? null;
   const riskMoney = balance != null ? (cfg.riskU === "$" ? risk : (balance * risk) / 100) : null;
-  // XAUUSD: 1 lot = 100 oz, so a $1 move is $100 per lot
-  const suggestedLot = riskMoney != null && riskDist ? Math.max(0.01, Math.floor((riskMoney / (riskDist * 100)) * 100) / 100) : null;
   const slPts = Number(cfg.slPts) || 0, tpPts = Number(cfg.tpPts) || 0;
   const fillDefaults = () => {
     if (entryRef == null) return;
     const sign = dir === "buy" ? 1 : -1;
-    if (slPts > 0) setSlInput((entryRef - sign * slPts * 0.01).toFixed(2));
-    if (tpPts > 0) setTpInput((entryRef + sign * tpPts * 0.01).toFixed(2));
+    if (slPts > 0) setSlInput((entryRef - sign * slPts * 10 ** -dg).toFixed(dg));
+    if (tpPts > 0) setTpInput((entryRef + sign * tpPts * 10 ** -dg).toFixed(dg));
   };
 
   const placeOrder = async () => {
@@ -246,7 +245,7 @@ export default function ElionTradePage() {
     setOrderMsg(null);
     try {
       const r = await journalApi.placeOrder(orderAccount.id, {
-        symbol: SYMBOL,
+        symbol: sym,
         direction: side === "SELL" ? "sell" : "buy",
         order_type: orderType,
         price: orderType === "market" ? null : entryNum,
@@ -255,8 +254,8 @@ export default function ElionTradePage() {
         tp: tpNum,
       });
       setOrderMsg({ ok: true, text: orderType === "market"
-        ? `${side} ${lot.toFixed(2)} ${SYMBOL} filled @ ${Number(r.price).toFixed(2)} · #${r.ticket}`
-        : `${side} ${orderType.toUpperCase()} ${lot.toFixed(2)} @ ${entryNum!.toFixed(2)} placed · #${r.ticket}` });
+        ? `${side} ${lot.toFixed(2)} ${sym} filled @ ${Number(r.price).toFixed(dg)} · #${r.ticket}`
+        : `${side} ${orderType.toUpperCase()} ${lot.toFixed(2)} @ ${entryNum!.toFixed(dg)} placed · #${r.ticket}` });
       if (orderType !== "market") setEntryInput("");
       setChecks(CHECKLIST.map(() => false)); // the next trade needs its own checklist
       beep(true);
@@ -288,7 +287,11 @@ export default function ElionTradePage() {
     [pos, posOverride],
   );
   const quotes = pos?.quotes ?? [];
-  const xq = quotes.find((q) => q.symbol === SYMBOL) ?? quotes.find((q) => q.symbol.toUpperCase().startsWith(SYMBOL)) ?? null;
+  const xq = quotes.find((q) => q.symbol === sym) ?? null;
+  /** price decimals: from MT4 when known, else guessed from the price (gold 2, JPY 3, FX 5) */
+  const digitsOf = (s: string, ref?: number | null) => quotes.find((q) => q.symbol === s)?.digits ?? (ref == null ? 2 : ref >= 500 ? 2 : ref >= 20 ? 3 : 5);
+  const dg = xq?.digits ?? digitsOf(sym, last?.close);
+  const fx = (s: string, v: number | null | undefined) => (v == null ? "—" : v.toFixed(digitsOf(s, v)));
   useEffect(() => { setQuoteRef(xq ? { bid: xq.bid, ask: xq.ask } : null); }, [xq?.bid, xq?.ask]); // eslint-disable-line react-hooks/exhaustive-deps
   const pending: LivePending[] = pos?.pending ?? [];
   const cancelPending = async (o: LivePending) => {
@@ -324,7 +327,7 @@ export default function ElionTradePage() {
     setPosMsg(null);
     try {
       await journalApi.modifyPosition(posAccId, p.ticket, sl, tp);
-      setPosMsg({ ok: true, text: `#${p.ticket}: SL ${sl?.toFixed(2) ?? "—"} · TP ${tp?.toFixed(2) ?? "—"} set in MT4` });
+      setPosMsg({ ok: true, text: `#${p.ticket}: SL ${fx(p.symbol, sl)} · TP ${fx(p.symbol, tp)} set in MT4` });
       beep(true);
       window.setTimeout(() => setPosOverride((o) => { const n = { ...o }; delete n[p.ticket]; return n; }), 4000);
     } catch (e) {
@@ -341,7 +344,7 @@ export default function ElionTradePage() {
     setPosMsg(null);
     try {
       const r = await journalApi.closePosition(posAccId, p.ticket);
-      setPosMsg({ ok: true, text: `#${p.ticket} closed @ ${Number(r.price).toFixed(2)}` });
+      setPosMsg({ ok: true, text: `#${p.ticket} closed @ ${fx(p.symbol, Number(r.price))}` });
       beep(true);
     } catch (e) {
       setPosMsg({ ok: false, text: `#${p.ticket}: ${(e as Error).message}` });
@@ -362,7 +365,7 @@ export default function ElionTradePage() {
   const chartLevels = useMemo<Level[]>(() => {
     const out: Level[] = [];
     for (const p of livePos) {
-      if (!p.symbol.toUpperCase().startsWith("XAU")) continue;
+      if (p.symbol !== sym) continue;
       const tag = `#${p.ticket.slice(-4)}`;
       const at = pnlAt(p);
       out.push({ id: `${p.ticket}:entry`, price: p.open_price, color: "#e0b354", dashed: true, draggable: true,
@@ -371,7 +374,7 @@ export default function ElionTradePage() {
       if (p.tp != null) out.push({ id: `${p.ticket}:tp`, price: p.tp, color: "#26a69a", draggable: true, label: `TP ${tag}`, pnlAt: at });
     }
     for (const o of pending) {
-      if (!o.symbol.toUpperCase().startsWith("XAU")) continue;
+      if (o.symbol !== sym) continue;
       out.push({ id: `pend:${o.ticket}`, price: o.price, color: "#8fa3ad", dashed: true, label: `${o.type.replace("_", " ").toUpperCase()} ${o.volume.toFixed(2)} #${o.ticket.slice(-4)}` });
     }
     if (orderType !== "market" && entryNum != null && Number.isFinite(entryNum)) out.push({ id: "new:entry", price: entryNum, color: "#e0b354", dashed: true, draggable: true, label: `${side} ${orderType.toUpperCase()} (new)` });
@@ -383,7 +386,7 @@ export default function ElionTradePage() {
 
   const onLevelMove = (id: string, price: number) => {
     const [ticket, kind] = id.split(":");
-    if (ticket === "new") return kind === "sl" ? setSlInput(price.toFixed(2)) : kind === "tp" ? setTpInput(price.toFixed(2)) : setEntryInput(price.toFixed(2));
+    if (ticket === "new") return kind === "sl" ? setSlInput(price.toFixed(dg)) : kind === "tp" ? setTpInput(price.toFixed(dg)) : setEntryInput(price.toFixed(dg));
     const p = livePos.find((x) => x.ticket === ticket);
     if (!p) return;
     if (kind === "sl") return void modifyPos(p, price, p.tp);
@@ -395,14 +398,15 @@ export default function ElionTradePage() {
   const drawDraft = () => {
     if (orderType !== "market" && entryNum == null && marketRef != null) {
       // a limit sits on the better side of the price, a stop on the breakout side
-      const away = (side === "BUY") === (orderType === "limit") ? -3 : 3;
-      setEntryInput((marketRef + away).toFixed(2));
+      const away = marketRef * 0.0007 * ((side === "BUY") === (orderType === "limit") ? -1 : 1);
+      setEntryInput((marketRef + away).toFixed(dg));
       return;
     }
     if (entryRef == null) return;
     const sign = dir === "buy" ? 1 : -1;
-    if (!slInput.trim()) setSlInput((entryRef - sign * 5).toFixed(2));
-    if (!tpInput.trim()) setTpInput((entryRef + sign * 10).toFixed(2));
+    const u = entryRef * 0.0012; // ~5 on gold, ~13 pips on EURUSD
+    if (!slInput.trim()) setSlInput((entryRef - sign * u).toFixed(dg));
+    if (!tpInput.trim()) setTpInput((entryRef + sign * u * 2).toFixed(dg));
   };
 
   const todayClosed = useMemo(() => {
@@ -412,7 +416,9 @@ export default function ElionTradePage() {
   }, [orderRow]);
   const todayPnl = todayClosed.reduce((s2, t) => s2 + net(t), 0);
   // money per 1.00 move per lot, learned from a live position (cent accounts included), else gold's 100 oz/lot
-  const perLot = livePos.length ? moneyPerPoint(livePos[0]) : 100;
+  const samePos = livePos.find((p) => p.symbol === sym);
+  const perLot = samePos ? moneyPerPoint(samePos) : xq?.pv ?? (sym.startsWith("XAU") ? 100 : 100000);
+  const suggestedLot = riskMoney != null && riskDist ? Math.max(0.01, Math.floor((riskMoney / (riskDist * perLot)) * 100) / 100) : null;
   const accBal = pos?.balance ?? balance;
   const riskUsd = riskDist != null ? riskDist * lot * perLot : null;
   const rewardUsd = rewardDist != null ? rewardDist * lot * perLot : null;
@@ -437,7 +443,7 @@ export default function ElionTradePage() {
   );
   const ticked = checks.filter(Boolean).length;
   const gateOk = !cfg.checklistReq || checklistDone;
-  const pendDist = (o: LivePending) => (xq ? Math.abs((o.type.startsWith("buy") ? xq.ask : xq.bid) - o.price) : null);
+  const pendDist = (o: LivePending) => { const q = quotes.find((x) => x.symbol === o.symbol); return q ? Math.abs((o.type.startsWith("buy") ? q.ask : q.bid) - o.price) : null; };
 
   return (
     <div className="elion-scope e-root e-inner" style={{ height: "100vh", overflow: "hidden", background: "radial-gradient(ellipse at 50% 0%, var(--e-bg-2) 0%, var(--e-bg) 70%)", display: "grid", gridTemplateColumns: "78px minmax(0,1fr)", gridTemplateRows: "minmax(0,1fr) 34px", fontFamily: "Manrope, sans-serif", color: "var(--e-text)", fontSize: 13 }}>
@@ -481,17 +487,17 @@ export default function ElionTradePage() {
         {/* ---- one-line market strip ---- */}
         <div style={{ ...CARD, height: 46, flexShrink: 0, display: "flex", alignItems: "center", padding: "0 6px 0 14px", overflowX: "auto" }}>
           <div style={{ display: "flex", alignItems: "baseline", gap: 10, paddingRight: 14 }}>
-            <span style={{ fontSize: 16, fontWeight: 600 }}>XAUUSD</span>
-            <span style={{ fontSize: 17, fontWeight: 600 }}>{xq ? xq.bid.toFixed(2) : last ? last.close.toFixed(2) : "—"}</span>
+            <span style={{ fontSize: 16, fontWeight: 600 }}>{sym}</span>
+            <span style={{ fontSize: 17, fontWeight: 600 }}>{xq ? xq.bid.toFixed(dg) : last ? last.close.toFixed(dg) : "—"}</span>
             <span style={{ fontSize: 12, color: bullish ? UP : DOWN }}>{pnlStr(change)} ({change && last ? ((change / (last.close - change)) * 100).toFixed(2) : "0.00"}%)</span>
           </div>
           {stat("Session", <span style={{ display: "flex", alignItems: "center", gap: 5 }}><span style={{ width: 7, height: 7, borderRadius: "50%", background: activeSessName ? UP : "var(--e-muted-2)" }} />{activeSessName ?? "Closed"}</span>)}
           {stat(closeInfo.label, `${Math.floor(closeInfo.mins / 60)}h ${closeInfo.mins % 60}m`)}
-          {stat("Day High", dayHigh != null ? dayHigh.toFixed(2) : "—")}
-          {stat("Day Low", dayLow != null ? dayLow.toFixed(2) : "—", DOWN)}
-          {stat("Range", dayHigh != null && dayLow != null ? (dayHigh - dayLow).toFixed(2) : "—")}
-          {stat("ADR (14)", adr14 != null ? adr14.toFixed(1) : "—")}
-          {stat("Spread", xq ? (xq.ask - xq.bid).toFixed(2) : "—")}
+          {stat("Day High", dayHigh != null ? dayHigh.toFixed(dg) : "—")}
+          {stat("Day Low", dayLow != null ? dayLow.toFixed(dg) : "—", DOWN)}
+          {stat("Range", dayHigh != null && dayLow != null ? (dayHigh - dayLow).toFixed(dg) : "—")}
+          {stat("ADR (14)", adr14 != null ? adr14.toFixed(Math.max(1, dg - 1)) : "—")}
+          {stat("Spread", xq ? (xq.ask - xq.bid).toFixed(dg) : "—")}
           <div style={{ flex: 1 }} />
           {pos?.live && stat("Equity", pos.equity?.toFixed(2) ?? "—")}
           {pos?.live && stat("Floating", pnlStr(pos.floating ?? 0), (pos.floating ?? 0) >= 0 ? UP : DOWN)}
@@ -512,9 +518,10 @@ export default function ElionTradePage() {
               <div style={{ flex: 1, minHeight: 0, overflowY: "auto" }}>
                 {quotes.length === 0 && <div style={{ padding: 12, fontSize: 11.5, color: "var(--e-muted)" }}>Prices come from MT4's Market Watch once RobotTradingEA v1.4 runs.</div>}
                 {quotes.map((q) => (
-                  <div key={q.symbol} style={{ display: "grid", gridTemplateColumns: "1fr auto auto", gap: 6, alignItems: "center", padding: "6px 12px", fontSize: 12, borderTop: "1px solid var(--e-line-2)", background: q === xq ? "rgba(224,179,84,.08)" : "transparent" }}>
+                  <div key={q.symbol} onClick={() => { app.setSymbol(q.symbol); setSlInput(""); setTpInput(""); setEntryInput(""); }} title={`Show ${q.symbol}`}
+                    style={{ cursor: "pointer", display: "grid", gridTemplateColumns: "1fr auto auto", gap: 6, alignItems: "center", padding: "6px 12px", fontSize: 12, borderTop: "1px solid var(--e-line-2)", borderLeft: `2px solid ${q === xq ? "var(--e-gold)" : "transparent"}`, background: q === xq ? "rgba(224,179,84,.08)" : "transparent" }}>
                     <span style={{ fontWeight: q === xq ? 600 : 400, overflow: "hidden", textOverflow: "ellipsis" }}>{q.symbol}</span>
-                    <span>{q.bid.toFixed(q.bid >= 100 ? 2 : 5)}</span>
+                    <span>{q.bid.toFixed(q.digits ?? (q.bid >= 100 ? 2 : 5))}</span>
                     <span style={{ width: 46, textAlign: "right", color: q.change == null ? "var(--e-muted)" : q.change >= 0 ? UP : DOWN }}>{q.change == null ? "—" : `${q.change >= 0 ? "+" : ""}${q.change.toFixed(2)}%`}</span>
                   </div>
                 ))}
@@ -549,11 +556,11 @@ export default function ElionTradePage() {
               <div style={{ flex: 1 }} />
               {/* eToro-style quote buttons: pick the side in the ticket */}
               <div onClick={() => setSide("SELL")} title="Sell side (bid)" style={{ display: "flex", alignItems: "center", gap: 6, height: 28, padding: "0 10px", borderRadius: 14, cursor: "pointer", fontSize: 12, border: "1px solid #e0463f", background: sel ? "#e0463f" : "transparent", color: sel ? "#fff" : "#f3b5ae" }}>
-                <b>S</b><span>{xq ? xq.bid.toFixed(2) : "—"}</span>
+                <b>S</b><span>{xq ? xq.bid.toFixed(dg) : "—"}</span>
               </div>
-              <span style={{ fontSize: 10.5, color: "var(--e-muted)" }}>{xq ? (xq.ask - xq.bid).toFixed(2) : ""}</span>
+              <span style={{ fontSize: 10.5, color: "var(--e-muted)" }}>{xq ? (xq.ask - xq.bid).toFixed(dg) : ""}</span>
               <div onClick={() => setSide("BUY")} title="Buy side (ask)" style={{ display: "flex", alignItems: "center", gap: 6, height: 28, padding: "0 10px", borderRadius: 14, cursor: "pointer", fontSize: 12, border: "1px solid #26b58d", background: !sel ? "#26b58d" : "transparent", color: !sel ? "#fff" : "#9fe3cf" }}>
-                <b>B</b><span>{xq ? xq.ask.toFixed(2) : "—"}</span>
+                <b>B</b><span>{xq ? xq.ask.toFixed(dg) : "—"}</span>
               </div>
               <span style={{ fontSize: 12, color: "var(--e-text-2)", marginLeft: 6 }}>{new Date(nowTick).toUTCString().slice(17, 25)} UTC</span>
               {view === "tv" && <span style={{ fontSize: 11, color: "var(--e-muted)" }}>Price from TradingView (OANDA), not your broker</span>}
@@ -564,7 +571,7 @@ export default function ElionTradePage() {
 
             {view === "tv" ? (
               <div className="chart-area tv" style={{ flex: 1, minHeight: 0 }}>
-                <TradingViewWidget key={`${SYMBOL}-${TV_INTERVAL[tfSec] ?? "1"}`} symbol={`OANDA:${SYMBOL}`} interval={TV_INTERVAL[tfSec] ?? "1"} />
+                <TradingViewWidget key={`${sym}-${TV_INTERVAL[tfSec] ?? "1"}`} symbol={`OANDA:${sym.replace(/[^A-Za-z]/g, "").slice(0, 6).toUpperCase()}`} interval={TV_INTERVAL[tfSec] ?? "1"} />
               </div>
             ) : (
               <>
@@ -594,7 +601,7 @@ export default function ElionTradePage() {
                   {source.length === 0 ? (
                     <div className="loading">
                       {app.mode === "live"
-                        ? app.live.status === "live" ? "Loading candles…" : "Waiting for MT4 — put RobotTradingEA on an XAUUSD chart in MetaTrader 4"
+                        ? app.live.status === "live" ? "Loading candles…" : `Loading ${sym} from MT4… (RobotTradingEA v1.5 streams any Market Watch symbol)`
                         : "Loading…"}
                     </div>
                   ) : (
@@ -621,6 +628,7 @@ export default function ElionTradePage() {
                       showVolume={app.showVolume}
                       showGrid={cfg.showGrid}
                       levels={app.mode === "live" ? chartLevels : undefined}
+                      precision={dg}
                       onLevelMove={onLevelMove}
                       hideTradeLines={app.mode === "live" && !!pos?.live}
                     />
@@ -655,8 +663,8 @@ export default function ElionTradePage() {
           {/* ---- order ticket ---- */}
           <div style={{ ...CARD, minHeight: 0, overflowY: "auto", padding: "12px 14px", display: "flex", flexDirection: "column", gap: 10 }}>
             <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between" }}>
-              <div style={{ fontSize: 15, fontWeight: 500 }}>Order Ticket · {SYMBOL}</div>
-              <div style={{ fontSize: 11, color: "var(--e-text-2)" }}>{xq ? `Bid ${xq.bid.toFixed(2)} · Ask ${xq.ask.toFixed(2)}` : ""}</div>
+              <div style={{ fontSize: 15, fontWeight: 500 }}>Order Ticket · {sym}</div>
+              <div style={{ fontSize: 11, color: "var(--e-text-2)" }}>{xq ? `Bid ${xq.bid.toFixed(dg)} · Ask ${xq.ask.toFixed(dg)}` : ""}</div>
             </div>
             {mt5Accounts.length === 0 ? (
               <div style={{ fontSize: 11.5, color: "var(--e-muted)" }}>No MT4/MT5 account connected — add one on the Connection page to place real orders.</div>
@@ -667,10 +675,10 @@ export default function ElionTradePage() {
             )}
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
               <div onClick={() => setSide("SELL")} style={{ height: 44, borderRadius: 6, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", cursor: "pointer", background: sel ? "#e0463f" : "#16242a", color: sel ? "#fff" : "var(--e-text)", border: `1px solid ${sel ? "#e0463f" : "var(--e-border)"}` }}>
-                <span style={{ fontSize: 14, letterSpacing: ".04em" }}>SELL</span><span style={{ fontSize: 11, opacity: .85 }}>{xq ? xq.bid.toFixed(2) : ""}</span>
+                <span style={{ fontSize: 14, letterSpacing: ".04em" }}>SELL</span><span style={{ fontSize: 11, opacity: .85 }}>{xq ? xq.bid.toFixed(dg) : ""}</span>
               </div>
               <div onClick={() => setSide("BUY")} style={{ height: 44, borderRadius: 6, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", cursor: "pointer", background: sel ? "#16242a" : "#26b58d", color: sel ? "var(--e-text)" : "#fff", border: `1px solid ${sel ? "var(--e-border)" : "#26b58d"}` }}>
-                <span style={{ fontSize: 14, letterSpacing: ".04em" }}>BUY</span><span style={{ fontSize: 11, opacity: .85 }}>{xq ? xq.ask.toFixed(2) : ""}</span>
+                <span style={{ fontSize: 14, letterSpacing: ".04em" }}>BUY</span><span style={{ fontSize: 11, opacity: .85 }}>{xq ? xq.ask.toFixed(dg) : ""}</span>
               </div>
             </div>
             <div style={{ display: "flex", borderRadius: 7, border: "1px solid var(--e-border)", padding: 2 }}>
@@ -683,7 +691,7 @@ export default function ElionTradePage() {
             {orderType !== "market" && (
               <div style={{ ...FIELD, height: 46, padding: "0 10px", display: "flex", flexDirection: "column", justifyContent: "center", gap: 2 }}>
                 <span style={{ fontSize: 11, color: "var(--e-text-2)" }}>{side === "BUY" ? "Buy" : "Sell"} {orderType} price {orderType === "limit" ? (side === "BUY" ? "(below market)" : "(above market)") : (side === "BUY" ? "(above market)" : "(below market)")}</span>
-                <input value={entryInput} onChange={(e) => setEntryInput(e.target.value)} placeholder={marketRef != null ? marketRef.toFixed(2) : "price"} inputMode="decimal" style={{ background: "transparent", border: 0, outline: 0, color: "var(--e-text)", fontSize: 15, width: "100%", padding: 0 }} />
+                <input value={entryInput} onChange={(e) => setEntryInput(e.target.value)} placeholder={marketRef != null ? marketRef.toFixed(dg) : "price"} inputMode="decimal" style={{ background: "transparent", border: 0, outline: 0, color: "var(--e-text)", fontSize: 15, width: "100%", padding: 0 }} />
               </div>
             )}
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
@@ -763,11 +771,11 @@ export default function ElionTradePage() {
             </div>
             <div
               onClick={!orderAccount || placing ? undefined : placeOrder}
-              title={orderAccount ? `Sends a REAL ${side} ${orderType} order for ${lot.toFixed(2)} ${SYMBOL} to "${orderAccount.name}" — no confirmation step.` : "No MT4/MT5 account to send to"}
+              title={orderAccount ? `Sends a REAL ${side} ${orderType} order for ${lot.toFixed(2)} ${sym} to "${orderAccount.name}" — no confirmation step.` : "No MT4/MT5 account to send to"}
               style={{ height: 42, flexShrink: 0, borderRadius: 6, background: !orderAccount || !gateOk ? "var(--e-panel-2)" : sel ? "#e0463f" : "#26b58d", border: orderAccount && gateOk ? "none" : "1px solid var(--e-border)", color: orderAccount && gateOk ? "#fff" : "var(--e-muted)", display: "flex", alignItems: "center", justifyContent: "center", gap: 10, fontSize: 14.5, fontWeight: 500, cursor: !orderAccount || placing ? "default" : "pointer", opacity: placing ? 0.6 : 1 }}
             >
               <span className="e-icon" style={{ fontSize: 19 }}>{placing ? "sync" : "send"}</span>
-              {placing ? "Sending…" : !orderAccount ? "No Account" : !gateOk ? `Checklist ${ticked}/${CHECKLIST.length}` : `${side} ${lot.toFixed(2)} ${orderType === "market" ? "Market" : `${orderType === "limit" ? "Limit" : "Stop"} @ ${entryNum != null ? entryNum.toFixed(2) : "—"}`}`}
+              {placing ? "Sending…" : !orderAccount ? "No Account" : !gateOk ? `Checklist ${ticked}/${CHECKLIST.length}` : `${side} ${lot.toFixed(2)} ${orderType === "market" ? "Market" : `${orderType === "limit" ? "Limit" : "Stop"} @ ${entryNum != null ? entryNum.toFixed(dg) : "—"}`}`}
             </div>
             {orderMsg && (
               <div style={{ fontSize: 11.5, padding: "6px 8px", borderRadius: 6, background: orderMsg.ok ? "#0f2a26" : "#2a1414", border: `1px solid ${orderMsg.ok ? "#2c7a5f" : "#8a2a26"}`, color: orderMsg.ok ? UP : "#f3b5ae" }}>
@@ -818,7 +826,7 @@ export default function ElionTradePage() {
                   <tbody>
                     {livePos.map((p) => {
                       const v = p.profit + p.swap + p.commission;
-                      const ed = posEdit[p.ticket] ?? { sl: p.sl?.toFixed(2) ?? "", tp: p.tp?.toFixed(2) ?? "" };
+                      const ed = posEdit[p.ticket] ?? { sl: p.sl != null ? fx(p.symbol, p.sl) : "", tp: p.tp != null ? fx(p.symbol, p.tp) : "" };
                       const edit = (k: "sl" | "tp", val: string) => setPosEdit((m) => ({ ...m, [p.ticket]: { ...ed, [k]: val } }));
                       const busy = posBusy === p.ticket;
                       return (
@@ -826,8 +834,8 @@ export default function ElionTradePage() {
                           <td style={td}>{p.symbol} <span style={{ color: "var(--e-muted)", fontSize: 10.5 }}>#{p.ticket}</span></td>
                           <td style={{ ...td, color: p.direction === "buy" ? UP : DOWN, fontWeight: 600 }}>{p.direction === "buy" ? "BUY" : "SELL"}</td>
                           <td style={td}>{p.volume.toFixed(2)}</td>
-                          <td style={td}>{p.open_price.toFixed(2)}</td>
-                          <td style={td}>{p.price?.toFixed(2) ?? "—"}</td>
+                          <td style={td}>{fx(p.symbol, p.open_price)}</td>
+                          <td style={td}>{fx(p.symbol, p.price)}</td>
                           <td style={td}><input value={ed.sl} placeholder="none" inputMode="decimal" onChange={(e) => edit("sl", e.target.value)} onKeyDown={(e) => e.key === "Enter" && savePosEdit(p)} style={cellIn} /></td>
                           <td style={td}><input value={ed.tp} placeholder="none" inputMode="decimal" onChange={(e) => edit("tp", e.target.value)} onKeyDown={(e) => e.key === "Enter" && savePosEdit(p)} style={cellIn} /></td>
                           <td style={{ ...td, fontWeight: 600, color: v >= 0 ? UP : DOWN }}>{pnlStr(v)}</td>
@@ -855,10 +863,10 @@ export default function ElionTradePage() {
                           <td style={td}>{o.symbol} <span style={{ color: "var(--e-muted)", fontSize: 10.5 }}>#{o.ticket}</span></td>
                           <td style={{ ...td, color: o.type.startsWith("buy") ? UP : DOWN, fontWeight: 600 }}>{o.type.replace("_", " ").toUpperCase()}</td>
                           <td style={td}>{o.volume.toFixed(2)}</td>
-                          <td style={td}>{o.price.toFixed(2)}</td>
-                          <td style={td}>{d != null ? d.toFixed(2) : "—"}</td>
-                          <td style={td}>{o.sl?.toFixed(2) ?? "—"}</td>
-                          <td style={td}>{o.tp?.toFixed(2) ?? "—"}</td>
+                          <td style={td}>{fx(o.symbol, o.price)}</td>
+                          <td style={td}>{d != null ? d.toFixed(digitsOf(o.symbol, o.price)) : "—"}</td>
+                          <td style={td}>{fx(o.symbol, o.sl)}</td>
+                          <td style={td}>{fx(o.symbol, o.tp)}</td>
                           <td style={{ ...td, textAlign: "right" }}><span onClick={posBusy === o.ticket ? undefined : () => cancelPending(o)} style={btn("#e0463f")}>Cancel</span></td>
                         </tr>
                       );
@@ -881,8 +889,8 @@ export default function ElionTradePage() {
                           <td style={td}>{r.symbol}</td>
                           <td style={{ ...td, color: r.direction === "buy" ? UP : DOWN }}>{r.direction === "buy" ? "BUY" : "SELL"}</td>
                           <td style={td}>{r.volume.toFixed(2)}</td>
-                          <td style={td}>{r.open_price.toFixed(2)}</td>
-                          <td style={td}>{r.close_price != null ? r.close_price.toFixed(2) : "—"}</td>
+                          <td style={td}>{fx(r.symbol, r.open_price)}</td>
+                          <td style={td}>{fx(r.symbol, r.close_price)}</td>
                           <td style={{ ...td, fontWeight: 600, color: v >= 0 ? UP : DOWN }}>{pnlStr(v)}</td>
                         </tr>
                       );

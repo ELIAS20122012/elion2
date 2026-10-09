@@ -57,6 +57,8 @@ interface Props {
   shift?: boolean;
   /** grid lines on/off (Settings → Show Grid); on by default */
   showGrid?: boolean;
+  /** decimals of the symbol's prices (2 for gold, 5 for EURUSD, 3 for JPY pairs) */
+  precision?: number;
   levels?: Level[];
   /** a draggable level was released at a new price */
   onLevelMove?: (id: string, price: number) => void;
@@ -76,9 +78,10 @@ export interface Level {
   pnlAt?: (price: number) => number;
 }
 
+let PREC = 2; // set from the `precision` prop; titles and drags format with it
 const levelTitle = (l: Level, price: number) => {
   const v = l.pnlAt?.(price);
-  return `${l.label} ${price.toFixed(2)}${v != null && Number.isFinite(v) ? `  ${v >= 0 ? "+" : ""}${v.toFixed(1)}$` : ""}`;
+  return `${l.label} ${price.toFixed(PREC)}${v != null && Number.isFinite(v) ? `  ${v >= 0 ? "+" : ""}${v.toFixed(1)}$` : ""}`;
 };
 
 interface Drag { id: string; kind: "point" | "body"; idx: number; startLogical: number; startPrice: number; orig: DPoint[] }
@@ -300,7 +303,7 @@ export default function Chart(props: Props) {
         const l = (live.current.levels ?? []).find((v) => v.id === ld.id);
         const line = levelLines.current.get(ld.id);
         if (p == null || !l || !line) return;
-        ld.price = Math.round(p * 100) / 100;
+        ld.price = Math.round(p * 10 ** PREC) / 10 ** PREC;
         line.applyOptions({ price: ld.price, title: levelTitle(l, ld.price) });
         return;
       }
@@ -440,6 +443,13 @@ export default function Chart(props: Props) {
     }
     volRef.current.setData(candles.map((c) => ({ time: c.time, value: c.volume ?? 0, color: c.close >= c.open ? "rgba(38,166,154,0.35)" : "rgba(239,83,80,0.35)" })));
   }, [candles, showVolume, hasVolume]);
+
+  /* ---- price precision of the symbol (axis, crosshair label, level titles) ---- */
+  const prec = props.precision ?? 2;
+  PREC = prec;
+  useEffect(() => {
+    seriesRef.current?.applyOptions({ priceFormat: { type: "price", precision: prec, minMove: 1 / 10 ** prec } });
+  }, [prec, candles.length > 0]);
 
   /* ---- drawings layer ---- */
   const [dsVer, setDsVer] = useState(0);

@@ -168,6 +168,10 @@ export interface LiveQuote {
   bid: number;
   ask: number;
   change: number | null;
+  /** price decimals in MT4 */
+  digits?: number | null;
+  /** account money per 1.0 price move per lot (MT4 tick value / tick size) */
+  pv?: number | null;
 }
 
 export interface LivePositions {

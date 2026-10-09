@@ -838,6 +838,7 @@ def ev_candles(body: robot.CandlesIn, request: Request):
 @app.get("/robot/candles")
 def robot_candles(symbol: str = "XAUUSD", count: int = 3000, since: int | None = None):
     """M1 bars from the MT4 robot EA, for the dashboard chart."""
+    robot.want(symbol)  # the EA starts streaming this symbol's bars if it isn't its own chart symbol
     return {"symbol": symbol, "candles": robot.candles(symbol, count, since)}
 
 

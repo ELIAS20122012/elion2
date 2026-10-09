@@ -42,6 +42,7 @@ export function useLive(enabled: boolean, symbol = "XAUUSD") {
     let have: Candle[] = [];
     let polls = 0;
     setStatus("connecting");
+    setCandles([]); // a symbol switch: never show the previous symbol's bars
     const poll = async () => {
       try {
         // first load: the full history (~2 weeks of M1); afterwards only the last few minutes, merged in

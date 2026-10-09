@@ -23,6 +23,8 @@ datetime g_lastOpenSync   = 0;
 datetime g_lastFeedBar    = 0;
 bool     g_feedInit       = false;
 int      g_backfill       = 0;      // M1 bars of history already sent (oldest last)
+string   g_feedSym        = "";     // another symbol the dashboard chart is showing
+int      g_feedBack       = 0;      // its M1 history already sent
 datetime g_lastErrorPrint = 0;
 
 //+------------------------------------------------------------------+
@@ -83,6 +85,7 @@ void OnTimer()
    SyncClosedOrders();
    ExecuteDashboardOrders();
    SendCandleFeed();
+   SendExtraFeed();
    if(InpSendCandles)
       SendSignalEvaluateOnNewBar();
 }
@@ -170,6 +173,33 @@ void SendCandleFeed()
 //| سفارش‌هایی که الیاس در داشبورد ELION می‌زند (Place Order)         |
 //| فقط سفارش تازه (کمتر از ۱۵ ثانیه) از سرور می‌آید و یک بار اجرا می‌شود |
 //+------------------------------------------------------------------+
+//| کندل‌های نمادی که داشبورد الان نشان می‌دهد (اگر غیر از نماد چارت خود EA باشد) |
+void SendExtraFeed()
+{
+   if(g_feedSym == "" || g_feedSym == _Symbol || MarketInfo(g_feedSym, MODE_BID) <= 0)
+      return;
+   int start = 0, want = 3;
+   bool backfill = g_feedBack < 5000;
+   if(backfill) { start = g_feedBack; want = MathMin(1000, 5000 - g_feedBack); }
+   MqlRates rates[];
+   ArraySetAsSeries(rates, false);
+   int copied = CopyRates(g_feedSym, PERIOD_M1, start, want, rates);
+   if(copied <= 0)
+      return; // history still downloading in MT4: try again next tick
+   int dg = (int)MarketInfo(g_feedSym, MODE_DIGITS);
+   string json = "{\"login\":\"" + IntegerToString(AccountNumber()) + "\",\"symbol\":\"" + JsonEscape(g_feedSym) + "\",\"candles\":[";
+   for(int i = 0; i < copied; i++)
+   {
+      if(i > 0) json += ",";
+      json += "{\"time\":\"" + TimeToIso(rates[i].time) + "\",\"open\":" + DoubleToString(rates[i].open, dg) +
+              ",\"high\":" + DoubleToString(rates[i].high, dg) + ",\"low\":" + DoubleToString(rates[i].low, dg) +
+              ",\"close\":" + DoubleToString(rates[i].close, dg) + ",\"volume\":" + IntegerToString(rates[i].tick_volume) + "}";
+   }
+   json += "]}";
+   if(PostOrQueue("/events/candles", json) && backfill)
+      g_feedBack = (copied < want) ? 5000 : g_feedBack + copied;
+}
+
 string JStr(string src, string key)
 {
    string pat = "\"" + key + "\":";
@@ -188,7 +218,7 @@ string JStr(string src, string key)
 
 string PositionsJson()
 {
-   string json = "{\"login\":\"" + IntegerToString(AccountNumber()) + "\",\"balance\":" + DoubleToString(AccountBalance(), 2) +
+   string json = "{\"login\":\"" + IntegerToString(AccountNumber()) + "\",\"chart\":\"" + JsonEscape(_Symbol) + "\",\"balance\":" + DoubleToString(AccountBalance(), 2) +
                  ",\"equity\":" + DoubleToString(AccountEquity(), 2) + ",\"positions\":[";
    int n = 0;
    for(int i = 0; i < OrdersTotal(); i++)
@@ -232,9 +262,11 @@ string PositionsJson()
       if(bid <= 0) continue;
       int dg3 = (int)MarketInfo(sym, MODE_DIGITS);
       double prev = iClose(sym, PERIOD_D1, 1);
+      double tsz = MarketInfo(sym, MODE_TICKSIZE), tv = MarketInfo(sym, MODE_TICKVALUE);
       if(n++ > 0) json += ",";
       json += "{\"symbol\":\"" + JsonEscape(sym) + "\",\"bid\":" + DoubleToString(bid, dg3) + ",\"ask\":" + DoubleToString(ask, dg3) +
-              ",\"change\":" + (prev > 0 ? DoubleToString((bid - prev) / prev * 100.0, 2) : "null") + "}";
+              ",\"change\":" + (prev > 0 ? DoubleToString((bid - prev) / prev * 100.0, 2) : "null") +
+              ",\"digits\":" + IntegerToString(dg3) + ",\"pv\":" + (tsz > 0 ? DoubleToString(tv / tsz, 4) : "null") + "}";
    }
    return json + "]}";
 }
@@ -251,6 +283,8 @@ void ExecuteDashboardOrders()
    string resp;
    if(!HttpPostJson("/events/positions", PositionsJson(), resp))
       return;
+   string feed = JStr(resp, "feed");
+   if(feed != g_feedSym) { g_feedSym = feed; g_feedBack = 0; }
    if(StringFind(resp, "\"order\":null") >= 0 || StringFind(resp, "\"id\":") < 0)
       return;
    string id   = JStr(resp, "id");
@@ -369,7 +403,7 @@ void SendSnapshot()
 void SendHeartbeat()
 {
    string info = TerminalName() + " / " + AccountServer();
-   string json = "{\"login\":\"" + IntegerToString(AccountNumber()) + "\",\"ea_version\":\"1.4-mt4\",\"terminal_info\":\"" + JsonEscape(info) + "\"}";
+   string json = "{\"login\":\"" + IntegerToString(AccountNumber()) + "\",\"ea_version\":\"1.5-mt4\",\"terminal_info\":\"" + JsonEscape(info) + "\"}";
    PostOrQueue("/events/heartbeat", json);
 }
 
