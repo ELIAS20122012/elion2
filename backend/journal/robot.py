@@ -13,7 +13,7 @@ from datetime import datetime
 
 from pydantic import BaseModel, Field
 
-from . import db, notify
+from . import alerts, db, notify
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS robot_keys (
@@ -413,6 +413,7 @@ def save_positions(account_id: int, b: PositionsIn) -> dict:
         con.execute("INSERT INTO robot_positions (account_id, time, data) VALUES (?,?,?) "
                     "ON CONFLICT(account_id) DO UPDATE SET time=excluded.time, data=excluded.data",
                     (account_id, time.time(), json.dumps(data)))
+    alerts.check(b.quotes)
     return {"ok": True, "order": next_order(account_id), "feed": wanted_feed(b.chart)}
 
 

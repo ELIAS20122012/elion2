@@ -161,6 +161,18 @@ export interface TgNotify {
   opens: boolean;
   closes: boolean;
   orders: boolean;
+  alerts: boolean;
+}
+
+export interface PriceAlert {
+  id: number;
+  symbol: string;
+  price: number;
+  direction: "above" | "below";
+  note: string | null;
+  created_at: number;
+  triggered_at: number | null;
+  triggered_price: number | null;
 }
 
 export interface LiveQuote {
@@ -424,6 +436,10 @@ export const journalApi = {
   positions: (id: number) => call<LivePositions>(`/accounts/${id}/positions`),
   modifyPosition: (id: number, ticket: string, sl: number | null, tp: number | null) =>
     call<{ ticket: string }>(`/accounts/${id}/positions/${ticket}/modify`, json("POST", { sl, tp })),
+  alerts: (symbol?: string) => call<PriceAlert[]>(`/alerts${symbol ? `?symbol=${encodeURIComponent(symbol)}` : ""}`),
+  addAlert: (symbol: string, price: number, current: number | null, note?: string) => call<PriceAlert>("/alerts", json("POST", { symbol, price, current, note })),
+  moveAlert: (id: number, price: number, current: number | null) => call<PriceAlert>(`/alerts/${id}`, json("PUT", { price, current })),
+  deleteAlert: (id: number) => call<void>(`/alerts/${id}`, { method: "DELETE" }),
   notifySettings: () => call<TgNotify>("/notify/settings"),
   saveNotify: (p: Partial<Omit<TgNotify, "configured">>) => call<TgNotify>("/notify/settings", json("PUT", p)),
   testNotify: () => call<{ ok: boolean }>("/notify/test", json("POST", {})),

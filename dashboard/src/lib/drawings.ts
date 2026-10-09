@@ -7,7 +7,8 @@ export type ToolId =
   | "abcd" | "xabcd" | "hs" | "elliott5" | "elliott3"
   | "long" | "short" | "measure" | "pricerange" | "daterange"
   | "rect" | "circle" | "ellipse" | "triangle"
-  | "text" | "callout" | "pricelabel" | "arrowup" | "arrowdown" | "flag";
+  | "text" | "callout" | "pricelabel" | "arrowup" | "arrowdown" | "flag"
+  | "alert"; // not a drawing: one click creates a server-side price alert
 
 export interface DPoint { time: number; price: number }
 
@@ -57,6 +58,7 @@ export const TOOLS: { id: ToolId; label: string; icon: string; points: number }[
   { id: "arrowup", label: "Arrow Mark Up", icon: "trend", points: 1 },
   { id: "arrowdown", label: "Arrow Mark Down", icon: "trend", points: 1 },
   { id: "flag", label: "Flag Mark", icon: "tag", points: 1 },
+  { id: "alert", label: "Price Alert", icon: "bell", points: 1 },
 ];
 
 /** Drawing-mode switches shared by the toolbar and the chart (TradingView's bottom-of-toolbar toggles). */

@@ -13,7 +13,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
-from . import ai, auth, bridge, db, engine, notify, parsers, robot, signals
+from . import ai, alerts, auth, bridge, db, engine, notify, parsers, robot, signals
 
 @asynccontextmanager
 async def lifespan(_app):
@@ -21,6 +21,7 @@ async def lifespan(_app):
     signals.init()
     robot.init()
     notify.init()
+    alerts.init()
     stop = threading.Event()
     if not os.environ.get("JOURNAL_NO_BRIDGE"):  # tests drive the watcher by hand
         engine.boot()  # MT engine starts OFF: no terminal is launched until Start is pressed on the Connection page
@@ -799,7 +800,31 @@ def cancel_order(account_id: int, ticket: str):
         raise HTTPException(409, str(e))
 
 
+@app.get("/alerts")
+def alerts_list(symbol: str | None = None):
+    return alerts.listing(symbol)
+
+
+@app.post("/alerts", status_code=201)
+def alerts_create(a: alerts.AlertIn):
+    return alerts.create(a)
+
+
+@app.put("/alerts/{aid}")
+def alerts_move(aid: int, m: alerts.AlertMove):
+    r = alerts.move(aid, m)
+    if not r:
+        raise HTTPException(404, "No such alert.")
+    return r
+
+
+@app.delete("/alerts/{aid}", status_code=204)
+def alerts_delete(aid: int):
+    alerts.delete(aid)
+
+
 class NotifyIn(BaseModel):
+    alerts: bool | None = None
     enabled: bool | None = None
     opens: bool | None = None
     closes: bool | None = None

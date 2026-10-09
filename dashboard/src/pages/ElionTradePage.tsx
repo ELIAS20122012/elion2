@@ -11,7 +11,7 @@ import TradingViewWidget from "../components/TradingViewWidget";
 import { isClosed, net } from "../lib/analytics";
 import { TIMEFRAMES, type Trade } from "../lib/data";
 import { beep, getSettings, useSettings } from "../lib/elionSettings";
-import { journalApi, type LivePending, type LivePosition, type LivePositions } from "../lib/journalApi";
+import { journalApi, type LivePending, type LivePosition, type LivePositions, type PriceAlert } from "../lib/journalApi";
 /** Level Continuation checklist (Rules → Checklist). Every item must be ticked before an order can be sent. */
 const CHECKLIST: { title: string; hint: string }[] = [
   { title: "Higher timeframe trend confirmed", hint: "H4/H1: HH/HL for buys, LL/LH for sells" },
@@ -294,6 +294,24 @@ export default function ElionTradePage() {
   const fx = (s: string, v: number | null | undefined) => (v == null ? "—" : v.toFixed(digitsOf(s, v)));
   useEffect(() => { setQuoteRef(xq ? { bid: xq.bid, ask: xq.ask } : null); }, [xq?.bid, xq?.ask]); // eslint-disable-line react-hooks/exhaustive-deps
   const pending: LivePending[] = pos?.pending ?? [];
+
+  /* ---- price alerts (server-side; Telegram fires them even with the dashboard closed) ---- */
+  const [alerts, setAlerts] = useState<PriceAlert[]>([]);
+  const loadAlerts = () => journalApi.alerts(sym).then(setAlerts).catch(() => undefined);
+  useEffect(() => {
+    loadAlerts();
+    const h = window.setInterval(loadAlerts, 5000);
+    return () => window.clearInterval(h);
+  }, [sym]); // eslint-disable-line react-hooks/exhaustive-deps
+  const nowPrice = () => xq?.bid ?? last?.close ?? null;
+  const addAlert = (price: number) => {
+    const pr = Number(price.toFixed(dg));
+    journalApi.addAlert(sym, pr, nowPrice())
+      .then(() => { setPosMsg({ ok: true, text: `🔔 Alert set: ${sym} ${pr.toFixed(dg)} — Telegram will tell you when it's reached` }); loadAlerts(); })
+      .catch((e) => setPosMsg({ ok: false, text: (e as Error).message }));
+  };
+  const removeAlert = (a: PriceAlert) => journalApi.deleteAlert(a.id).then(loadAlerts).catch((e) => setPosMsg({ ok: false, text: (e as Error).message }));
+  const armedAlerts = alerts.filter((a) => a.triggered_at == null);
   const cancelPending = async (o: LivePending) => {
     if (posAccId == null) return;
     setPosBusy(o.ticket);
@@ -377,15 +395,20 @@ export default function ElionTradePage() {
       if (o.symbol !== sym) continue;
       out.push({ id: `pend:${o.ticket}`, price: o.price, color: "#8fa3ad", dashed: true, label: `${o.type.replace("_", " ").toUpperCase()} ${o.volume.toFixed(2)} #${o.ticket.slice(-4)}` });
     }
+    for (const a of armedAlerts) out.push({ id: `alert:${a.id}`, price: a.price, color: "#f59e0b", dashed: true, draggable: true, label: `🔔 ${a.direction === "above" ? "▲" : "▼"}` });
     if (orderType !== "market" && entryNum != null && Number.isFinite(entryNum)) out.push({ id: "new:entry", price: entryNum, color: "#e0b354", dashed: true, draggable: true, label: `${side} ${orderType.toUpperCase()} (new)` });
     if (slNum != null && Number.isFinite(slNum)) out.push({ id: "new:sl", price: slNum, color: "#ef5350", dashed: true, draggable: true, label: "SL (new)" });
     if (tpNum != null && Number.isFinite(tpNum)) out.push({ id: "new:tp", price: tpNum, color: "#26a69a", dashed: true, draggable: true, label: "TP (new)" });
     return out;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [livePos, pending, slNum, tpNum, orderType, entryNum, side]);
+  }, [livePos, pending, slNum, tpNum, orderType, entryNum, side, alerts]);
 
   const onLevelMove = (id: string, price: number) => {
     const [ticket, kind] = id.split(":");
+    if (ticket === "alert") {
+      journalApi.moveAlert(Number(kind), Number(price.toFixed(dg)), nowPrice()).then(loadAlerts).catch((e) => setPosMsg({ ok: false, text: (e as Error).message }));
+      return;
+    }
     if (ticket === "new") return kind === "sl" ? setSlInput(price.toFixed(dg)) : kind === "tp" ? setTpInput(price.toFixed(dg)) : setEntryInput(price.toFixed(dg));
     const p = livePos.find((x) => x.ticket === ticket);
     if (!p) return;
@@ -618,7 +641,7 @@ export default function ElionTradePage() {
                       magnet={app.magnet}
                       color={app.color}
                       selectedId={app.selectedId}
-                      onAdd={(d) => app.setDrawings((l) => [...l, d])}
+                      onAdd={(d) => (d.type === "alert" ? addAlert(d.points[0].price) : app.setDrawings((l) => [...l, d]))}
                       onSelect={app.setSelectedId}
                       onDelete={app.removeDrawing}
                       onTool={app.setTool}
@@ -794,6 +817,7 @@ export default function ElionTradePage() {
               ["Positions", `Positions (${livePos.length})`],
               ["Pending", `Pending (${pending.length})`],
               ["Today", `Today (${todayClosed.length})`],
+              ["Alerts", `Alerts (${armedAlerts.length})`],
               ["News", "News"],
               ["Market", "Market"],
             ].map(([k, label]) => (
@@ -892,6 +916,28 @@ export default function ElionTradePage() {
                           <td style={td}>{fx(r.symbol, r.open_price)}</td>
                           <td style={td}>{fx(r.symbol, r.close_price)}</td>
                           <td style={{ ...td, fontWeight: 600, color: v >= 0 ? UP : DOWN }}>{pnlStr(v)}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              )
+            )}
+            {bottomTab === "Alerts" && (
+              alerts.length === 0 ? <div style={{ padding: 16, fontSize: 12, color: "var(--e-muted)" }}>No alerts on {sym}. Pick the 🔔 tool on the chart toolbar (Alt+A) and click a price — Telegram tells you when it's reached.</div> : (
+                <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                  <thead><tr>{["Symbol", "When price goes", "Price", "Distance", "Status", ""].map((h) => <th key={h} style={th}>{h}</th>)}</tr></thead>
+                  <tbody>
+                    {alerts.map((a) => {
+                      const now = nowPrice();
+                      return (
+                        <tr key={a.id} style={{ opacity: a.triggered_at ? 0.6 : 1 }}>
+                          <td style={td}>{a.symbol}</td>
+                          <td style={td}>{a.direction === "above" ? "▲ above" : "▼ below"}</td>
+                          <td style={td}>{fx(a.symbol, a.price)}</td>
+                          <td style={td}>{now != null && !a.triggered_at ? Math.abs(now - a.price).toFixed(dg) : "—"}</td>
+                          <td style={{ ...td, color: a.triggered_at ? UP : "var(--e-gold)" }}>{a.triggered_at ? `Reached ${new Date(a.triggered_at * 1000).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} @ ${fx(a.symbol, a.triggered_price)}` : "Armed"}</td>
+                          <td style={{ ...td, textAlign: "right" }}><span onClick={() => removeAlert(a)} style={btn("#e0463f")}>Delete</span></td>
                         </tr>
                       );
                     })}

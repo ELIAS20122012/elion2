@@ -57,6 +57,7 @@ const ICONS: Record<string, string[]> = {
   arrowdown: ["M12 21l7-8h-4V3H9v10H5z"],
   flag: ["M6 21V3", "M6 4h12l-3 4 3 4H6"],
   magnet: ["M6 3v9a6 6 0 0 0 12 0V3", "M6 8h4", "M14 8h4"],
+  bell: ["M6 16v-5a6 6 0 0 1 12 0v5l2 2H4z", "M10 20a2 2 0 0 0 4 0"],
   stay: ["M14 4l6 6L9 21H3v-6z", "M6 14l4 4", "M17 21h4"],
   lock: ["M6 11h12v9H6z", "M8 11V8a4 4 0 0 1 8 0v3"],
   unlock: ["M6 11h12v9H6z", "M8 11V8a4 4 0 0 1 7.5-2"],
@@ -148,7 +149,7 @@ const GROUPS: Group[] = [
   },
 ];
 
-const HOTKEYS: Record<string, ToolId> = { t: "trend", h: "hline", j: "hray", v: "vline", c: "crossline", f: "fib" };
+const HOTKEYS: Record<string, ToolId> = { t: "trend", h: "hline", j: "hray", v: "vline", c: "crossline", f: "fib", a: "alert" };
 
 const CSS = `
 .tvbar{flex:none;align-self:stretch;width:48px;display:flex;flex-direction:column;align-items:center;background:#0d171b;border-right:1px solid rgba(255,255,255,.06);position:relative;z-index:6;user-select:none}
@@ -245,6 +246,7 @@ export default function DrawToolbar(p: Props) {
         })}
 
         <div className="sep" />
+        <button className={`tb ${p.tool === "alert" ? "on" : ""}`} onClick={() => p.onTool(p.tool === "alert" ? "cursor" : "alert")} title="Add Price Alert (Alt+A) — click a price on the chart; Telegram tells you when it's reached"><Svg name="bell" /></button>
         <button className={`tb ${p.magnet ? "on" : ""}`} onClick={p.onMagnet} title="Magnet Mode: snap to Open/High/Low/Close"><Svg name="magnet" /></button>
         <button className={`tb ${drawState.stay ? "on" : ""}`} onClick={() => drawState.set({ stay: !drawState.stay })} title="Stay in Drawing Mode"><Svg name="stay" /></button>
         <button className={`tb ${drawState.locked ? "on" : ""}`} onClick={() => drawState.set({ locked: !drawState.locked })} title={drawState.locked ? "Unlock All Drawings" : "Lock All Drawings"}><Svg name={drawState.locked ? "lock" : "unlock"} /></button>

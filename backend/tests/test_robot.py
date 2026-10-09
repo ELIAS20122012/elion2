@@ -232,3 +232,27 @@ def test_chart_symbol_is_requested_from_the_ea(client):
     assert client.post("/events/positions", json=pulse, headers=h).json()["feed"] == ""
     client.get("/robot/candles?symbol=EURUSD")
     assert client.post("/events/positions", json=pulse, headers=h).json()["feed"] == "EURUSD"
+
+
+def test_price_alert_fires_once(client, monkeypatch):
+    from journal import notify
+    sent = []
+    monkeypatch.setattr(notify, "send", lambda kind, text: sent.append((kind, text)))
+    up = client.post("/alerts", json={"symbol": "XAUUSD", "price": 4200, "current": 4186}).json()
+    dn = client.post("/alerts", json={"symbol": "XAUUSD", "price": 4150, "current": 4186, "note": "buy zone"}).json()
+    assert up["direction"] == "above" and dn["direction"] == "below"
+    r = client.post("/accounts", json={"name": "MT4", "platform": "mt4", "kind": "manual", "login": "555"})
+    acc = r.json()["id"]
+    h = {"X-API-Key": client.post(f"/accounts/{acc}/robot-key").json()["api_key"]}
+    pulse = lambda bid: {"login": "555", "quotes": [{"symbol": "XAUUSD", "bid": bid, "ask": bid + 0.2}]}
+    client.post("/events/positions", json=pulse(4190), headers=h)
+    assert sent == []
+    client.post("/events/positions", json=pulse(4200.5), headers=h)
+    client.post("/events/positions", json=pulse(4201), headers=h)
+    assert [k for k, _ in sent] == ["alerts"] and "4200" in sent[0][1]
+    lst = client.get("/alerts?symbol=XAUUSD").json()
+    assert {a["id"]: a["triggered_at"] is not None for a in lst} == {up["id"]: True, dn["id"]: False}
+    # dragging re-arms it
+    moved = client.put(f"/alerts/{up['id']}", json={"price": 4210, "current": 4201}).json()
+    assert moved["triggered_at"] is None and moved["direction"] == "above"
+    assert client.delete(f"/alerts/{dn['id']}").status_code == 204
