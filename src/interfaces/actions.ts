@@ -21,6 +21,12 @@ const SAFE: Record<string, (args: string) => boolean> = {
   lot: () => true,
   draw: () => true,
   backup: () => true,
+  screen: () => true,
+  open: () => true,
+  file: () => true,
+  apps: () => true,
+  close: (a) => !/\byes\b/i.test(a), // without "yes" it only asks
+  power: (a) => !/\byes\b/i.test(a), // lock/cancel run; restart/shutdown/sleep only ask
   pc: (a) => !/\b(yes|undo)\b|بله|آره/i.test(a), // report / previews only; the real clean-up needs a tap
 };
 

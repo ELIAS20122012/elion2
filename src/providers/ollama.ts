@@ -5,9 +5,11 @@ export class OllamaProvider implements ExecutionProvider {
   readonly name = "ollama";
   private url: string;
   private model: string;
-  constructor(o: { url?: string; model?: string } = {}) {
+  private system: () => string | null;
+  constructor(o: { url?: string; model?: string; system?: () => string | null } = {}) {
     this.url = o.url ?? "http://127.0.0.1:11434";
     this.model = o.model ?? "qwen2.5:7b";
+    this.system = o.system ?? (() => null);
   }
 
   async health(): Promise<ProviderHealth> {
@@ -29,7 +31,7 @@ export class OllamaProvider implements ExecutionProvider {
       r = await fetch(`${this.url}/api/generate`, {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ model: this.model, prompt: req.prompt, stream: false }),
+        body: JSON.stringify({ model: this.model, prompt: req.prompt, stream: false, ...(this.system() ? { system: this.system() } : {}) }),
         signal: req.signal,
       });
     } catch (e) {

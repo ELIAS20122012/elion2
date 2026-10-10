@@ -5,9 +5,12 @@ export class GeminiApiProvider implements ExecutionProvider {
   readonly name = "gemini";
   private key: () => string | null;
   private model: string;
-  constructor(o: { key: () => string | null; model?: string }) {
+  private system: () => string | null;
+  /** system: the Elias OS persona (CLI agents read it from CLAUDE.md themselves; API models get it here) */
+  constructor(o: { key: () => string | null; model?: string; system?: () => string | null }) {
     this.key = o.key;
     this.model = o.model ?? "gemini-2.5-flash";
+    this.system = o.system ?? (() => null);
   }
 
   async health(): Promise<ProviderHealth> {
@@ -20,7 +23,10 @@ export class GeminiApiProvider implements ExecutionProvider {
     const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${this.model}:generateContent`, {
       method: "POST",
       headers: { "content-type": "application/json", "x-goog-api-key": key },
-      body: JSON.stringify({ contents: [{ role: "user", parts: [{ text: req.prompt }] }] }),
+      body: JSON.stringify({
+        ...(this.system() ? { systemInstruction: { parts: [{ text: this.system() }] } } : {}),
+        contents: [{ role: "user", parts: [{ text: req.prompt }] }],
+      }),
       signal: req.signal,
     });
     const j = (await res.json()) as { candidates?: { content?: { parts?: { text?: string }[] } }[]; error?: { message?: string; status?: string } };

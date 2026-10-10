@@ -38,7 +38,7 @@ test("broken skill files are reported, not fatal", () => {
 test("built-in plugins register sources + brief skill; disabled ones are skipped", async () => {
   const k = mk();
   loadBuiltinPlugins(k, BUILTIN_PLUGINS, tmp(), { disabled: ["google"] });
-  assert.deepEqual(loadedPlugins(k).map((p) => p.name), ["core", "memory", "briefing", "trading", "youtube", "video", "aivideo", "reminders", "appointments", "maintenance", "vault", "mt4", "health", "research", "team", "website", "pc", "skills"]);
+  assert.deepEqual(loadedPlugins(k).map((p) => p.name), ["core", "memory", "briefing", "trading", "youtube", "video", "aivideo", "reminders", "appointments", "maintenance", "vault", "mt4", "health", "research", "team", "website", "pc", "remote", "skills"]);
   assert.ok(k.listContextSources().some((c) => c.name === "tasks:open"));
   assert.ok(!k.listContextSources().some((c) => c.name === "gmail:recent"));
   const t = k.runSkill("brief", "", "cli");

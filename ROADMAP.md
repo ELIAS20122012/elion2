@@ -17,12 +17,14 @@ Legend: [x] done · [ ] open · (P) postponed by Elias — only start when he as
 - [x] "Hey Elion" desktop voice assistant (wake word + Ctrl+Alt+E, /listen, /words vocabulary)
 - [x] Elion Group website agent (/site → draft → sandboxed preview on panel → publish with approval via wrangler)
 - [x] MT4 read-only bridge (/account /trades /draw, risk alerts)
+- [x] Persian speech recognition: local faster-whisper large-v3-turbo (accurate, ~2x audio length); TTS retries
+- [x] Appointments (/termin) with automatic reminders; chat knows date, appointments and recent messages
+- [x] Natural language: the chat agent turns requests into actions; safe ones run, risky ones get a ▶️ button
+- [x] PC control from Telegram: /screen /open /file /apps /close /power (risky ones confirm first)
 - [x] Antigravity CLI (agy) provider: free Gemini via Google login; in the auto chain after codex, first choice for /team gemini
 
 ## Open / next
-- [ ] Persian speech recognition: Gemini transcription (AI Studio free tier or Vertex) with Whisper fallback
 - [ ] Instagram publishing (after Elias sets up the channel) — with approval
-- [ ] Control the PC from Telegram (apps, screenshot, send file, restart)
 - [ ] Mobile PWA for the panel
 - [ ] Personal finance tracker
 

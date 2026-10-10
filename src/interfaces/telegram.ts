@@ -340,7 +340,7 @@ export class TelegramInterface {
           const command = this.kernel.getCommand(cmd.slice(1));
           if (command) {
             try {
-              return this.send(await command.run(args.join(" ")));
+              return this.sendResult(await command.run(args.join(" ")));
             } catch (e) {
               return this.send(`خطا: ${errMsg(e)}`);
             }
@@ -597,6 +597,32 @@ ${ask ? `His request: ${ask}` : "No caption: describe or summarize it usefully. 
   }
 
   /** Speaks a reply as a Telegram voice note (best effort; text was already sent). */
+  /** A command's reply: «<<<PHOTO|FILE path …>>>» marks become attachments, «>>> /cmd» lines become ▶️ buttons. */
+  async sendResult(text: string): Promise<void> {
+    const chat = this.ownerChatId();
+    const files: Array<{ kind: string; path: string }> = [];
+    const clean = text.replace(/<<<(PHOTO|FILE)\s+([\s\S]+?)\s+\1>>>/g, (_m, kind: string, p: string) => (files.push({ kind, path: p.trim() }), "")).trim();
+    const { text: body, actions } = extractActions(clean);
+    const buttons = actions.map((a) => {
+      const key = Math.random().toString(36).slice(2, 10);
+      this.kernel.setKv(`telegram.action.${key}`, a);
+      return [{ text: `▶️ ${a}`.slice(0, 60), callback_data: `run:${key}` }];
+    });
+    if (body || buttons.length) await this.send(body || "👇", buttons.length ? { reply_markup: { inline_keyboard: buttons } } : undefined);
+    for (const f of files) {
+      if (!chat || !fs.existsSync(f.path)) continue;
+      try {
+        const photo = f.kind === "PHOTO" && fs.statSync(f.path).size < 10 * 1024 * 1024;
+        await this.api(photo ? "sendPhoto" : "sendDocument", { chat_id: chat, __file: { field: photo ? "photo" : "document", path: f.path } });
+      } catch (e) {
+        this.kernel.log("telegram.file_failed", errMsg(e), { level: "warn" });
+        await this.send(`فایل فرستاده نشد: ${errMsg(e).slice(0, 150)}`);
+      } finally {
+        if (f.kind === "PHOTO" && path.basename(f.path).startsWith("elias-screen-")) fs.rmSync(f.path, { force: true });
+      }
+    }
+  }
+
   async sendSpoken(text: string): Promise<void> {
     const chat = this.ownerChatId();
     if (!chat || !this.voice?.speak) return;
@@ -712,7 +738,7 @@ ${ask ? `His request: ${ask}` : "No caption: describe or summarize it usefully. 
           for (const a of auto) {
             const [c, ...rest] = a.slice(1).split(/\s+/);
             const cmd = this.kernel.getCommand(c!.toLowerCase());
-            if (cmd) void Promise.resolve(cmd.run(rest.join(" "))).then((r) => this.send(r)).catch((e) => this.send(`خطا: ${errMsg(e)}`));
+            if (cmd) void Promise.resolve(cmd.run(rest.join(" "))).then((r) => this.sendResult(r)).catch((e) => this.send(`خطا: ${errMsg(e)}`));
           }
           const buttons = actions.map((a) => {
             const key = Math.random().toString(36).slice(2, 10);

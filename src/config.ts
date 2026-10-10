@@ -151,6 +151,15 @@ export function writePersona(kernel: Kernel): void {
   for (const f of ["CLAUDE.md", "AGENTS.md"]) fs.writeFileSync(path.join(dir, f), text, "utf8");
 }
 
+/** The live persona (with the list of commands) for API models that cannot read CLAUDE.md themselves. */
+export function personaText(): string | null {
+  try {
+    return fs.readFileSync(path.join(WORKSPACE, "CLAUDE.md"), "utf8");
+  } catch {
+    return null;
+  }
+}
+
 /** Agents run in their own workspace (not the source tree) with a persona file Claude Code reads. */
 export function ensureWorkspace(): string {
   fs.mkdirSync(WORKSPACE, { recursive: true });
@@ -188,8 +197,9 @@ export function createKernel(cfg = loadConfig(), onEvent?: (e: Omit<KernelEvent,
       new GeminiApiProvider({
         key: () => loadSecrets().gemini?.apiKey?.trim() || process.env.GEMINI_API_KEY || null,
         model: cfg.providers?.gemini?.model,
+        system: personaText,
       }),
-      new OllamaProvider(cfg.providers?.ollama ?? {}),
+      new OllamaProvider({ ...(cfg.providers?.ollama ?? {}), system: personaText }),
     ],
     onEvent,
   });

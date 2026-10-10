@@ -5,6 +5,16 @@ Format: date · agent · what was done · state (finished / half-done + how to c
 
 ---
 
+## 2026-10-10 (4) · Claude (Cowork)
+- PC control from Telegram: src/plugins/remote.ts — /screen (screenshot as photo), /open <app|link> (allow-list +
+  Persian names, Start-Process with quoting), /file <name> (searches Desktop/Documents/Downloads/Pictures/Videos/Music/
+  OneDrive, never secrets/keys), /apps, /close <app> and /power restart|shutdown|sleep (ask with a ▶️ "yes" button
+  first; lock/cancel act at once). Command replies now support «<<<PHOTO|FILE path …>>>» attachments and ▶️ buttons
+  (TelegramInterface.sendResult).
+- Gemini API + Ollama now get the live persona (data/workspace/CLAUDE.md) as system prompt, so natural-language
+  actions keep working when Claude/Codex are out of quota.
+- State: finished, tests green.
+
 ## 2026-10-10 (3) · Claude (Cowork)
 - Telegram voice fixed. STT: faster-whisper "small" misheard most Persian words ("ایک گوزارش از کارار…");
   default is now large-v3-turbo (int8, CPU): exact on a test sentence, ~2x audio length (9 s → 18 s).
