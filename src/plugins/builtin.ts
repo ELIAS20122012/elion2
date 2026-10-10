@@ -58,7 +58,13 @@ export const briefingPlugin: Plugin = {
   name: "briefing",
   description: "Morning briefing skill (/brief)",
   setup({ kernel }) {
-    kernel.registerSkill({ name: "brief", description: "گزارش صبح (تقویم + ایمیل + کارها)", plugin: "briefing", build: () => briefingTask() });
+    kernel.registerSkill({
+      name: "brief",
+      description: "گزارش صبح (تقویم + همه‌ی جیمیل‌ها + کارها)",
+      plugin: "briefing",
+      // the PC agent (when loaded) reads every Gmail account in the browser; otherwise the Google API account only
+      build: () => briefingTask({ agent: kernel.listProviders().some((p) => p.name === "pc-agent") ? "pc-agent" : undefined }),
+    });
   },
 };
 

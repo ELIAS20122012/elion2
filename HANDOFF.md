@@ -5,6 +5,13 @@ Format: date · agent · what was done · state (finished / half-done + how to c
 
 ---
 
+## 2026-10-10 (6) · Claude (Cowork)
+- Morning briefing now covers every Gmail account: with the PC agent loaded, /brief and the daily-briefing schedule
+  run on "pc-agent", which reads each signed-in account in the agent Chrome profile (read-only, Spam/Promotions
+  ignored, emails tagged by account). agent.ts rebuilds an older stored daily-briefing template once (same cron).
+- Both accounts (elias.farahanii, elias.trade.f) are signed in to the agent profile (checked 2026-10-10).
+- State: finished, tests green.
+
 ## 2026-10-10 (5) · Claude (Cowork)
 - PC agent ("do anything"): src/plugins/agent.ts. Free-form PC/web requests → `/agent <request>` (the chat persona
   routes them there) → second Claude Code instance "pc-agent" (cwd data/agent, its own CLAUDE.md rules, tools:

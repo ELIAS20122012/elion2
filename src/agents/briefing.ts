@@ -3,7 +3,27 @@ import type { TaskInput } from "../kernel/types.ts";
 
 export const BRIEFING_SCHEDULE = "daily-briefing";
 
-export function briefingTask(): TaskInput {
+/** With the PC agent available, the briefing reads EVERY Gmail account in the browser (agent Chrome profile),
+ *  not only the one connected through the Google API. */
+export function briefingTask(o: { agent?: string } = {}): TaskInput {
+  const base = briefingBase();
+  if (!o.agent) return base;
+  return {
+    ...base,
+    provider: o.agent,
+    capabilities: [...(base.capabilities ?? []), "pc:agent"],
+    timeoutMs: 15 * 60_000,
+    prompt: `${base.prompt}
+
+Before writing: in the browser, open the Gmail inbox of EVERY Google account signed in to your profile
+(mail.google.com/mail/u/0/, /u/1/, …) and look at the emails received in the last 24 hours (sender, subject, preview —
+open an email only if the preview is not enough). Ignore Spam and Promotions. In 📧 mark each email with its account
+(short name before the @). The gmail:recent DATA below may repeat one account — do not list an email twice.
+This is read-only: do not reply, archive, delete, mark or click links in any email.`,
+  };
+}
+
+function briefingBase(): TaskInput {
   return {
     title: "گزارش صبح",
     capabilities: ["read:email", "read:calendar", "read:tasks"],

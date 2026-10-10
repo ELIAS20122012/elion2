@@ -94,3 +94,21 @@ test("both Google accounts are named in the agent rules", () => {
   const plain = fs.readFileSync(path.join(mk().home, "data", "agent", "CLAUDE.md"), "utf8");
   assert.doesNotMatch(plain, /Google accounts signed in/);
 });
+
+test("briefing reads every Gmail account through the agent; the stored daily schedule is rebuilt once", async () => {
+  const { BUILTIN_PLUGINS } = await import("../src/plugins/builtin.ts");
+  const { loadBuiltinPlugins } = await import("../src/plugins/host.ts");
+  const { briefingTask } = await import("../src/agents/briefing.ts");
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), "brief-"));
+  const k = new Kernel({ dbPath: ":memory:", providers: [], defaultProvider: "x", retryBaseMs: 0, policy: DEFAULT_POLICY });
+  k.addSchedule("daily-briefing", "0 8 * * *", briefingTask()); // old template, before the agent
+  loadBuiltinPlugins(k, BUILTIN_PLUGINS, home, { disabled: ["google"] });
+  const s = k.getSchedule("daily-briefing")!;
+  assert.equal(s.cron, "0 8 * * *");
+  assert.equal(s.template.provider, AGENT_PROVIDER);
+  assert.match(s.template.prompt, /EVERY Google account/);
+  assert.ok(s.template.capabilities!.includes("pc:agent"));
+  const t = k.runSkill("brief", "", "cli");
+  assert.equal(t.provider, AGENT_PROVIDER);
+  assert.equal(briefingTask().provider, undefined); // without the agent: unchanged
+});

@@ -110,6 +110,16 @@ export function agentPlugin(o: { command?: string; model?: string; open?: (url: 
         const context = ["time:now", "memory:notes"].filter((n) => have.has(n));
         return context.length ? { capabilities: ["pc:agent", "read:memory"], context } : { capabilities: ["pc:agent"] };
       };
+      // the stored daily briefing was built before the agent existed: rebuild it so it reads every Gmail account
+      const sched = kernel.getSchedule("daily-briefing");
+      const brief = kernel.getSkill("brief");
+      if (sched && brief && sched.template.provider !== AGENT_PROVIDER) {
+        const t = brief.build("");
+        if (t.provider === AGENT_PROVIDER) {
+          kernel.removeSchedule(sched.name);
+          kernel.addSchedule(sched.name, sched.cron, t, sched.enabled);
+        }
+      }
       kernel.registerCommand({
         name: "agent",
         description: "هر کاری روی کامپیوتر/وب (/agent درخواست · /agent login سایت)",
