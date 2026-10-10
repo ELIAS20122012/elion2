@@ -5,6 +5,13 @@ Format: date · agent · what was done · state (finished / half-done + how to c
 
 ---
 
+## 2026-10-10 (10) · Claude (Cowork)
+- AI lab picks the model: every /compare is tagged with a kind (code, writing, ideas, translate, analysis, general —
+  keyword heuristic `categorize`, no AI call); wins/results also go to kv lab.cats per kind. When a model has ≥2 wins
+  and ≥60 % of a kind's wins (`bestFor`), the "auto" provider tries it first for requests of that kind
+  (FallbackProvider.setPreference/orderFor; the normal chain follows if it fails). /lab auto on|off, /lab stats shows routes.
+- State: finished, tests green.
+
 ## 2026-10-10 (9) · Claude (Cowork)
 - AI lab v1: src/plugins/lab.ts. /compare <question> runs it on every healthy model (claude-code, codex, antigravity,
   gemini-cli, gemini API, ollama — never Vertex) as internal tasks "🧪 lab:<id>:<provider>"; once all finish one report

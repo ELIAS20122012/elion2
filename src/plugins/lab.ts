@@ -13,8 +13,30 @@ const LABEL: Record<string, string> = {
   "claude-code": "Claude", codex: "ChatGPT (Codex)", antigravity: "Gemini (Antigravity)", "gemini-cli": "Gemini CLI", gemini: "Gemini API", ollama: "Ollama (local)",
 };
 
-interface LabRun { id: string; prompt: string; providers: string[]; tasks: Record<string, string>; created: string; reported?: boolean; order?: string[] }
-interface Stat { runs: number; ok: number; ms: number; wins: number }
+/** Rough kind of request, from keywords (no AI call): the lab learns the best model per kind. */
+export const CATEGORIES = ["code", "writing", "ideas", "translate", "analysis", "general"] as const;
+export type Category = (typeof CATEGORIES)[number];
+export const CAT_LABEL: Record<Category, string> = { code: "کد", writing: "نوشتن", ideas: "ایده", translate: "ترجمه", analysis: "تحلیل", general: "عمومی" };
+export function categorize(text: string): Category {
+  const t = text.split("\n\n---\nDATA")[0]!.toLowerCase();
+  if (/ترجمه|translat|übersetz|به انگلیسی|به آلمانی|به فارسی|in english|auf deutsch/.test(t)) return "translate";
+  if (/\bcode\b|(^|\s)کد(\s|$)|اسکریپت|برنامه‌?نویسی|باگ|\bbug|python|javascript|typescript|\bsql\b|function|regex|mql|\bea\b/.test(t)) return "code";
+  if (/ایده|پیشنهاد بده|اسم |عنوان|\bidea|brainstorm|name for|خلاق/.test(t)) return "ideas";
+  if (/بنویس|متن|کپشن|ایمیل|نامه|پیام|پست|مقاله|\bwrite\b|caption|\bemail\b|\bpost\b|schreib/.test(t)) return "writing";
+  if (/تحلیل|مقایسه|چرا|بررسی|توضیح بده|analy|compare|explain|why |pros and cons|بهتره/.test(t)) return "analysis";
+  return "general";
+}
+
+/** The model the lab trusts for this kind of request: ≥2 wins and ≥60 % of the wins of that kind. */
+export function bestFor(cats: Record<string, Record<string, Stat>>, cat: Category): string | null {
+  const rows = Object.entries(cats[cat] ?? {});
+  const total = rows.reduce((a, [, s]) => a + s.wins, 0);
+  const top = rows.sort((a, b) => b[1].wins - a[1].wins)[0];
+  return top && top[1].wins >= 2 && top[1].wins / total >= 0.6 ? top[0] : null;
+}
+
+interface LabRun { id: string; prompt: string; category?: Category; providers: string[]; tasks: Record<string, string>; created: string; reported?: boolean; order?: string[] }
+export interface Stat { runs: number; ok: number; ms: number; wins: number }
 
 const getJson = <T>(k: Kernel, key: string, dflt: T): T => {
   try {
@@ -82,16 +104,20 @@ export const labPlugin: Plugin = {
       if (!tasks.every((x) => x && ["succeeded", "failed", "cancelled"].includes(x.status))) return;
       // stats
       const stats = getJson<Record<string, Stat>>(kernel, "lab.stats", {});
+      const cats = getJson<Record<string, Record<string, Stat>>>(kernel, "lab.cats", {});
+      const cat = run.category ?? categorize(run.prompt);
       for (const p of run.providers) {
         const x = kernel.getTask(run.tasks[p]!);
-        const s = (stats[p] ??= { runs: 0, ok: 0, ms: 0, wins: 0 });
-        s.runs++;
-        if (x?.status === "succeeded" && x.provider === p) { // a fallback to another model is not this model's answer
-          s.ok++;
-          s.ms += kernel.listRuns(x.id).at(-1)?.durationMs ?? 0;
+        for (const s of [(stats[p] ??= { runs: 0, ok: 0, ms: 0, wins: 0 }), ((cats[cat] ??= {})[p] ??= { runs: 0, ok: 0, ms: 0, wins: 0 })]) {
+          s.runs++;
+          if (x?.status === "succeeded" && x.provider === p) { // a fallback to another model is not this model's answer
+            s.ok++;
+            s.ms += kernel.listRuns(x.id).at(-1)?.durationMs ?? 0;
+          }
         }
       }
       kernel.setKv("lab.stats", JSON.stringify(stats));
+      kernel.setKv("lab.cats", JSON.stringify(cats));
       const r = report(kernel, run);
       kernel.setKv(runKey(id), JSON.stringify({ ...run, reported: true, order: r.order }));
       kernel.setKv("lab.last", id);
@@ -120,7 +146,7 @@ export const labPlugin: Plugin = {
             timeoutMs: 5 * 60_000,
           }).id;
         }
-        kernel.setKv(runKey(id), JSON.stringify({ id, prompt, providers, tasks, created: new Date().toISOString() } satisfies LabRun));
+        kernel.setKv(runKey(id), JSON.stringify({ id, prompt, category: categorize(prompt), providers, tasks, created: new Date().toISOString() } satisfies LabRun));
         return `🧪 سؤال را به ${providers.length} مدل دادم: ${providers.map((p) => LABEL[p] ?? p).join("، ")}.\nوقتی همه جواب دادند، مقایسه را می‌فرستم.`;
       },
     });
@@ -139,14 +165,38 @@ export const labPlugin: Plugin = {
           if (!run || !p) return "اول یک مقایسه انجام بده (/compare …)، بعد شماره‌ی بهترین جواب را بنویس.";
           (stats[p] ??= { runs: 0, ok: 0, ms: 0, wins: 0 }).wins++;
           kernel.setKv("lab.stats", JSON.stringify(stats));
-          return `🏆 ثبت شد: ${LABEL[p] ?? p} برنده‌ی این مقایسه.`;
+          const cats = getJson<Record<string, Record<string, Stat>>>(kernel, "lab.cats", {});
+          const cat = run.category ?? categorize(run.prompt);
+          ((cats[cat] ??= {})[p] ??= { runs: 0, ok: 0, ms: 0, wins: 0 }).wins++;
+          kernel.setKv("lab.cats", JSON.stringify(cats));
+          const best = bestFor(cats, cat);
+          return `🏆 ثبت شد: ${LABEL[p] ?? p} برنده‌ی این مقایسه (${CAT_LABEL[cat]}).${best ? `\nاز این به بعد کارهای «${CAT_LABEL[cat]}» اول به ${LABEL[best] ?? best} می‌رود.` : ""}`;
+        }
+        if (cmd === "auto") {
+          if (n === "off" || n === "on") kernel.setKv("lab.routing", n);
+          return kernel.getKv("lab.routing") === "off" ? "انتخاب خودکار مدل خاموش است (/lab auto on)." : "انتخاب خودکار مدل روشن است (/lab auto off).";
         }
         const rows = Object.entries(stats).sort((a, b) => b[1].wins - a[1].wins || b[1].ok - a[1].ok);
         if (!rows.length) return "هنوز مقایسه‌ای نشده. مثال: /compare یک اسم برای کانال یوتیوب پیشنهاد بده";
+        const cats = getJson<Record<string, Record<string, Stat>>>(kernel, "lab.cats", {});
+        const routes = CATEGORIES.map((c) => [c, bestFor(cats, c)] as const).filter(([, b]) => b);
+        const routing = kernel.getKv("lab.routing") === "off"
+          ? "\n\nانتخاب خودکار مدل: خاموش"
+          : routes.length
+            ? `\n\n🎯 انتخاب خودکار:\n${routes.map(([c, b]) => `• ${CAT_LABEL[c]} → ${LABEL[b!] ?? b}`).join("\n")}`
+            : "\n\n🎯 انتخاب خودکار: هنوز داده‌ی کافی نیست (برای هر نوع کار حداقل ۲ برد لازم است).";
         return `🧪 آمار مدل‌ها\n${rows
           .map(([p, s]) => `• ${LABEL[p] ?? p}: ${s.wins} برد · ${s.ok}/${s.runs} موفق · میانگین ${s.ok ? (s.ms / s.ok / 1000).toFixed(0) : "—"} ثانیه`)
-          .join("\n")}`;
+          .join("\n")}${routing}`;
       },
+    });
+
+    // the "auto" provider asks the lab which model to try first for this kind of request
+    const auto = kernel.listProviders().find((p) => p.name === "auto") as { setPreference?: (fn: (req: { prompt: string }) => string[] | null) => void } | undefined;
+    auto?.setPreference?.((req) => {
+      if (kernel.getKv("lab.routing") === "off") return null;
+      const best = bestFor(getJson<Record<string, Record<string, Stat>>>(kernel, "lab.cats", {}), categorize(req.prompt));
+      return best ? [best] : null;
     });
   },
 };

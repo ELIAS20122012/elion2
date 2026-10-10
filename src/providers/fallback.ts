@@ -49,9 +49,27 @@ export class FallbackProvider implements ExecutionProvider {
     return { ok, detail: parts.join(" → ") };
   }
 
+  /** Optional per-request preference (the AI lab's "best model for this kind of task"); those go first. */
+  private prefer: ((req: ExecutionRequest) => string[] | null) | null = null;
+  setPreference(fn: ((req: ExecutionRequest) => string[] | null) | null): void {
+    this.prefer = fn;
+  }
+
+  /** The chain for this request: preferred providers first (only ones in the chain), then the rest in order. */
+  orderFor(req: ExecutionRequest): ExecutionProvider[] {
+    let first: string[] = [];
+    try {
+      first = this.prefer?.(req) ?? [];
+    } catch {
+      first = [];
+    }
+    const pick = first.map((n) => this.chain.find((p) => p.name === n)).filter((p): p is ExecutionProvider => !!p);
+    return [...pick, ...this.chain.filter((p) => !pick.includes(p))];
+  }
+
   async execute(req: ExecutionRequest): Promise<ExecutionResult> {
     const errors: string[] = [];
-    for (const p of this.chain) {
+    for (const p of this.orderFor(req)) {
       if (this.coolingUntil(p.name) > this.now()) {
         errors.push(`${p.name}: cooling down`);
         continue;

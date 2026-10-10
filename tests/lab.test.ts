@@ -52,3 +52,33 @@ test("an answer that fell back to another model does not count for the model ask
   assert.deepEqual(r.order, []);
   assert.match(r.text, /✗ Gemini API · در دسترس نبود/);
 });
+
+test("categories, best model per kind, and the auto provider tries it first", async () => {
+  const { categorize, bestFor } = await import("../src/plugins/lab.ts");
+  const { FallbackProvider } = await import("../src/providers/fallback.ts");
+  assert.equal(categorize("یک اسکریپت python برای مرتب کردن فایل‌ها بنویس"), "code");
+  assert.equal(categorize("کدام بهتره؟ مقایسه کن"), "analysis");
+  assert.equal(categorize("این متن رو به آلمانی ترجمه کن"), "translate");
+  assert.equal(categorize("یک ایده برای ویدیو"), "ideas");
+  assert.equal(categorize("یک ایمیل برای صاحبخانه بنویس"), "writing");
+  assert.equal(categorize("سلام"), "general");
+  const S = (wins: number) => ({ runs: wins, ok: wins, ms: 0, wins });
+  assert.equal(bestFor({ ideas: { codex: S(2), "claude-code": S(1) } }, "ideas"), "codex");
+  assert.equal(bestFor({ ideas: { codex: S(1) } }, "ideas"), null); // not enough evidence
+  assert.equal(bestFor({ ideas: { codex: S(2), "claude-code": S(2) } }, "ideas"), null); // no clear winner
+
+  const used: string[] = [];
+  const mk = (name: string) => ({ name, health: async () => ({ ok: true, detail: "" }), execute: async () => (used.push(name), { output: name }) });
+  const auto = new FallbackProvider([mk("claude-code"), mk("codex")] as any, { get: () => null, set: () => {} });
+  const k = new Kernel({ dbPath: ":memory:", providers: [auto as any, mk("claude-code") as any, mk("codex") as any], defaultProvider: "auto", retryBaseMs: 0 });
+  labPlugin.setup({ kernel: k, home: "", options: {} });
+  k.setKv("lab.cats", JSON.stringify({ ideas: { codex: S(3) } }));
+  const sig = new AbortController().signal;
+  await auto.execute({ taskId: "t", runId: "r", attempt: 1, prompt: "یک ایده برای اسم کانال", signal: sig });
+  await auto.execute({ taskId: "t", runId: "r", attempt: 1, prompt: "سلام", signal: sig });
+  assert.deepEqual(used, ["codex", "claude-code"]);
+  k.setKv("lab.routing", "off");
+  await auto.execute({ taskId: "t", runId: "r", attempt: 1, prompt: "یک ایده", signal: sig });
+  assert.equal(used.at(-1), "claude-code");
+  assert.match(await k.getCommand("lab")!.run("auto on"), /روشن/);
+});
