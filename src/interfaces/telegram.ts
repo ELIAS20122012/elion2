@@ -10,6 +10,7 @@ import fs from "node:fs";
 import path from "node:path";
 import type { Transcriber } from "../voice/whisper.ts";
 import { Appointments, isAppointmentQuestion, parseAppointment } from "../plugins/appointments.ts";
+import { isSafeAction } from "./actions.ts";
 import { isVideoRequest } from "../plugins/aivideo.ts";
 import { extractMarks, imageSize, type Level } from "../voice/marks.ts";
 
@@ -705,8 +706,8 @@ ${ask ? `His request: ${ask}` : "No caption: describe or summarize it usefully. 
             if (marked.levels.length) void this.sendMarked(markImg, marked.levels);
           }
           const { text: body, actions: all } = extractActions(marked.text);
-          // safe local actions (a reminder, an appointment) are done right away instead of waiting for a ▶️ tap
-          const auto = all.filter((a) => /^\/(remind|termin)\s/i.test(a));
+          // safe actions run right away (Elias just talks, no commands); risky ones still wait for a ▶️ tap
+          const auto = all.filter(isSafeAction);
           const actions = all.filter((a) => !auto.includes(a));
           for (const a of auto) {
             const [c, ...rest] = a.slice(1).split(/\s+/);

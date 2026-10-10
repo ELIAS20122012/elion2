@@ -165,11 +165,11 @@ test("AI answer with '>>> /cmd' line → ▶️ button → tapping runs the comm
   const k = new Kernel({ dbPath: ":memory:", providers: [new EchoProvider()], defaultProvider: "echo", retryBaseMs: 0 });
   let ran = "", researched = "";
   k.registerCommand({ name: "remind", description: "", plugin: "t", run: (a) => ((ran = a), "ok") });
-  k.registerCommand({ name: "research", description: "", plugin: "t", run: (a) => ((researched = a), "ok") });
+  k.registerCommand({ name: "yt", description: "", plugin: "t", run: (a) => ((researched = a), "ok") });
   const sent: any[] = [];
   const tg = new TelegramInterface(k, async (m: string, p: any) => (sent.push({ m, ...p }), m === "getUpdates" ? [] : {}));
   k.setKv("telegram.owner_chat_id", "42");
-  const t = k.createTask({ title: "x", prompt: "باشه\n>>> /remind 2h چای\n>>> /research طلا", source: "telegram" });
+  const t = k.createTask({ title: "x", prompt: "باشه\n>>> /remind 2h چای\n>>> /yt 3", source: "telegram" });
   k.addEventSink((e) => tg.notify(e));
   await k.processNext();
   await new Promise((r) => setTimeout(r, 50));
@@ -179,7 +179,7 @@ test("AI answer with '>>> /cmd' line → ▶️ button → tapping runs the comm
   assert.equal(msg.reply_markup.inline_keyboard.length, 1);
   const data = msg.reply_markup.inline_keyboard[0][0].callback_data;
   await (tg as any).handleCallback({ id: "c", data, message: { chat: { id: 42 } }, from: { id: 42 } });
-  assert.equal(researched, "طلا");
+  assert.equal(researched, "3"); // publishing waits for the tap
   void t;
 });
 

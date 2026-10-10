@@ -5,6 +5,13 @@ Format: date · agent · what was done · state (finished / half-done + how to c
 
 ---
 
+## 2026-10-10 (2) · Claude (Cowork)
+- Natural language instead of commands: the chat persona now tells the agent to turn any request into
+  `>>> /command` lines; src/interfaces/actions.ts decides which run by themselves (reminders, appointments,
+  /remember, notes, research, team, reports, lot, PC report/previews) and which still need a ▶️ tap
+  (delete, publish, videos, paid, /pc … yes|undo, /termin del, /forget). Lasting facts → automatic /remember.
+- State: finished, tests green. Roll back: make isSafeAction return false (old button behaviour).
+
 ## 2026-10-10 · Claude (Cowork)
 - Appointments: src/plugins/appointments.ts. "15.10.2026 با AMS ترمین دارم یک روز قبل یادم بنداز" is saved by Elias OS
   itself (kv "appointments") with reminder tasks (asked offset or day before 09:00, plus the day itself 08:00 / 2 h before).
