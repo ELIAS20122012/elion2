@@ -5,6 +5,15 @@ Format: date · agent · what was done · state (finished / half-done + how to c
 
 ---
 
+## 2026-10-10 (8) · Claude (Cowork)
+- Evening review + smart memory: src/plugins/evening.ts. Schedules: evening-review 22:00 (source "review", /review),
+  memory-learn 22:15 (reads chat:day, saves new lasting facts with « ⟨auto YYYY-MM-DD⟩», tells Elias; /memory review,
+  /forget N), memory-cleanup Sunday 21:00 (proposal only; /memory apply replaces memory.md, keeps memory.md.bak).
+  New context source chat:day. memory.ts exports writeNotes.
+- graphify (pip graphifyy + `graphify install` → Claude skill) installed; the PC agent may use skills ("Skill" tool),
+  e.g. "/graphify <folder>" for a knowledge graph.
+- State: finished, tests green.
+
 ## 2026-10-10 (7) · Claude (Cowork)
 - Appointments → Google Calendar: when the PC agent is loaded, every new appointment queues a pc-agent task that
   opens a prefilled Calendar "new event" link (account u/N, plugins.options.appointments.calendarAccount, default 0)

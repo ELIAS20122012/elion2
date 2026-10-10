@@ -21,6 +21,8 @@ Legend: [x] done · [ ] open · (P) postponed by Elias — only start when he as
 - [x] Appointments (/termin) with automatic reminders; chat knows date, appointments and recent messages
 - [x] Natural language: the chat agent turns requests into actions; safe ones run, risky ones get a ▶️ button
 - [x] PC control from Telegram: /screen /open /file /apps /close /power (risky ones confirm first)
+- [x] Evening review 22:00 + smart memory (learns lasting facts from chats nightly, weekly cleanup with approval)
+- [x] graphify knowledge graphs via the PC agent
 - [x] PC agent: any PC/web request in plain words (/agent) — shell + browser in the agent Chrome profile, approvals for risky steps
 - [x] Antigravity CLI (agy) provider: free Gemini via Google login; in the auto chain after codex, first choice for /team gemini
 
@@ -32,7 +34,6 @@ Legend: [x] done · [ ] open · (P) postponed by Elias — only start when he as
 ## Postponed by Elias (P)
 - (P) AI video / Mini Rescue / Shorts — switched off 2026-10-08 (quality too low, wasted tokens); plugins disabled in config
 - (P) Daily planner & goals (/goal, 08:00 plan, 22:00 check-in, weekly review)
-- (P) Automatic smart memory (learns from chats, /memory review)
 - (P) Email assistant (drafts, send only with approval)
 - (P) MT4 natural-language chart drawing (EA exports candles)
 - (P) Trading extras: economic news calendar, trade journal analysis

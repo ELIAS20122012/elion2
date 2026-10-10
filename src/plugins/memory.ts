@@ -13,7 +13,7 @@ export function readNotes(file: string): string[] {
   return fs.readFileSync(file, "utf8").split(/\r?\n/).filter((l) => l.startsWith("- ")).map((l) => l.slice(2).trim());
 }
 
-function writeNotes(file: string, notes: string[]): void {
+export function writeNotes(file: string, notes: string[]): void {
   fs.mkdirSync(path.dirname(file), { recursive: true });
   fs.writeFileSync(file, `# Elias OS memory\n\n${notes.map((n) => `- ${n}`).join("\n")}\n`, "utf8");
 }
