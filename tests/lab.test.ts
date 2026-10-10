@@ -42,3 +42,13 @@ test("compare needs at least two working models", async () => {
   labPlugin.setup({ kernel: k, home: "", options: {} });
   assert.match(await k.getCommand("compare")!.run("سلام دنیا"), /حداقل دو مدل/);
 });
+
+test("an answer that fell back to another model does not count for the model asked", async () => {
+  const { report } = await import("../src/plugins/lab.ts");
+  const k = new Kernel({ dbPath: ":memory:", providers: [prov("claude-code", true, "C")], defaultProvider: "claude-code", retryBaseMs: 0 });
+  const t = k.createTask({ title: "🧪 lab:x:gemini", prompt: "q", provider: "claude-code", source: "internal" });
+  k.db.prepare("UPDATE tasks SET status='succeeded', result='C: q' WHERE id=?").run(t.id);
+  const r = report(k, { id: "x", prompt: "q", providers: ["gemini"], tasks: { gemini: t.id }, created: "" });
+  assert.deepEqual(r.order, []);
+  assert.match(r.text, /✗ Gemini API · در دسترس نبود/);
+});

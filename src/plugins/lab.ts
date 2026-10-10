@@ -48,10 +48,12 @@ export function report(k: Kernel, run: LabRun): { text: string; order: string[] 
     const t = k.getTask(run.tasks[p]!);
     const r = t ? k.listRuns(t.id).at(-1) : undefined;
     const secs = r?.durationMs != null ? `${(r.durationMs / 1000).toFixed(0)}s` : "—";
-    if (t?.status === "succeeded") {
+    if (t?.status === "succeeded" && t.provider === p) {
       order.push(p);
       const ans = (t.result ?? "").trim();
       parts.push(`${order.length}. ${LABEL[p] ?? p} · ⏱ ${secs} · ${ans.length} حرف\n${ans.length > 700 ? ans.slice(0, 700) + " …" : ans}`);
+    } else if (t?.status === "succeeded") {
+      parts.push(`✗ ${LABEL[p] ?? p} · در دسترس نبود (Elias OS به مدل دیگری رفت؛ این جواب حساب نمی‌شود)`);
     } else {
       parts.push(`✗ ${LABEL[p] ?? p} · ${t?.failureKind ?? t?.status ?? "?"}: ${(t?.error ?? "").slice(0, 120)}`);
     }
@@ -84,7 +86,7 @@ export const labPlugin: Plugin = {
         const x = kernel.getTask(run.tasks[p]!);
         const s = (stats[p] ??= { runs: 0, ok: 0, ms: 0, wins: 0 });
         s.runs++;
-        if (x?.status === "succeeded") {
+        if (x?.status === "succeeded" && x.provider === p) { // a fallback to another model is not this model's answer
           s.ok++;
           s.ms += kernel.listRuns(x.id).at(-1)?.durationMs ?? 0;
         }
