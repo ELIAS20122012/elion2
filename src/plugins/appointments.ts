@@ -18,6 +18,26 @@ export interface Appointment {
   text: string;
   reminders: string[]; // queued reminder task ids
   createdAt: string;
+  /** Google Calendar copy, made by the PC agent in the browser */
+  gcal?: "queued" | "removed";
+}
+
+const AGENT = "pc-agent";
+const ymd = (date: string) => date.replace(/-/g, "");
+
+/** Google Calendar "new event" link with everything filled in — the agent only has to press Save. */
+export function gcalLink(a: Pick<Appointment, "date" | "time" | "text">, account = 0): string {
+  let dates: string;
+  if (a.time) {
+    const [h, m] = a.time.split(":").map(Number);
+    const end = `${pad(Math.min(23, h! + 1))}${pad(h! + 1 > 23 ? 59 : m!)}`;
+    dates = `${ymd(a.date)}T${pad(h!)}${pad(m!)}00/${ymd(a.date)}T${end}00`;
+  } else {
+    const [y, mo, d] = a.date.split("-").map(Number);
+    dates = `${ymd(a.date)}/${iso(new Date(y!, mo! - 1, d! + 1)).replace(/-/g, "")}`;
+  }
+  const q = new URLSearchParams({ text: a.text, dates, ctz: "Europe/Vienna", details: "Elias OS" });
+  return `https://calendar.google.com/calendar/u/${account}/r/eventedit?${q.toString()}`;
 }
 
 const KEYWORDS = /(ترمین|termin|قرار|نوبت|وقت\s*(دکتر|دندان|سفارت)|appointment|meeting|مصاحبه|interview|جلسه|مراجعه|amt|behörde)/i;
@@ -112,9 +132,49 @@ const faDate = (a: Appointment) => {
 export class Appointments {
   private kernel: Kernel;
   private now: () => Date;
+  /** which signed-in Google account's calendar gets the copy (mail/u/N order in the agent profile) */
+  static calendarAccount = 0;
   constructor(kernel: Kernel, now: () => Date = () => new Date()) {
     this.kernel = kernel;
     this.now = now;
+  }
+
+  private hasAgent(): boolean {
+    return this.kernel.listProviders().some((p) => p.name === AGENT);
+  }
+
+  /** Elias asked for this appointment, so adding (or removing) this ONE event is already approved. */
+  private calendarTask(a: Appointment, remove = false): void {
+    const when = `${a.date}${a.time ? ` ${a.time}` : " (all day)"}`;
+    this.kernel.createTask({
+      title: remove ? `📅 حذف از Google Calendar: ${a.text}`.slice(0, 60) : `📅 Google Calendar: ${a.text}`.slice(0, 60),
+      prompt: remove
+        ? `Elias APPROVED removing ONE Google Calendar event (account u/${Appointments.calendarAccount}): "${a.text}" on ${when}, created by Elias OS. Open https://calendar.google.com/calendar/u/${Appointments.calendarAccount}/r/day/${a.date.replace(/-/g, "/")}, delete only that event (if it is not there, do nothing). Answer in one short Persian line.`
+        : `Elias APPROVED adding ONE event to his Google Calendar (account u/${Appointments.calendarAccount}): "${a.text}" on ${when}.\nOpen this prefilled link and press Save: ${gcalLink(a, Appointments.calendarAccount)}\nIf the same event already exists that day, do not add it again. No guests, no invitations, change nothing else. Answer in one short Persian line (e.g. «📅 در Google Calendar ثبت شد»).`,
+      provider: AGENT,
+      source: "telegram",
+      capabilities: ["pc:agent"],
+      verify: { type: "non_empty" },
+      maxAttempts: 1,
+      timeoutMs: 10 * 60_000,
+    });
+  }
+
+  /** Copies upcoming appointments that have no Google Calendar event yet. */
+  syncCalendar(): number {
+    if (!this.hasAgent()) return 0;
+    const list = this.all();
+    const today = iso(this.now());
+    let n = 0;
+    for (const a of list) {
+      if (a.date >= today && !a.gcal) {
+        this.calendarTask(a);
+        a.gcal = "queued";
+        n++;
+      }
+    }
+    if (n) this.save(list);
+    return n;
   }
 
   all(): Appointment[] {
@@ -156,6 +216,10 @@ export class Appointments {
       });
       appt.reminders.push(task.id);
     }
+    if (this.hasAgent()) {
+      this.calendarTask(appt);
+      appt.gcal = "queued";
+    }
     this.save([...list, appt]);
     this.kernel.log("appointment.added", `${date} ${time ?? ""} ${p.text}`.slice(0, 120));
     return { appt, reminders: times, duplicate: false };
@@ -172,6 +236,7 @@ export class Appointments {
         /* already fired */
       }
     }
+    if (a.gcal === "queued" && this.hasAgent()) this.calendarTask(a, true);
     this.save(this.all().filter((x) => x.id !== a.id));
     return a;
   }
@@ -184,7 +249,7 @@ export class Appointments {
   confirmText(r: { appt: Appointment; reminders: Date[]; duplicate: boolean }): string {
     if (r.duplicate) return `این ترمین قبلاً ثبت شده:\n📅 ${faDate(r.appt)} — ${r.appt.text}`;
     const rem = r.reminders.map((d) => `⏰ ${d.toLocaleString("fa-IR", { weekday: "long", day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" })}`);
-    return [`✅ ترمین ثبت شد:\n📅 ${faDate(r.appt)} — ${r.appt.text}`, rem.length ? `یادآوری:\n${rem.join("\n")}` : "", "لیست: /termin · حذف: /termin del شماره"]
+    return [`✅ ترمین ثبت شد:\n📅 ${faDate(r.appt)} — ${r.appt.text}`, rem.length ? `یادآوری:\n${rem.join("\n")}` : "", r.appt.gcal === "queued" ? "📅 در Google Calendar هم ثبت می‌شود." : "", "لیست: /termin · حذف: /termin del شماره"]
       .filter(Boolean)
       .join("\n\n");
   }
@@ -193,7 +258,8 @@ export class Appointments {
 export const appointmentsPlugin: Plugin = {
   name: "appointments",
   description: "Appointments with automatic reminders: /termin, appointments:upcoming, time:now, chat:recent",
-  setup({ kernel }) {
+  setup({ kernel, options }) {
+    Appointments.calendarAccount = Number(options?.calendarAccount ?? 0) || 0;
     const store = new Appointments(kernel);
     kernel.registerCommand({
       name: "termin",
@@ -207,6 +273,10 @@ export const appointmentsPlugin: Plugin = {
           return gone ? `🗑 حذف شد (با یادآوری‌هایش): ${gone.date} ${gone.text}` : "شماره پیدا نشد. /termin";
         }
         if (!a) return store.listText();
+        if (/^(sync|calendar|تقویم)$/i.test(a)) {
+          const n = store.syncCalendar();
+          return n ? `📅 ${n} ترمین به Google Calendar فرستاده شد.` : "همه‌ی ترمین‌ها در Google Calendar هستند (یا ایجنت در دسترس نیست).";
+        }
         const p = parseAppointment(/(ترمین|termin|قرار|نوبت|appointment)/i.test(a) ? a : `${a} ترمین`);
         return p ? store.confirmText(store.add(p)) : "استفاده: /termin 15.10.2026 10:30 ترمین با AMS";
       },

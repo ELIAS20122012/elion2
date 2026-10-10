@@ -5,6 +5,12 @@ Format: date · agent · what was done · state (finished / half-done + how to c
 
 ---
 
+## 2026-10-10 (7) · Claude (Cowork)
+- Appointments → Google Calendar: when the PC agent is loaded, every new appointment queues a pc-agent task that
+  opens a prefilled Calendar "new event" link (account u/N, plugins.options.appointments.calendarAccount, default 0)
+  and presses Save; /termin del removes it the same way; /termin sync copies older ones. No Google API scope change.
+- State: finished, tests green. AMS 15.10.2026 synced.
+
 ## 2026-10-10 (6) · Claude (Cowork)
 - Morning briefing now covers every Gmail account: with the PC agent loaded, /brief and the daily-briefing schedule
   run on "pc-agent", which reads each signed-in account in the agent Chrome profile (read-only, Spam/Promotions

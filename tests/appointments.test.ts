@@ -87,3 +87,22 @@ test("an AI answer's /remind action runs by itself instead of waiting for a butt
   assert.equal(pendingReminders(k).length, 1);
   assert.equal(pendingReminders(k)[0]!.prompt, "فردا ترمین با AMS");
 });
+
+test("with the PC agent, an appointment is copied to Google Calendar (prefilled link) and removed with it", async () => {
+  const { gcalLink } = await import("../src/plugins/appointments.ts");
+  const k = new Kernel({ dbPath: ":memory:", providers: [{ name: "pc-agent", health: async () => ({ ok: true, detail: "" }), execute: async () => ({ output: "ok" }) }], defaultProvider: "reminder", retryBaseMs: 0 });
+  remindersPlugin.setup({ kernel: k, home: "", options: {} });
+  appointmentsPlugin.setup({ kernel: k, home: "", options: {} });
+  const store = new Appointments(k, () => now);
+  const r = store.add(parseAppointment("15.10.2026 ساعت 10:30 ترمین با AMS", now)!);
+  assert.equal(r.appt.gcal, "queued");
+  assert.match(store.confirmText(r), /Google Calendar/);
+  const cal = k.listTasks({ limit: 10 }).find((t) => t.provider === "pc-agent")!;
+  assert.match(cal.prompt, /APPROVED adding ONE event/);
+  assert.match(cal.prompt, /dates=20261015T103000%2F20261015T113000/);
+  assert.match(gcalLink({ date: "2026-10-15", time: null, text: "x" }), /dates=20261015%2F20261016/);
+  assert.match(gcalLink({ date: "2026-10-31", time: null, text: "x" }), /dates=20261031%2F20261101/);
+  await k.getCommand("termin")!.run("del 1");
+  assert.ok(k.listTasks({ limit: 10 }).some((t) => t.provider === "pc-agent" && /APPROVED removing ONE/.test(t.prompt)));
+  assert.match(await k.getCommand("termin")!.run("sync"), /همه‌ی ترمین‌ها/);
+});
