@@ -169,16 +169,16 @@ tr:last-child td { border-bottom: 0; }
 .toast { position: fixed; inset-inline: 16px; bottom: calc(20px + env(safe-area-inset-bottom)); margin-inline: auto; max-width: 520px; background: #1b1f2b; border: 1px solid var(--line2); color: var(--fg); padding: 10px 14px; border-radius: 10px; white-space: pre-wrap; z-index: 20; box-shadow: 0 8px 30px rgba(0, 0, 0, .5); cursor: pointer; }
 .offline { background: var(--card); border: 1px solid var(--line); border-radius: var(--r); padding: 24px; text-align: center; margin-top: 40px; }
 
-/* medium: cards in two columns around a smaller core */
-@media (max-width: 1180px) {
-  .m-tasks { right: 26%; } .m-calendar { left: 18%; }
+/* the floating layout needs a wide stage; narrower → network on top, cards in a grid (container query on .main) */
+.main { container-type: inline-size; }
+@container (max-width: 1080px) {
+  .m-tasks { right: 27%; } .m-calendar { left: 20%; }
 }
-/* phones & narrow windows: stacked layout */
-@media (max-width: 900px) {
+@container (max-width: 980px) {
   .stage { min-height: 0; display: flex; flex-direction: column; padding: 210px 12px 12px; }
   .net { height: 230px; }
   .core { top: 115px; }
-  .mods { position: static; display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; pointer-events: auto; }
+  .mods { position: static; display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; pointer-events: auto; }
   .mod { position: static; width: auto; }
   .askbox { position: static; transform: none; width: 100%; margin-top: 12px; }
 }
