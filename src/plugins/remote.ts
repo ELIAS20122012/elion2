@@ -49,6 +49,11 @@ export function resolveApp(name: string): string | null {
 
 const BLOCKED = /(secret|password|passwd|token|\.env$|\.pem$|\.key$|id_rsa|\.ssh|credential|wallet|google-token|google-client|cookies)/i;
 
+/** Never send secrets, keys, tokens or Elias OS config to Telegram, whoever asks for it. */
+export function sendableFile(p: string): boolean {
+  return !BLOCKED.test(p) && !/[\\/]elias-os[\\/]config[\\/]/i.test(p);
+}
+
 /** Finds Elias's file by (part of) its name in his own folders. Newest match first. */
 export function findFiles(query: string, roots: string[], limit = 5): string[] {
   const q = query.trim().toLowerCase();

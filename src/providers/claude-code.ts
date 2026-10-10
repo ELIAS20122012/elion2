@@ -19,15 +19,20 @@ export interface ClaudeCodeOptions {
   maxTurns?: number;
   /** Working directory for the agent. */
   cwd?: string;
+  /** Provider name (default "claude-code"); the PC agent is a second instance with more tools. */
+  name?: string;
+  /** MCP servers file (e.g. the browser), used with --strict-mcp-config. */
+  mcpConfig?: string;
 }
 
 const isWin = process.platform === "win32";
 
 export class ClaudeCodeProvider implements ExecutionProvider {
-  readonly name = "claude-code";
+  readonly name: string;
   private opts: ClaudeCodeOptions;
   constructor(opts: ClaudeCodeOptions = {}) {
     this.opts = opts;
+    this.name = opts.name ?? "claude-code";
   }
 
   private cmd(): string {
@@ -47,6 +52,7 @@ export class ClaudeCodeProvider implements ExecutionProvider {
     if (this.opts.model) args.push("--model", this.opts.model);
     if (this.opts.maxTurns) args.push("--max-turns", String(this.opts.maxTurns));
     if (this.opts.allowedTools?.length) args.push("--allowedTools", this.opts.allowedTools.join(","));
+    if (this.opts.mcpConfig) args.push("--mcp-config", this.opts.mcpConfig, "--strict-mcp-config");
     return args;
   }
 

@@ -21,6 +21,7 @@ const SAFE: Record<string, (args: string) => boolean> = {
   lot: () => true,
   draw: () => true,
   backup: () => true,
+  agent: (a) => !/^go\b/i.test(a.trim()), // the agent itself stops before risky steps; "go" is Elias's tap
   screen: () => true,
   open: () => true,
   file: () => true,

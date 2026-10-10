@@ -21,6 +21,7 @@ Legend: [x] done · [ ] open · (P) postponed by Elias — only start when he as
 - [x] Appointments (/termin) with automatic reminders; chat knows date, appointments and recent messages
 - [x] Natural language: the chat agent turns requests into actions; safe ones run, risky ones get a ▶️ button
 - [x] PC control from Telegram: /screen /open /file /apps /close /power (risky ones confirm first)
+- [x] PC agent: any PC/web request in plain words (/agent) — shell + browser in the agent Chrome profile, approvals for risky steps
 - [x] Antigravity CLI (agy) provider: free Gemini via Google login; in the auto chain after codex, first choice for /team gemini
 
 ## Open / next

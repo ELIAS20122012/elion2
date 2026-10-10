@@ -23,6 +23,7 @@ export const DEFAULT_POLICY: Policy = {
     "delete:*": "approve",
     "trade:execute": "approve",
     "system:shell": "approve",
+    "pc:agent": "allow", // the PC agent stops by itself before deleting, sending, publishing or installing
   },
 };
 

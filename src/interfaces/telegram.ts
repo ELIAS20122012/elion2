@@ -11,6 +11,8 @@ import path from "node:path";
 import type { Transcriber } from "../voice/whisper.ts";
 import { Appointments, isAppointmentQuestion, parseAppointment } from "../plugins/appointments.ts";
 import { isSafeAction } from "./actions.ts";
+import { AGENT_PROVIDER, NEEDS_APPROVAL } from "../plugins/agent.ts";
+import { sendableFile } from "../plugins/remote.ts";
 import { isVideoRequest } from "../plugins/aivideo.ts";
 import { extractMarks, imageSize, type Level } from "../voice/marks.ts";
 
@@ -86,6 +88,13 @@ const HELP = `Elias OS 🤖
 /voice on|off  جواب صوتی
 /restart  ری‌استارت Elias OS
 /help  راهنما`;
+
+/** Pulls «<<<PHOTO|FILE path PHOTO|FILE>>>» attachment marks out of a reply. */
+export function takeFiles(text: string): { text: string; files: Array<{ kind: string; path: string }> } {
+  const files: Array<{ kind: string; path: string }> = [];
+  const out = text.replace(/<<<(PHOTO|FILE)\s+([\s\S]+?)\s+\1>>>/g, (_m, kind: string, p: string) => (files.push({ kind, path: p.trim() }), "")).trim();
+  return { text: out, files };
+}
 
 /** Pulls ">>> /command args" lines out of an AI answer: they become ▶️ buttons instead of text. */
 export function extractActions(result: string): { text: string; actions: string[] } {
@@ -599,9 +608,7 @@ ${ask ? `His request: ${ask}` : "No caption: describe or summarize it usefully. 
   /** Speaks a reply as a Telegram voice note (best effort; text was already sent). */
   /** A command's reply: «<<<PHOTO|FILE path …>>>» marks become attachments, «>>> /cmd» lines become ▶️ buttons. */
   async sendResult(text: string): Promise<void> {
-    const chat = this.ownerChatId();
-    const files: Array<{ kind: string; path: string }> = [];
-    const clean = text.replace(/<<<(PHOTO|FILE)\s+([\s\S]+?)\s+\1>>>/g, (_m, kind: string, p: string) => (files.push({ kind, path: p.trim() }), "")).trim();
+    const { text: clean, files } = takeFiles(text);
     const { text: body, actions } = extractActions(clean);
     const buttons = actions.map((a) => {
       const key = Math.random().toString(36).slice(2, 10);
@@ -609,8 +616,14 @@ ${ask ? `His request: ${ask}` : "No caption: describe or summarize it usefully. 
       return [{ text: `▶️ ${a}`.slice(0, 60), callback_data: `run:${key}` }];
     });
     if (body || buttons.length) await this.send(body || "👇", buttons.length ? { reply_markup: { inline_keyboard: buttons } } : undefined);
+    await this.sendFiles(files);
+  }
+
+  /** Attachments from «<<<PHOTO|FILE path …>>>» marks; secrets/keys/config are never sent. */
+  async sendFiles(files: Array<{ kind: string; path: string }>): Promise<void> {
+    const chat = this.ownerChatId();
     for (const f of files) {
-      if (!chat || !fs.existsSync(f.path)) continue;
+      if (!chat || !fs.existsSync(f.path) || !sendableFile(f.path)) continue;
       try {
         const photo = f.kind === "PHOTO" && fs.statSync(f.path).size < 10 * 1024 * 1024;
         await this.api(photo ? "sendPhoto" : "sendDocument", { chat_id: chat, __file: { field: photo ? "photo" : "document", path: f.path } });
@@ -731,10 +744,14 @@ ${ask ? `His request: ${ask}` : "No caption: describe or summarize it usefully. 
             this.kernel.db.prepare("DELETE FROM kv WHERE key=?").run(`telegram.marks.${task.id}`);
             if (marked.levels.length) void this.sendMarked(markImg, marked.levels);
           }
-          const { text: body, actions: all } = extractActions(marked.text);
-          // safe actions run right away (Elias just talks, no commands); risky ones still wait for a ▶️ tap
-          const auto = all.filter(isSafeAction);
+          const isAgent = task.provider === AGENT_PROVIDER;
+          const { text: withoutFiles, files } = takeFiles(marked.text);
+          const { text: body, actions: all } = extractActions(withoutFiles);
+          // safe actions run right away (Elias just talks, no commands); risky ones still wait for a ▶️ tap.
+          // The PC agent reads web pages, so nothing in its answer runs by itself — buttons only.
+          const auto = isAgent ? [] : all.filter(isSafeAction);
           const actions = all.filter((a) => !auto.includes(a));
+          if (isAgent && NEEDS_APPROVAL.test(task.result ?? "")) actions.unshift(`/agent go ${task.id}`);
           for (const a of auto) {
             const [c, ...rest] = a.slice(1).split(/\s+/);
             const cmd = this.kernel.getCommand(c!.toLowerCase());
@@ -749,6 +766,7 @@ ${ask ? `His request: ${ask}` : "No caption: describe or summarize it usefully. 
             parse_mode: "HTML",
             ...(buttons.length ? { reply_markup: { inline_keyboard: buttons } } : {}),
           });
+          if (files.length) void this.sendQueue.then(() => this.sendFiles(files));
           const spoken = task.source === "telegram-voice" || (task.source === "telegram" && this.kernel.getKv("telegram.voice_replies") === "1");
           if (spoken && task.result) void this.sendSpoken(task.result);
         }

@@ -5,6 +5,16 @@ Format: date · agent · what was done · state (finished / half-done + how to c
 
 ---
 
+## 2026-10-10 (5) · Claude (Cowork)
+- PC agent ("do anything"): src/plugins/agent.ts. Free-form PC/web requests → `/agent <request>` (the chat persona
+  routes them there) → second Claude Code instance "pc-agent" (cwd data/agent, its own CLAUDE.md rules, tools:
+  Bash/PowerShell/files/web + Playwright MCP driving Chrome with the agent profile data/agent/chrome-profile).
+  Elias signs in once per site with `/agent login <site>` — agents never type passwords/2FA/card data, never pay.
+  Risky steps (delete, send, publish, submit, install, settings) end with "NEEDS APPROVAL: …" → ▶️ `/agent go <task>`.
+  Agent answers never auto-run actions (prompt-injection guard); attachments never include secrets/config.
+- Policy: "pc:agent" allowed. Claude Code provider got `name` and `mcpConfig` options.
+- State: finished, tests green.
+
 ## 2026-10-10 (4) · Claude (Cowork)
 - PC control from Telegram: src/plugins/remote.ts — /screen (screenshot as photo), /open <app|link> (allow-list +
   Persian names, Start-Process with quoting), /file <name> (searches Desktop/Documents/Downloads/Pictures/Videos/Music/
