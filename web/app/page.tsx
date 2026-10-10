@@ -1,108 +1,126 @@
 "use client";
 import Link from "next/link";
-import { useState } from "react";
-import { post, usePoll, type Appointment, type Overview, type Status } from "./api";
-import { ApptLine, Offline } from "./parts";
-import { TaskRow } from "./TaskRow";
-import { Card, Empty, reply, toast } from "./ui";
+import { useEffect, useState } from "react";
+import { post, usePoll, type Appointment, type Lab, type Overview } from "./api";
+import { Network } from "./Network";
+import { Offline } from "./parts";
+import { reply } from "./ui";
+
+type Mod = { key: string; href: string; icon: string; n: number | string; label: string; sub: string; color: string; on: boolean };
+
+const fa = (n: number) => n.toLocaleString("fa-IR");
 
 export default function Home() {
-  const { data, down } = usePoll<Overview>("/api/overview");
+  const { data, down } = usePoll<Overview>("/api/overview", 4000);
   const appts = usePoll<{ upcoming: Appointment[] }>("/api/panel/appointments", 30000).data;
+  const memory = usePoll<{ notes: string[] }>("/api/panel/memory", 30000).data;
+  const lab = usePoll<Lab>("/api/panel/lab", 30000).data;
   const [text, setText] = useState("");
-  const [busy, setBusy] = useState(false);
+  const [asked, setAsked] = useState<{ id: string; q: string } | null>(null);
 
-  async function send() {
-    const prompt = text.trim();
-    if (!prompt) return;
-    setBusy(true);
-    const r = await post("/api/tasks", { prompt });
-    setBusy(false);
-    if (r.ok) {
+  if (down && !data) return <Offline />;
+  const s = data?.stats ?? {};
+  const live = (s.running ?? 0) + (s.queued ?? 0) + (s.verifying ?? 0);
+  const ready = data?.providers.filter((p) => !p.coolingUntil).length ?? 0;
+  const cooling = (data?.providers.length ?? 0) - ready;
+  const labRuns = lab ? Object.values(lab.stats).reduce((a, x) => a + x.runs, 0) : 0;
+  const labWins = lab ? Object.values(lab.stats).reduce((a, x) => a + x.wins, 0) : 0;
+  const next = appts?.upcoming[0];
+  const sched = data?.schedules.filter((x) => x.enabled) ?? [];
+  const mods: Mod[] = [
+    { key: "agents", href: "/lab", icon: "⚇", n: ready, label: "ایجنت‌ها", sub: `${fa(ready)} آماده · ${fa(cooling)} محدود`, color: "#38bdf8", on: ready > 0 },
+    { key: "tasks", href: "/tasks", icon: "☰", n: live, label: "کارها", sub: live ? "در حال انجام" : `${fa(s.succeeded ?? 0)} انجام‌شده`, color: "#a78bfa", on: true },
+    { key: "calendar", href: "/calendar", icon: "▦", n: appts?.upcoming.length ?? "—", label: "ترمین‌ها", sub: next ? `${next.text}`.slice(0, 22) : "ترمینی نیست", color: "#f59e0b", on: true },
+    { key: "memory", href: "/memory", icon: "◎", n: memory?.notes.length ?? "—", label: "حافظه", sub: "یادداشت ماندگار", color: "#c084fc", on: true },
+    { key: "skills", href: "/system", icon: "✦", n: (data?.skills.length ?? 0) + (data?.commands.length ?? 0), label: "اسکیل‌ها", sub: `${fa(data?.commands.length ?? 0)} دستور`, color: "#22d3ee", on: true },
+    { key: "lab", href: "/lab", icon: "⚗", n: labRuns, label: "آزمایشگاه", sub: `${fa(labWins)} برد ثبت‌شده`, color: "#f472b6", on: lab?.routing ?? false },
+    { key: "schedules", href: "/system", icon: "◷", n: sched.length, label: "زمان‌بندی", sub: "کار خودکار", color: "#34d399", on: sched.length > 0 },
+    { key: "approvals", href: "/", icon: "⚑", n: data?.approvals.length ?? 0, label: "تأییدها", sub: data?.approvals.length ? "منتظر تو" : "چیزی منتظر نیست", color: "#fb7185", on: true },
+  ];
+
+  async function ask() {
+    const q = text.trim();
+    if (!q) return;
+    const r = await post("/api/tasks", { prompt: q });
+    if (r.ok && r.id) {
+      setAsked({ id: r.id, q });
       setText("");
-      toast("✔ فرستاده شد — جواب اینجا و در تلگرام می‌آید");
     } else reply(r);
   }
 
-  if (down && !data) return <Offline />;
-  const stats = data?.stats ?? {};
-  const n = (...s: Status[]) => s.reduce((a, x) => a + (stats[x] ?? 0), 0);
-  const tiles = [
-    { label: "⚙️ در جریان", v: n("running", "queued", "verifying") },
-    { label: "🔐 منتظر تأیید", v: n("awaiting_approval") },
-    { label: "❌ شکست", v: n("failed") },
-  ];
   return (
     <>
-      <h1 className="page-h">سلام الیاس 👋</h1>
-      <div className="grid">
-        <Card title="📥 چه کاری انجام بدهم؟" wide>
+      {data && data.approvals.length > 0 && (
+        <div className="approvals">
+          {data.approvals.map((a) => (
+            <div className="appr" key={a.id}>
+              <span className="t">
+                <b>⚑ {a.task}</b>
+                <small>{a.reason || a.capability}</small>
+              </span>
+              <button className="primary" onClick={async () => reply(await post(`/api/approvals/${a.id}/approve`))}>تأیید</button>
+              <button onClick={async () => reply(await post(`/api/approvals/${a.id}/reject`))}>رد</button>
+            </div>
+          ))}
+        </div>
+      )}
+      <section className="stage">
+        <div className="states" dir="ltr" aria-label="وضعیت">
+          {(["idle", "thinking", "working"] as const).map((x) => (
+            <span key={x} className={(x === "idle" && !live) || (x === "working" && live > 0) || (x === "thinking" && (s.verifying ?? 0) > 0) ? "on" : ""}>{x}</span>
+          ))}
+        </div>
+        <Network busy={live > 0} />
+        <div className="core">
+          <b>ELIAS OS</b>
+          <i className="line" />
+          <small>{live ? `روی ${fa(live)} کار کار می‌کنم…` : "آنلاینم. چه کاری انجام بدهم؟"}</small>
+        </div>
+        <div className="mods">
+          {mods.map((m) => (
+            <Link href={m.href} key={m.key} className={`mod m-${m.key}`} style={{ ["--c" as string]: m.color }}>
+              <span className="mod-h">
+                <span className="mic" aria-hidden>{m.icon}</span>
+                <span className={`live${m.on ? "" : " off"}`}>{m.on ? "online" : "off"}</span>
+              </span>
+              <b className="num">{typeof m.n === "number" ? m.n : m.n}</b>
+              <span className="lbl">{m.label}</span>
+              <small>{m.sub}</small>
+              <i className="bar" />
+            </Link>
+          ))}
+        </div>
+        <div className="askbox">
+          {asked && <Answer id={asked.id} q={asked.q} data={data} onClose={() => setAsked(null)} />}
           <form
-            className="ask"
             onSubmit={(e) => {
               e.preventDefault();
-              send();
+              ask();
             }}
           >
-            <textarea
-              rows={2}
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && (e.ctrlKey || e.metaKey) && send()}
-              placeholder="هر چیزی بنویس… مثلاً: فردا ساعت ۱۰ یادم بنداز به بانک زنگ بزنم"
-              aria-label="درخواست"
-            />
-            <button className="primary" disabled={busy || !text.trim()}>
-              {busy ? "…" : "ارسال"}
-            </button>
+            <input value={text} onChange={(e) => setText(e.target.value)} placeholder="از Elias OS هر چیزی بپرس…" aria-label="درخواست" />
+            <button className="send" disabled={!text.trim()} aria-label="ارسال">➤</button>
           </form>
-        </Card>
-
-        {data && data.approvals.length > 0 && (
-          <Card title="🔐 منتظر تأیید تو" wide>
-            {data.approvals.map((a) => (
-              <div className="row" key={a.id}>
-                <span className="t">
-                  <span className="ttl">{a.task}</span>
-                  <small className="mute">{a.reason || a.capability}</small>
-                </span>
-                <span className="acts">
-                  <button className="primary" onClick={async () => reply(await post(`/api/approvals/${a.id}/approve`))}>تأیید</button>
-                  <button onClick={async () => reply(await post(`/api/approvals/${a.id}/reject`))}>رد</button>
-                </span>
-              </div>
-            ))}
-          </Card>
-        )}
-
-        <Card title="📊 وضعیت">
-          <div className="stats">
-            {tiles.map((x) => (
-              <Link href="/tasks" className="stat" key={x.label}>
-                <b>{x.v.toLocaleString("fa-IR")}</b>
-                <span>{x.label}</span>
-              </Link>
-            ))}
-          </div>
-          <div className="pills">
-            {data?.providers.map((p) => (
-              <span key={p.name} className={`pill ${p.coolingUntil ? "warn" : "ok"}`} dir="ltr" title={p.coolingUntil ? "محدود" : "آماده"}>
-                {p.name}
-              </span>
-            ))}
-          </div>
-        </Card>
-
-        <Card title="📅 ترمین‌های پیش رو" action={<Link href="/calendar" className="more">همه</Link>}>
-          {!appts ? <Empty>…</Empty> : appts.upcoming.length === 0 ? <Empty>ترمینی نداری.</Empty> : (
-            appts.upcoming.slice(0, 4).map((a) => <ApptLine key={a.id} a={a} />)
-          )}
-        </Card>
-
-        <Card title="📋 آخرین کارها" wide action={<Link href="/tasks" className="more">همه</Link>}>
-          {!data ? <Empty>…</Empty> : data.tasks.length === 0 ? <Empty>هنوز کاری نیست.</Empty> : data.tasks.slice(0, 6).map((t) => <TaskRow key={t.id} t={t} />)}
-        </Card>
-      </div>
+        </div>
+      </section>
     </>
+  );
+}
+
+function Answer({ id, q, data, onClose }: { id: string; q: string; data: Overview | null; onClose: () => void }) {
+  const t = data?.tasks.find((x) => x.id === id);
+  const [dots, setDots] = useState(1);
+  useEffect(() => {
+    const i = setInterval(() => setDots((d) => (d % 3) + 1), 500);
+    return () => clearInterval(i);
+  }, []);
+  const done = t && (t.status === "succeeded" || t.status === "failed" || t.status === "cancelled");
+  const body = t?.result?.replace(/^>>> .*$/gm, "").replace(/<<<(PHOTO|FILE) .*? (PHOTO|FILE)>>>/g, "📎").trim();
+  return (
+    <div className="answer" role="status">
+      <button className="x" onClick={onClose} aria-label="بستن">×</button>
+      <small className="q">{q}</small>
+      {done ? <p className={t.status === "succeeded" ? "" : "bad"}>{body || t.error || "—"}</p> : <p className="mute">در حال فکر کردن{".".repeat(dots)}</p>}
+    </div>
   );
 }

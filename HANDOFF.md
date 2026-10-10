@@ -12,6 +12,8 @@ Format: date · agent · what was done · state (finished / half-done + how to c
 - Data: plugins share read-only JSON via `registerPanel(name, fn)` → `GET /api/panel/<name>` (appointments, memory, lab);
   all writes reuse `/api/commands/<name>/run` with the X-Elias header.
 - Build: `cd web && npm install && npm run build` (redo after changing web/). Dev: `npm run dev` (port 3020, proxies /api).
+- Restyled like xoai.agency/xos (dark command center): animated network canvas (web/app/Network.tsx), live module
+  cards around the ELIAS OS core, ask bar with inline answer, top bar (greeting, Vienna clock, AUTOPILOT).
 - State: finished, tests green.
 
 ## 2026-10-10 (10) · Claude (Cowork)
