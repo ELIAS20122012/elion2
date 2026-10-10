@@ -61,7 +61,8 @@ export class WhisperTranscriber implements Transcriber {
       const p = spawn(this.opts.python, [this.opts.script], {
         env: {
           ...process.env,
-          ELIAS_WHISPER_MODEL: this.opts.model ?? "small",
+          ELIAS_WHISPER_MODEL: this.opts.model ?? "large-v3-turbo",
+          HF_HUB_DISABLE_SYMLINKS_WARNING: "1",
           ELIAS_WHISPER_LANG: this.opts.language ?? "",
           ELIAS_WHISPER_DIR: this.opts.modelDir ?? "",
           PYTHONIOENCODING: "utf-8",

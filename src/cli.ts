@@ -157,6 +157,13 @@ async function main(argv: string[]): Promise<number> {
         console.log(url);
         return 0;
       }
+      case "cmd": {
+        // Run a Telegram command from the shell: elias cmd pc tidy
+        const c = sub ? kernel.getCommand(sub) : null;
+        if (!c) throw new Error(`Unknown command "${sub ?? ""}". Commands: ${kernel.listCommands().map((x) => x.name).join(", ")}`);
+        console.log(await c.run(rest.join(" ")));
+        return 0;
+      }
       case "plugins":
         for (const p of loadedPlugins(kernel))
           console.log(`${p.error ? "✖" : "✔"} ${p.name.padEnd(12)} ${p.source.padEnd(8)} ${p.version.padEnd(8)} ${p.error ?? p.description}`);
@@ -536,7 +543,7 @@ function makeTranscriber(): WhisperTranscriber | null {
   return new WhisperTranscriber({
     python: WhisperTranscriber.venvPython(HOME),
     script: path.join(HOME, "voice", "whisper_server.py"),
-    model: v.model ?? "small",
+    model: v.model ?? "large-v3-turbo", // best Persian accuracy; ~2x audio length on the PC CPU (small misheard most words)
     language: v.language === undefined ? "fa" : v.language,
     modelDir: path.join(HOME, "data", "models"),
     prompt: () => voiceWords(),

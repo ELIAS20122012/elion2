@@ -5,6 +5,13 @@ Format: date · agent · what was done · state (finished / half-done + how to c
 
 ---
 
+## 2026-10-10 (3) · Claude (Cowork)
+- Telegram voice fixed. STT: faster-whisper "small" misheard most Persian words ("ایک گوزارش از کارار…");
+  default is now large-v3-turbo (int8, CPU): exact on a test sentence, ~2x audio length (9 s → 18 s).
+  config voice.model still overrides. TTS: edge-tts randomly refused requests (403 / NoAudioReceived);
+  video/tts.py now retries (twice, then without rate, then the other Persian voice).
+- State: finished, tests green. Roll back: "voice": {"model": "small"} in config/elias.config.json.
+
 ## 2026-10-10 (2) · Claude (Cowork)
 - Natural language instead of commands: the chat persona now tells the agent to turn any request into
   `>>> /command` lines; src/interfaces/actions.ts decides which run by themselves (reminders, appointments,
