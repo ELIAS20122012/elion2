@@ -50,8 +50,9 @@ const getJson = <T>(k: Kernel, key: string, dflt: T): T => {
 /** Models that are registered and answer their health check (within 20 s). */
 export async function workingModels(k: Kernel, wanted: readonly string[] = LAB_MODELS): Promise<string[]> {
   const have = new Map(k.listProviders().map((p) => [p.name, p]));
+  const now = Date.now();
   const checks = wanted
-    .filter((n) => have.has(n))
+    .filter((n) => have.has(n) && Number(k.getKv(`lab.skip.${n}`) ?? 0) < now) // failed recently → rest for a while
     .map(async (n) => {
       try {
         const h = await Promise.race([have.get(n)!.health(), new Promise<{ ok: boolean }>((r) => setTimeout(() => r({ ok: false }), 20_000))]);
@@ -81,7 +82,7 @@ export function report(k: Kernel, run: LabRun): { text: string; order: string[] 
     }
   }
   return {
-    text: `🧪 مقایسه‌ی مدل‌ها\n«${run.prompt.slice(0, 150)}»\n\n${parts.join("\n\n")}${order.length > 1 ? `\n\nکدام بهتر بود؟ بنویس: /lab best شماره` : ""}`,
+    text: `🧪 مقایسه‌ی مدل‌ها\n«${run.prompt.slice(0, 150)}»\n\n${parts.join("\n\n")}${parts.some((x) => x.startsWith("✗")) ? "\n\n(مدل‌های ✗ تا چند ساعت در مقایسه‌ها نیستند)" : ""}${order.length > 1 ? `\n\nکدام بهتر بود؟ بنویس: /lab best شماره` : ""}`,
     order,
   };
 }
@@ -118,6 +119,12 @@ export const labPlugin: Plugin = {
       }
       kernel.setKv("lab.stats", JSON.stringify(stats));
       kernel.setKv("lab.cats", JSON.stringify(cats));
+      // a model that is not logged in / out of credit is left out of the next comparisons for a while
+      for (const p of run.providers) {
+        const x = kernel.getTask(run.tasks[p]!);
+        if (x?.status === "failed") kernel.setKv(`lab.skip.${p}`, String(Date.now() + (x.failureKind === "provider_unavailable" ? 24 : 6) * 3_600_000));
+        else if (x?.status === "succeeded" && x.provider !== p) kernel.setKv(`lab.skip.${p}`, String(Date.now() + 24 * 3_600_000));
+      }
       const r = report(kernel, run);
       kernel.setKv(runKey(id), JSON.stringify({ ...run, reported: true, order: r.order }));
       kernel.setKv("lab.last", id);

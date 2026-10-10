@@ -772,7 +772,7 @@ ${ask ? `His request: ${ask}` : "No caption: describe or summarize it usefully. 
         }
         return;
       case "task.failed":
-        if (task)
+        if (task && !task.title.startsWith("🧪 lab:")) // the lab reports its failures in one message
           void this.send(`❌ شکست: ${task.title}\n${task.failureKind ?? ""}: ${task.error ?? e.message}`, {
             reply_markup: { inline_keyboard: [[{ text: "🔁 دوباره", callback_data: `retry:${task.id}` }]] },
           });

@@ -82,3 +82,10 @@ test("categories, best model per kind, and the auto provider tries it first", as
   assert.equal(used.at(-1), "claude-code");
   assert.match(await k.getCommand("lab")!.run("auto on"), /روشن/);
 });
+
+test("a model that failed is left out of the next comparison", async () => {
+  const { workingModels } = await import("../src/plugins/lab.ts");
+  const k = new Kernel({ dbPath: ":memory:", providers: [prov("claude-code", true, "C"), prov("codex", true, "X")], defaultProvider: "claude-code", retryBaseMs: 0 });
+  k.setKv("lab.skip.codex", String(Date.now() + 60_000));
+  assert.deepEqual(await workingModels(k), ["claude-code"]);
+});

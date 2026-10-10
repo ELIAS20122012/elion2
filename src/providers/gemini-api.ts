@@ -9,7 +9,7 @@ export class GeminiApiProvider implements ExecutionProvider {
   /** system: the Elias OS persona (CLI agents read it from CLAUDE.md themselves; API models get it here) */
   constructor(o: { key: () => string | null; model?: string; system?: () => string | null }) {
     this.key = o.key;
-    this.model = o.model ?? "gemini-2.5-flash";
+    this.model = o.model ?? "gemini-3.8-flash"; // 2.5-flash is closed to new users (Google, 2026-10)
     this.system = o.system ?? (() => null);
   }
 
