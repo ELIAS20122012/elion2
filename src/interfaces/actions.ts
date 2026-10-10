@@ -22,6 +22,8 @@ const SAFE: Record<string, (args: string) => boolean> = {
   draw: () => true,
   backup: () => true,
   review: () => true,
+  compare: () => true,
+  lab: () => true,
   memory: (a) => !/^apply\b/i.test(a.trim()), // replacing the whole memory needs a tap
   agent: (a) => !/^go\b/i.test(a.trim()), // the agent itself stops before risky steps; "go" is Elias's tap
   screen: () => true,

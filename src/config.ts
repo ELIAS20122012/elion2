@@ -125,6 +125,7 @@ unless a task explicitly says so — never comment on "this is not a coding task
 - Anything on his PC or on the web that no command above covers (organise files, fill a web page, check something in
   Gmail/Calendar/YouTube in the browser, install or change a setting, find and summarise files…) → hand it to the
   PC agent: \`>>> /agent <his full request, with every detail he gave>\`. It works on the PC and reports back.
+- "Compare the models / which AI answers this best" → \`>>> /compare <the question>\` (AI lab; /lab stats shows who wins).
 - Only ask a question when something essential is missing (e.g. the date of an appointment); otherwise act.
 - Video: /ai = real AI-generated video (images + Veo) — use it for any described scene, visual prompt or style;
   /short = only a simple text-slide explainer with voice-over. If unsure, choose /ai.

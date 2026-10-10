@@ -23,6 +23,7 @@ Legend: [x] done · [ ] open · (P) postponed by Elias — only start when he as
 - [x] PC control from Telegram: /screen /open /file /apps /close /power (risky ones confirm first)
 - [x] Evening review 22:00 + smart memory (learns lasting facts from chats nightly, weekly cleanup with approval)
 - [x] graphify knowledge graphs via the PC agent
+- [x] AI lab v1: /compare a question across all models, /lab best, /lab stats
 - [x] PC agent: any PC/web request in plain words (/agent) — shell + browser in the agent Chrome profile, approvals for risky steps
 - [x] Antigravity CLI (agy) provider: free Gemini via Google login; in the auto chain after codex, first choice for /team gemini
 

@@ -5,6 +5,14 @@ Format: date · agent · what was done · state (finished / half-done + how to c
 
 ---
 
+## 2026-10-10 (9) · Claude (Cowork)
+- AI lab v1: src/plugins/lab.ts. /compare <question> runs it on every healthy model (claude-code, codex, antigravity,
+  gemini-cli, gemini API, ollama — never Vertex) as internal tasks "🧪 lab:<id>:<provider>"; once all finish one report
+  (answer, time, length per model) is posted. /lab best N records a win, /lab stats shows wins/success/avg time
+  (kv lab.stats). The persona routes "compare the models" requests to /compare.
+- Next lab steps (not built): use lab.stats to pick the model per task type; a panel page for runs.
+- State: finished, tests green.
+
 ## 2026-10-10 (8) · Claude (Cowork)
 - Evening review + smart memory: src/plugins/evening.ts. Schedules: evening-review 22:00 (source "review", /review),
   memory-learn 22:15 (reads chat:day, saves new lasting facts with « ⟨auto YYYY-MM-DD⟩», tells Elias; /memory review,

@@ -14,6 +14,7 @@ import { appointmentsPlugin } from "./appointments.ts";
 import { eveningPlugin } from "./evening.ts";
 import { remotePlugin } from "./remote.ts";
 import { agentPlugin } from "./agent.ts";
+import { labPlugin } from "./lab.ts";
 import { maintenancePlugin } from "./maintenance.ts";
 import { vaultPlugin } from "./vault.ts";
 import { mt4Plugin } from "./mt4.ts";
@@ -79,4 +80,4 @@ export const skillsPlugin: Plugin = {
   },
 };
 
-export const BUILTIN_PLUGINS = [corePlugin, memoryPlugin, googlePlugin, briefingPlugin, tradingPlugin, youtubePlugin, videoPlugin, aiVideoPlugin, remindersPlugin, appointmentsPlugin, eveningPlugin, maintenancePlugin, vaultPlugin, mt4Plugin, healthPlugin, researchPlugin, teamPlugin, websitePlugin, pcPlugin(), remotePlugin(), agentPlugin(), skillsPlugin];
+export const BUILTIN_PLUGINS = [corePlugin, memoryPlugin, googlePlugin, briefingPlugin, tradingPlugin, youtubePlugin, videoPlugin, aiVideoPlugin, remindersPlugin, appointmentsPlugin, eveningPlugin, maintenancePlugin, vaultPlugin, mt4Plugin, healthPlugin, researchPlugin, teamPlugin, websitePlugin, pcPlugin(), remotePlugin(), agentPlugin(), labPlugin, skillsPlugin];
