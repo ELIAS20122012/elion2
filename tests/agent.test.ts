@@ -9,11 +9,11 @@ import { AGENT_PROVIDER, agentPlugin, loginUrl } from "../src/plugins/agent.ts";
 import { isSafeAction } from "../src/interfaces/actions.ts";
 import { sendableFile } from "../src/plugins/remote.ts";
 
-function mk() {
+function mk(options: Record<string, unknown> = {}) {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), "agent-"));
   const k = new Kernel({ dbPath: ":memory:", providers: [], defaultProvider: "x", retryBaseMs: 0, policy: DEFAULT_POLICY });
   const opened: string[] = [];
-  agentPlugin({ open: (u) => (opened.push(u), true) }).setup({ kernel: k, home, options: {} });
+  agentPlugin({ open: (u) => (opened.push(u), true) }).setup({ kernel: k, home, options });
   return { k, home, opened };
 }
 
@@ -84,4 +84,13 @@ test("telegram: an agent answer never auto-runs actions, gets an approval button
   assert.ok(calls.some((c) => c.m === "sendPhoto" && c.__file.path === shot));
   assert.ok(!calls.some((c) => c.m === "sendDocument"));
   assert.ok(!calls.some((c) => /<<<|secrets/.test(String(c.text ?? ""))));
+});
+
+test("both Google accounts are named in the agent rules", () => {
+  const { home } = mk({ googleAccounts: ["a@gmail.com", "b@gmail.com"] });
+  const rules = fs.readFileSync(path.join(home, "data", "agent", "CLAUDE.md"), "utf8");
+  assert.match(rules, /2 Google accounts .*a@gmail\.com, b@gmail\.com/);
+  assert.match(rules, /check every account/);
+  const plain = fs.readFileSync(path.join(mk().home, "data", "agent", "CLAUDE.md"), "utf8");
+  assert.doesNotMatch(plain, /Google accounts signed in/);
 });
