@@ -23,7 +23,7 @@ export function Topbar() {
     <header className="topbar">
       <div className="hello">
         <b>{greeting(hour)}، الیاس 👋</b>
-        <small>{alive ? "تیم هوش مصنوعی‌ات آنلاین و آماده است." : "Elias OS در دسترس نیست."}</small>
+        <small>{alive ? "تیم هوش مصنوعی‌ات آنلاین و آماده است." : "Elion در دسترس نیست."}</small>
       </div>
       <div className="tb-right">
         <span className="clock" dir="ltr" suppressHydrationWarning>

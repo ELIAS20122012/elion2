@@ -62,13 +62,14 @@ button, input, textarea { font: inherit; color: inherit; }
 .states { position: absolute; top: 14px; left: 14px; display: flex; gap: 4px; z-index: 2; }
 .states span { font: 500 10px var(--display); letter-spacing: .08em; border: 1px solid var(--line); border-radius: 5px; padding: 2px 7px; color: var(--mute); }
 .states span.on { color: var(--acc); border-color: color-mix(in srgb, var(--acc) 45%, transparent); background: color-mix(in srgb, var(--acc) 10%, transparent); }
-.core { position: absolute; left: 50%; top: 47%; transform: translate(-50%, -50%); text-align: center; z-index: 2; pointer-events: none; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.core { position: absolute; left: 50%; top: 14px; transform: translateX(-50%); text-align: center; z-index: 2; pointer-events: none; display: flex; flex-direction: column; align-items: center; gap: 8px; }
 .core b { font: 700 clamp(26px, 3.6vw, 44px)/1 var(--display); letter-spacing: .32em; padding-left: .32em; direction: ltr; text-shadow: 0 0 24px rgba(200, 140, 255, .55); }
 .core .line { width: 200px; height: 2px; background: linear-gradient(90deg, transparent, var(--acc2), transparent); box-shadow: 0 0 12px var(--acc2); }
-.core small { color: #c9cddb; font-size: 13px; }
+.core small { color: #c9cddb; font-size: 12.5px; background: rgba(10, 11, 17, .6); border: 1px solid var(--line); border-radius: 99px; padding: 2px 12px; white-space: nowrap; }
+.graph { touch-action: none; }
 .mods { position: absolute; inset: 0; z-index: 3; pointer-events: none; }
 .mod {
-  pointer-events: auto; position: absolute; width: 168px; padding: 12px 14px 14px; border-radius: 12px; display: flex; flex-direction: column;
+  pointer-events: auto; position: absolute; width: 150px; padding: 10px 12px 12px; border-radius: 12px; display: flex; flex-direction: column;
   background: var(--card); border: 1px solid var(--line2); backdrop-filter: blur(10px); box-shadow: 0 10px 30px rgba(0, 0, 0, .35);
   transition: transform .2s, border-color .2s;
 }
@@ -78,13 +79,13 @@ button, input, textarea { font: inherit; color: inherit; }
 .live { font-size: 10px; color: var(--ok); direction: ltr; }
 .live::before { content: "● "; }
 .live.off { color: var(--mute); }
-.num { font: 700 26px/1.15 var(--display); }
+.num { font: 700 22px/1.15 var(--display); }
 .lbl { font-weight: 600; font-size: 13px; }
 .mod small { color: var(--mute); font-size: 11.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .mod .bar { height: 2px; margin-top: 8px; border-radius: 2px; background: linear-gradient(90deg, var(--c), transparent); }
 /* positions around the core (RTL: inset-inline-start = right) */
-.m-agents { top: 12%; right: 7%; } .m-tasks { top: 6%; right: 30%; } .m-calendar { top: 8%; left: 23%; } .m-memory { top: 24%; left: 5%; }
-.m-skills { top: 50%; right: 4%; } .m-lab { top: 52%; left: 4%; } .m-schedules { bottom: 15%; right: 20%; } .m-approvals { bottom: 13%; left: 22%; }
+.m-agents { top: 8%; right: 2.5%; } .m-tasks { top: 33%; right: 2.5%; } .m-calendar { top: 58%; right: 2.5%; } .m-skills { bottom: 4%; right: 2.5%; }
+.m-memory { top: 8%; left: 2.5%; } .m-lab { top: 33%; left: 2.5%; } .m-schedules { top: 58%; left: 2.5%; } .m-approvals { bottom: 4%; left: 2.5%; }
 .askbox { position: absolute; bottom: 16px; left: 50%; transform: translateX(-50%); width: min(560px, calc(100% - 32px)); z-index: 4; display: flex; flex-direction: column; gap: 8px; }
 .askbox form { display: flex; gap: 8px; align-items: center; background: rgba(14, 16, 24, .9); border: 1px solid var(--line2); border-radius: 12px; padding: 6px 6px 6px 6px; }
 .askbox input { border: 0; background: none; padding: 6px 10px; }
@@ -171,13 +172,10 @@ tr:last-child td { border-bottom: 0; }
 
 /* the floating layout needs a wide stage; narrower → network on top, cards in a grid (container query on .main) */
 .main { container-type: inline-size; }
-@container (max-width: 1080px) {
-  .m-tasks { right: 27%; } .m-calendar { left: 20%; }
-}
 @container (max-width: 980px) {
-  .stage { min-height: 0; display: flex; flex-direction: column; padding: 210px 12px 12px; }
-  .net { height: 230px; }
-  .core { top: 115px; }
+  .stage { min-height: 0; display: flex; flex-direction: column; padding: 400px 12px 12px; }
+  .net { height: 390px; }
+  .core { top: 44px; }
   .mods { position: static; display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; pointer-events: auto; }
   .mod { position: static; width: auto; }
   .askbox { position: static; transform: none; width: 100%; margin-top: 12px; }

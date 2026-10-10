@@ -1,8 +1,8 @@
 "use client";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { post, usePoll, type Appointment, type Lab, type Overview } from "./api";
-import { Network } from "./Network";
+import { Graph, type GLink, type GNode } from "./Graph";
 import { Offline } from "./parts";
 import { reply } from "./ui";
 
@@ -17,6 +17,7 @@ export default function Home() {
   const lab = usePoll<Lab>("/api/panel/lab", 30000).data;
   const [text, setText] = useState("");
   const [asked, setAsked] = useState<{ id: string; q: string } | null>(null);
+  const graph = useMemo(() => buildGraph(data, appts?.upcoming ?? [], memory?.notes ?? [], lab), [data, appts, memory, lab]);
 
   if (down && !data) return <Offline />;
   const s = data?.stats ?? {};
@@ -70,10 +71,8 @@ export default function Home() {
             <span key={x} className={(x === "idle" && !live) || (x === "working" && live > 0) || (x === "thinking" && (s.verifying ?? 0) > 0) ? "on" : ""}>{x}</span>
           ))}
         </div>
-        <Network busy={live > 0} />
+        <Graph nodes={graph.nodes} links={graph.links} busy={live > 0} />
         <div className="core">
-          <b>ELIAS OS</b>
-          <i className="line" />
           <small>{live ? `روی ${fa(live)} کار کار می‌کنم…` : "آنلاینم. چه کاری انجام بدهم؟"}</small>
         </div>
         <div className="mods">
@@ -98,7 +97,7 @@ export default function Home() {
               ask();
             }}
           >
-            <input value={text} onChange={(e) => setText(e.target.value)} placeholder="از Elias OS هر چیزی بپرس…" aria-label="درخواست" />
+            <input value={text} onChange={(e) => setText(e.target.value)} placeholder="از Elion هر چیزی بپرس…" aria-label="درخواست" />
             <button className="send" disabled={!text.trim()} aria-label="ارسال">➤</button>
           </form>
         </div>
@@ -123,4 +122,32 @@ function Answer({ id, q, data, onClose }: { id: string; q: string; data: Overvie
       {done ? <p className={t.status === "succeeded" ? "" : "bad"}>{body || t.error || "—"}</p> : <p className="mute">در حال فکر کردن{".".repeat(dots)}</p>}
     </div>
   );
+}
+
+/** Everything Elion knows, as one graph: core → modules → their items. */
+function buildGraph(d: Overview | null, appts: Appointment[], notes: string[], lab: Lab | null): { nodes: GNode[]; links: GLink[] } {
+  const nodes: GNode[] = [{ id: "core", label: "ELION", group: "core" }];
+  const links: GLink[] = [];
+  const hub = (group: string, label: string, href: string, items: { id: string; label: string }[]) => {
+    const id = `hub:${group}`;
+    nodes.push({ id, label, group, hub: true, href });
+    links.push({ a: "core", b: id });
+    for (const it of items) {
+      nodes.push({ id: `${group}:${it.id}`, label: it.label, group });
+      links.push({ a: id, b: `${group}:${it.id}` });
+    }
+  };
+  if (!d) return { nodes, links };
+  hub("agents", "ایجنت‌ها", "/lab", d.providers.map((p) => ({ id: p.name, label: p.name })));
+  hub("tasks", "کارها", "/tasks", d.tasks.slice(0, 14).map((t) => ({ id: t.id, label: t.title })));
+  hub("calendar", "ترمین‌ها", "/calendar", appts.map((a) => ({ id: a.id, label: `${a.date.split("-").reverse().join(".")} · ${a.text}` })));
+  hub("memory", "حافظه", "/memory", notes.map((n, i) => ({ id: String(i), label: n.replace(/ ⟨auto [\d-]+⟩$/, "") })));
+  const cmds = new Set(d.commands.map((c) => c.name));
+  hub("skills", "اسکیل‌ها", "/system", [...d.commands, ...d.skills.filter((x) => !cmds.has(x.name))].map((c) => ({ id: c.name, label: `/${c.name}` })));
+  hub("lab", "آزمایشگاه", "/lab", (lab?.models ?? []).map((m) => ({ id: m.name, label: m.label })));
+  hub("schedules", "زمان‌بندی", "/system", d.schedules.filter((x) => x.enabled).map((x) => ({ id: x.name, label: x.name })));
+  if (d.approvals.length) hub("approvals", "تأییدها", "/", d.approvals.map((a) => ({ id: a.id, label: a.task })));
+  // cross links: lab models are also agents
+  for (const m of lab?.models ?? []) if (d.providers.some((p) => p.name === m.name)) links.push({ a: `lab:${m.name}`, b: `agents:${m.name}` });
+  return { nodes, links };
 }

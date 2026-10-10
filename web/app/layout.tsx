@@ -5,11 +5,11 @@ import { Toaster } from "./ui";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Elias OS",
-  description: "Elias OS — سیستم‌عامل ایجنتیک شخصی",
+  title: "Elion",
+  description: "Elion — سیستم‌عامل ایجنتیک شخصی",
   manifest: "/manifest.webmanifest",
   icons: { icon: "/icon.svg", apple: "/icon.svg" },
-  appleWebApp: { capable: true, title: "Elias OS", statusBarStyle: "black-translucent" },
+  appleWebApp: { capable: true, title: "Elion", statusBarStyle: "black-translucent" },
 };
 export const viewport: Viewport = { width: "device-width", initialScale: 1, viewportFit: "cover", themeColor: "#07080c", colorScheme: "dark" };
 

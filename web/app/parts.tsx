@@ -21,8 +21,8 @@ export function ApptLine({ a }: { a: Appointment }) {
 export function Offline() {
   return (
     <div className="offline">
-      <b>به Elias OS وصل نیستم.</b>
-      <p className="mute">کامپیوتر خاموش است یا Elias OS اجرا نمی‌شود. خودش هر چند ثانیه دوباره امتحان می‌کند.</p>
+      <b>به Elion وصل نیستم.</b>
+      <p className="mute">کامپیوتر خاموش است یا Elion اجرا نمی‌شود. خودش هر چند ثانیه دوباره امتحان می‌کند.</p>
     </div>
   );
 }

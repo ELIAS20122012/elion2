@@ -21,7 +21,7 @@ export function Nav() {
     <nav className="nav" aria-label="بخش‌ها">
       <div className="brand">
         <span className="logo" aria-hidden>⬡</span>
-        <b>ELIAS OS</b>
+        <b>ELION</b>
         <small>v1</small>
       </div>
       <div className="links">
