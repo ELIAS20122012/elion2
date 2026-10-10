@@ -10,6 +10,7 @@ import { youtubePlugin } from "./youtube.ts";
 import { videoPlugin } from "./video.ts";
 import { aiVideoPlugin } from "./aivideo.ts";
 import { remindersPlugin } from "./reminders.ts";
+import { appointmentsPlugin } from "./appointments.ts";
 import { maintenancePlugin } from "./maintenance.ts";
 import { vaultPlugin } from "./vault.ts";
 import { mt4Plugin } from "./mt4.ts";
@@ -17,6 +18,7 @@ import { healthPlugin } from "./health.ts";
 import { researchPlugin } from "./research.ts";
 import { teamPlugin } from "./team.ts";
 import { websitePlugin } from "./website.ts";
+import { pcPlugin } from "./pc.ts";
 
 export const corePlugin: Plugin = {
   name: "core",
@@ -68,4 +70,4 @@ export const skillsPlugin: Plugin = {
   },
 };
 
-export const BUILTIN_PLUGINS = [corePlugin, memoryPlugin, googlePlugin, briefingPlugin, tradingPlugin, youtubePlugin, videoPlugin, aiVideoPlugin, remindersPlugin, maintenancePlugin, vaultPlugin, mt4Plugin, healthPlugin, researchPlugin, teamPlugin, websitePlugin, skillsPlugin];
+export const BUILTIN_PLUGINS = [corePlugin, memoryPlugin, googlePlugin, briefingPlugin, tradingPlugin, youtubePlugin, videoPlugin, aiVideoPlugin, remindersPlugin, appointmentsPlugin, maintenancePlugin, vaultPlugin, mt4Plugin, healthPlugin, researchPlugin, teamPlugin, websitePlugin, pcPlugin(), skillsPlugin];

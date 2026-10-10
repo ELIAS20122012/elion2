@@ -5,6 +5,21 @@ Format: date · agent · what was done · state (finished / half-done + how to c
 
 ---
 
+## 2026-10-10 · Claude (Cowork)
+- Appointments: src/plugins/appointments.ts. "15.10.2026 با AMS ترمین دارم یک روز قبل یادم بنداز" is saved by Elias OS
+  itself (kv "appointments") with reminder tasks (asked offset or day before 09:00, plus the day itself 08:00 / 2 h before).
+  "کی ترمین دارم؟" answers from storage. /termin [date time text] · /termin del N.
+- Why: the AI only answered with a ▶️ /remind button, /remind could not parse 14.10.2026, the AI had no date
+  (said "tomorrow" for a date a week away) and no chat history (follow-ups like "با ams" were not understood).
+- Fixes: /remind accepts DD.MM.YYYY, DD/MM[/YYYY], YYYY-MM-DD, پس‌فردا (date alone → 09:00); AI /remind and /termin
+  action lines now run by themselves; chat tasks get time:now, appointments:upcoming, chat:recent context.
+- State: finished, tests green. Seeded the AMS appointment of 15.10.2026. Roll back: remove appointmentsPlugin from builtin.ts.
+
+## 2026-10-08 (3) · Claude (Cowork)
+- PC care agent: src/plugins/pc.ts. /pc report (disk, RAM, CPU, heavy apps, startup, junk), /pc clean → preview, /pc clean yes
+  (temp >1 day, CrashDumps, recycle bin), /pc tidy → preview, /pc tidy yes (Desktop/Downloads loose files → type folders), /pc undo.
+  Weekly report Sunday 18:00 (schedule pc-weekly). 104 tests green on the PC.
+
 ## 2026-10-08 (2) · Claude (Cowork)
 - Antigravity CLI provider "antigravity" (src/providers/cli.ts): agy [--model X] -p <prompt>, prompt as argument without a shell,
   >24k chars → next provider. No --dangerously-skip-permissions (text answers only). Auto chain: claude-code, codex, antigravity,

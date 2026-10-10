@@ -46,3 +46,19 @@ test("telegram: 'یادم بنداز …' becomes a reminder, not an AI task", a
   assert.equal(pendingReminders(k).length, 1);
   assert.equal(pendingReminders(k)[0]!.prompt, "چک ترید");
 });
+
+test("parseReminder: real dates (14.10.2026, 2026-10-14, 14/10), a date alone means 09:00", () => {
+  const a = parseReminder("14.10.2026 09:00 فردا ترمین با AMS داری", now) as any;
+  assert.equal(a.at.getDate(), 14);
+  assert.equal(a.at.getMonth(), 9);
+  assert.equal(a.at.getHours(), 9);
+  assert.equal(a.text, "فردا ترمین با AMS داری");
+  const b = parseReminder("۱۴.۱۰.۲۰۲۶ ترمین AMS", now) as any;
+  assert.equal(b.at.getHours(), 9);
+  assert.equal(b.text, "ترمین AMS");
+  assert.equal((parseReminder("2026-10-14 ساعت 18:30 x", now) as any).at.getHours(), 18);
+  assert.equal((parseReminder("14/10 10 x", now) as any).at.getDate(), 14);
+  assert.equal((parseReminder("پس فردا 10 x", now) as any).at.getDate(), 5);
+  assert.equal(parseReminder("31.02.2026 x", now), null);
+  assert.equal((parseReminder("15.10 چای", now) as any).at.getHours(), 15); // DD.MM alone stays a clock time
+});

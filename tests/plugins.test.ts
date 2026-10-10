@@ -38,7 +38,7 @@ test("broken skill files are reported, not fatal", () => {
 test("built-in plugins register sources + brief skill; disabled ones are skipped", async () => {
   const k = mk();
   loadBuiltinPlugins(k, BUILTIN_PLUGINS, tmp(), { disabled: ["google"] });
-  assert.deepEqual(loadedPlugins(k).map((p) => p.name), ["core", "memory", "briefing", "trading", "youtube", "video", "aivideo", "reminders", "maintenance", "vault", "mt4", "health", "research", "team", "website", "skills"]);
+  assert.deepEqual(loadedPlugins(k).map((p) => p.name), ["core", "memory", "briefing", "trading", "youtube", "video", "aivideo", "reminders", "appointments", "maintenance", "vault", "mt4", "health", "research", "team", "website", "pc", "skills"]);
   assert.ok(k.listContextSources().some((c) => c.name === "tasks:open"));
   assert.ok(!k.listContextSources().some((c) => c.name === "gmail:recent"));
   const t = k.runSkill("brief", "", "cli");
@@ -112,7 +112,7 @@ test("memory plugin: /remember → /notes → context → /forget", async () => 
   const src = k.listContextSources().find((c) => c.name === "memory:notes")!;
   assert.match(await src.fetch(new AbortController().signal), /IC Markets/);
   await (tg as any).handleOwnerText("سلام");
-  assert.deepEqual(k.listTasks({ limit: 1 })[0]!.context, ["memory:notes"]);
+  assert.deepEqual(k.listTasks({ limit: 1 })[0]!.context, ["time:now", "memory:notes", "appointments:upcoming", "chat:recent"]);
   await (tg as any).handleOwnerText("/forget 1");
   assert.match(await src.fetch(new AbortController().signal), /No saved notes/);
 });

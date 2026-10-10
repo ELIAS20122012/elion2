@@ -22,6 +22,21 @@ function clock(tok: string): { h: number; m: number } | null {
   return h < 24 && min < 60 ? { h, m: min } : null;
 }
 
+/** A calendar date token: YYYY-MM-DD, DD.MM.YYYY, DD/MM/YYYY or DD/MM (DD.MM alone is a clock time). */
+export function parseDate(tok: string, now = new Date()): Date | null {
+  const t = normDigits(tok).replace(/[،,]$/, "");
+  let y: number, mo: number, d: number;
+  let m = t.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+  if (m) [y, mo, d] = [Number(m[1]), Number(m[2]), Number(m[3])];
+  else if ((m = t.match(/^(\d{1,2})[./-](\d{1,2})[./-](\d{2}|\d{4})$/))) [d, mo, y] = [Number(m[1]), Number(m[2]), Number(m[3]!.length === 2 ? `20${m[3]}` : m[3])];
+  else if ((m = t.match(/^(\d{1,2})\/(\d{1,2})$/))) {
+    [d, mo, y] = [Number(m[1]), Number(m[2]), now.getFullYear()];
+    if (new Date(y, mo - 1, d, 23, 59).getTime() < now.getTime()) y++;
+  } else return null;
+  const out = new Date(y, mo - 1, d);
+  return out.getMonth() === mo - 1 && out.getDate() === d ? out : null;
+}
+
 /** Parses the reminder syntax. `now` is injectable for tests. Returns null when no time is recognised. */
 export function parseReminder(input: string, now = new Date()): ParsedReminder | null {
   const words = normDigits(input).trim().split(/\s+/);
@@ -47,22 +62,30 @@ export function parseReminder(input: string, now = new Date()): ParsedReminder |
     return text ? { daily: false, at: new Date(now.getTime() + Number(words[0]) * unitFa[words[1]!]!), text } : null;
   }
 
-  // absolute: "[فردا|tomorrow|YYYY-MM-DD] HH[:MM] …"
+  // absolute: "[فردا|پس‌فردا|tomorrow|YYYY-MM-DD|DD.MM.YYYY|DD/MM[/YYYY]] [ساعت] HH[:MM] …" (a date alone → 09:00)
   let day = new Date(now);
   let i = 0;
   let explicitDay = false;
+  const date = parseDate(words[0]!, now);
   if (words[0] === "فردا" || words[0]?.toLowerCase() === "tomorrow") {
     day.setDate(day.getDate() + 1);
     i = 1;
     explicitDay = true;
-  } else if (/^\d{4}-\d{2}-\d{2}$/.test(words[0]!)) {
-    const [y, mo, d] = words[0]!.split("-").map(Number);
-    day = new Date(y!, mo! - 1, d!);
+  } else if (words[0] === "پس‌فردا" || words[0] === "پسفردا" || (words[0] === "پس" && words[1] === "فردا")) {
+    day.setDate(day.getDate() + 2);
+    i = words[0] === "پس" ? 2 : 1;
+    explicitDay = true;
+  } else if (date) {
+    day = date;
     i = 1;
     explicitDay = true;
   }
   if (words[i] === "ساعت") i++;
-  const c = clock(words[i] ?? "");
+  let c = clock(words[i] ?? "");
+  if (!c && explicitDay && rest(i)) {
+    c = { h: 9, m: 0 }; // a date without a time: 9 in the morning
+    i--;
+  }
   if (!c || !rest(i + 1)) return null;
   const at = new Date(day.getFullYear(), day.getMonth(), day.getDate(), c.h, c.m, 0, 0);
   if (!explicitDay && at.getTime() <= now.getTime()) at.setDate(at.getDate() + 1);

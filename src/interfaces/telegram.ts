@@ -9,6 +9,7 @@ import type { KernelEvent } from "../kernel/types.ts";
 import fs from "node:fs";
 import path from "node:path";
 import type { Transcriber } from "../voice/whisper.ts";
+import { Appointments, isAppointmentQuestion, parseAppointment } from "../plugins/appointments.ts";
 import { isVideoRequest } from "../plugins/aivideo.ts";
 import { extractMarks, imageSize, type Level } from "../voice/marks.ts";
 
@@ -363,6 +364,15 @@ export class TelegramInterface {
           if (tm && team) return this.send(await team.run(tm[1]!.trim()));
         }
         {
+          // Appointments ("15.10.2026 با AMS ترمین دارم …", "کی ترمین دارم؟") are kept by Elias OS itself, not by the AI.
+          const termin = this.kernel.getCommand("termin");
+          if (termin && !/^\s*(یادم بنداز|یادم بیار|یادآوری کن|remind me)\s/i.test(text)) {
+            if (isAppointmentQuestion(text)) return this.send(await termin.run(""));
+            const p = parseAppointment(text);
+            if (p) return this.send(new Appointments(this.kernel).confirmText(new Appointments(this.kernel).add(p)));
+          }
+        }
+        {
           // Natural reminders ("یادم بنداز فردا ساعت ۹ …", also by voice) go straight to /remind when it parses.
           const m = text.match(/^\s*(یادم بنداز|یادم بیار|یادآوری کن|remind me)\s+(.+)$/is);
           const remind = this.kernel.getCommand("remind");
@@ -493,13 +503,15 @@ ${ask ? `His request: ${ask}` : "No caption: describe or summarize it usefully. 
   private async createTaskFromChat(prompt: string): Promise<void> {
     if (!prompt.trim()) return this.send("متن تسک خالی است.");
     const title = prompt.length > 60 ? prompt.slice(0, 57) + "…" : prompt;
-    const mem = this.kernel.listContextSources().some((c) => c.name === "memory:notes");
+    // memory, today's date, saved appointments and the last few messages (so follow-ups make sense)
+    const have = new Set(this.kernel.listContextSources().map((c) => c.name));
+    const context = ["time:now", "memory:notes", "appointments:upcoming", "chat:recent"].filter((n) => have.has(n));
     const t = this.kernel.createTask({
       title,
       prompt,
       source: this.fromVoice ? "telegram-voice" : "telegram",
       verify: { type: "non_empty" },
-      ...(mem ? { capabilities: ["read:memory"], context: ["memory:notes"] } : {}),
+      ...(context.length ? { capabilities: ["read:memory"], context } : {}),
     });
     await this.send(`📥 گرفتم، دارم انجامش می‌دهم…\n${t.id}`);
   }
@@ -692,7 +704,15 @@ ${ask ? `His request: ${ask}` : "No caption: describe or summarize it usefully. 
             this.kernel.db.prepare("DELETE FROM kv WHERE key=?").run(`telegram.marks.${task.id}`);
             if (marked.levels.length) void this.sendMarked(markImg, marked.levels);
           }
-          const { text: body, actions } = extractActions(marked.text);
+          const { text: body, actions: all } = extractActions(marked.text);
+          // safe local actions (a reminder, an appointment) are done right away instead of waiting for a ▶️ tap
+          const auto = all.filter((a) => /^\/(remind|termin)\s/i.test(a));
+          const actions = all.filter((a) => !auto.includes(a));
+          for (const a of auto) {
+            const [c, ...rest] = a.slice(1).split(/\s+/);
+            const cmd = this.kernel.getCommand(c!.toLowerCase());
+            if (cmd) void Promise.resolve(cmd.run(rest.join(" "))).then((r) => this.send(r)).catch((e) => this.send(`خطا: ${errMsg(e)}`));
+          }
           const buttons = actions.map((a) => {
             const key = Math.random().toString(36).slice(2, 10);
             this.kernel.setKv(`telegram.action.${key}`, a);
