@@ -8,7 +8,7 @@ import type { Kernel } from "../kernel/kernel.ts";
 import type { Plugin } from "./types.ts";
 
 export const LAB_PREFIX = "🧪 lab:";
-export const LAB_MODELS = ["claude-code", "codex", "antigravity", "gemini-cli", "gemini", "ollama"] as const;
+export const LAB_MODELS = ["claude-code", "codex", "antigravity", "gemini", "ollama"] as const; // gemini-cli: Google ended it for individuals (use Antigravity)
 const LABEL: Record<string, string> = {
   "claude-code": "Claude", codex: "ChatGPT (Codex)", antigravity: "Gemini (Antigravity)", "gemini-cli": "Gemini CLI", gemini: "Gemini API", ollama: "Ollama (local)",
 };
