@@ -10,6 +10,45 @@ import { loadedPlugins } from "../plugins/host.ts";
 import type { VoiceAssistant } from "../voice/assistant.ts";
 
 const PAGE = path.join(path.dirname(fileURLToPath(import.meta.url)), "dashboard.html");
+/** Next.js panel (web/, static export in web/out). Falls back to the classic page while it is not built. */
+let webRoot = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "..", "web", "out");
+export function setWebRoot(dir: string): void {
+  webRoot = dir;
+}
+
+/** Read-only JSON data plugins share with the panel: GET /api/panel/<name>. Writes go through /api/commands. */
+const panels = new Map<string, () => unknown>();
+export function registerPanel(name: string, data: () => unknown): void {
+  panels.set(name, data);
+}
+
+const TYPES: Record<string, string> = {
+  ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".json": "application/json", ".txt": "text/plain",
+  ".svg": "image/svg+xml", ".png": "image/png", ".ico": "image/x-icon", ".webmanifest": "application/manifest+json", ".woff2": "font/woff2",
+};
+
+/** files of the built panel: /tasks → tasks.html or tasks/index.html; never outside web/out */
+function serveWeb(res: http.ServerResponse, pathname: string): boolean {
+  if (!fs.existsSync(path.join(webRoot, "index.html"))) return false;
+  const rel = decodeURIComponent(pathname).replace(/^\/+/, "");
+  if (rel.split("/").some((s) => s.startsWith("."))) return false;
+  const base = path.resolve(webRoot);
+  const tries = [rel || "index.html", `${rel}.html`, path.join(rel, "index.html")];
+  for (const t of tries) {
+    const file = path.resolve(base, t);
+    if (!file.startsWith(base + path.sep) || !fs.existsSync(file) || !fs.statSync(file).isFile()) continue;
+    const type = TYPES[path.extname(file).toLowerCase()] ?? "application/octet-stream";
+    res.writeHead(200, {
+      "content-type": type.startsWith("text/") || type.endsWith("json") ? `${type}; charset=utf-8` : type,
+      "cache-control": rel.startsWith("_next/static/") ? "public, max-age=31536000, immutable" : "no-store",
+      "x-content-type-options": "nosniff",
+      "x-frame-options": "DENY",
+    });
+    res.end(fs.readFileSync(file));
+    return true;
+  }
+  return false;
+}
 
 /** Read-only static previews registered by plugins (e.g. /site-preview/ → site-draft). Served sandboxed:
  *  no scripts, unique origin — a previewed page can never call the dashboard API. */
@@ -99,9 +138,16 @@ export function handler(k: Kernel, port: number, remote: RemoteAccess | null = n
         }
       }
       const url = new URL(req.url ?? "/", "http://x");
-      if (req.method === "GET" && url.pathname === "/") return send(res, 200, fs.readFileSync(PAGE, "utf8"), "text/html; charset=utf-8");
       if (req.method === "GET" && url.pathname === "/api/overview") return send(res, 200, overview(k));
+      const pm = url.pathname.match(/^\/api\/panel\/([\w-]+)$/);
+      if (req.method === "GET" && pm) {
+        const data = panels.get(pm[1]!);
+        return data ? send(res, 200, data()) : send(res, 404, { error: "not found" });
+      }
+      if (req.method === "GET" && url.pathname === "/classic") return send(res, 200, fs.readFileSync(PAGE, "utf8"), "text/html; charset=utf-8");
       if (req.method === "GET" && serveStatic(res, url.pathname)) return;
+      if (req.method === "GET" && !url.pathname.startsWith("/api/") && serveWeb(res, url.pathname)) return;
+      if (req.method === "GET" && url.pathname === "/") return send(res, 200, fs.readFileSync(PAGE, "utf8"), "text/html; charset=utf-8");
       // Desktop voice assistant (voice/listener.py) — this PC only, never through the tunnel.
       const vm = url.pathname.match(/^\/api\/voice(?:\/([\w-]+))?$/);
       if (vm) {

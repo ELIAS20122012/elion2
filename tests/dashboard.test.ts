@@ -44,3 +44,38 @@ test("dashboard: remote host only with owner's Cloudflare Access identity", asyn
     srv.close();
   }
 });
+
+test("dashboard: Next.js panel files from web/out, plugin panel data, classic page kept", async () => {
+  const fs = await import("node:fs");
+  const os = await import("node:os");
+  const path = await import("node:path");
+  const { setWebRoot, registerPanel } = await import("../src/interfaces/dashboard.ts");
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "eos-web-"));
+  fs.writeFileSync(path.join(dir, "index.html"), "<title>Next panel</title>");
+  fs.writeFileSync(path.join(dir, "tasks.html"), "tasks page");
+  fs.mkdirSync(path.join(dir, "_next", "static"), { recursive: true });
+  fs.writeFileSync(path.join(dir, "_next", "static", "a.js"), "x=1");
+  fs.writeFileSync(path.join(path.dirname(dir), "secret.txt"), "no");
+  setWebRoot(dir);
+  registerPanel("demo", () => ({ n: 1 }));
+  const k = new Kernel({ dbPath: ":memory:", providers: [new EchoProvider()], defaultProvider: "echo" });
+  const srv = http.createServer();
+  await new Promise<void>((r) => srv.listen(0, "127.0.0.1", r));
+  const port = (srv.address() as { port: number }).port;
+  srv.on("request", handler(k, port));
+  const base = `http://127.0.0.1:${port}`;
+  try {
+    assert.match(await (await fetch(base + "/")).text(), /Next panel/);
+    assert.equal(await (await fetch(base + "/tasks")).text(), "tasks page");
+    const js = await fetch(base + "/_next/static/a.js");
+    assert.match(js.headers.get("content-type")!, /javascript/);
+    assert.match(await (await fetch(base + "/classic")).text(), /Elias OS/);
+    assert.deepEqual(await (await fetch(base + "/api/panel/demo")).json(), { n: 1 });
+    assert.equal((await fetch(base + "/api/panel/nope")).status, 404);
+    assert.equal((await fetch(base + "/%2e%2e/secret.txt")).status, 404);
+    assert.equal((await fetch(base + "/..%2fsecret.txt")).status, 404);
+  } finally {
+    srv.close();
+    setWebRoot(path.join(dir, "missing"));
+  }
+});

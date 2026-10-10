@@ -3,6 +3,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import type { Plugin } from "./types.ts";
+import { registerPanel } from "../interfaces/dashboard.ts";
 
 export function memoryFile(home: string): string {
   return path.join(home, "data", "knowledge", "memory.md");
@@ -23,6 +24,7 @@ export const memoryPlugin: Plugin = {
   description: "Long-term notes: /remember /notes /forget, context memory:notes",
   setup({ kernel, home }) {
     const file = memoryFile(home);
+    registerPanel("memory", () => ({ notes: readNotes(file) }));
     kernel.registerContextSource({
       name: "memory:notes",
       capability: "read:memory",

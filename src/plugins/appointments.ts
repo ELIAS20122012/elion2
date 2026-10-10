@@ -6,6 +6,7 @@
 // messages (chat:recent), so the AI can answer follow-ups like "با AMS" without guessing.
 import type { Kernel } from "../kernel/kernel.ts";
 import type { Plugin } from "./types.ts";
+import { registerPanel } from "../interfaces/dashboard.ts";
 import { normDigits, parseDate, REMINDER_TITLE } from "./reminders.ts";
 
 const KV = "appointments";
@@ -261,6 +262,7 @@ export const appointmentsPlugin: Plugin = {
   setup({ kernel, options }) {
     Appointments.calendarAccount = Number(options?.calendarAccount ?? 0) || 0;
     const store = new Appointments(kernel);
+    registerPanel("appointments", () => ({ upcoming: store.upcoming() })); // index + 1 = /termin del N
     kernel.registerCommand({
       name: "termin",
       description: "ترمین‌ها (/termin 15.10.2026 10:00 AMS · /termin del 1)",

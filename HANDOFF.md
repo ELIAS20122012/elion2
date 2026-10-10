@@ -5,6 +5,15 @@ Format: date · agent · what was done · state (finished / half-done + how to c
 
 ---
 
+## 2026-10-11 · Claude (Cowork)
+- New Next.js panel in `web/` (App Router, static export → `web/out`). The daemon serves it on http://127.0.0.1:7420
+  (and through the Cloudflare tunnel); old page kept at `/classic`. Pages: home (ask, approvals, status, appointments,
+  recent tasks), tasks, calendar, memory, lab, system. RTL, light/dark, phone bottom nav, PWA manifest.
+- Data: plugins share read-only JSON via `registerPanel(name, fn)` → `GET /api/panel/<name>` (appointments, memory, lab);
+  all writes reuse `/api/commands/<name>/run` with the X-Elias header.
+- Build: `cd web && npm install && npm run build` (redo after changing web/). Dev: `npm run dev` (port 3020, proxies /api).
+- State: finished, tests green.
+
 ## 2026-10-10 (10) · Claude (Cowork)
 - AI lab picks the model: every /compare is tagged with a kind (code, writing, ideas, translate, analysis, general —
   keyword heuristic `categorize`, no AI call); wins/results also go to kv lab.cats per kind. When a model has ≥2 wins

@@ -6,6 +6,7 @@
 // Paid-per-use models (Vertex) are never included. Results live in kv (lab.run.<id>, lab.stats).
 import type { Kernel } from "../kernel/kernel.ts";
 import type { Plugin } from "./types.ts";
+import { registerPanel } from "../interfaces/dashboard.ts";
 
 export const LAB_PREFIX = "🧪 lab:";
 export const LAB_MODELS = ["claude-code", "codex", "antigravity", "gemini", "ollama"] as const; // gemini-cli: Google ended it for individuals (use Antigravity)
@@ -158,6 +159,19 @@ export const labPlugin: Plugin = {
       },
     });
 
+    registerPanel("lab", () => {
+      const cats = getJson<Record<string, Record<string, Stat>>>(kernel, "lab.cats", {});
+      const now = Date.now();
+      return {
+        models: LAB_MODELS.map((m) => {
+          const until = Number(kernel.getKv(`lab.skip.${m}`) ?? 0);
+          return { name: m, label: LABEL[m] ?? m, restingUntil: until > now ? new Date(until).toISOString() : null };
+        }),
+        stats: getJson<Record<string, Stat>>(kernel, "lab.stats", {}),
+        categories: CATEGORIES.map((c) => ({ name: c, label: CAT_LABEL[c], best: bestFor(cats, c), models: cats[c] ?? {} })),
+        routing: kernel.getKv("lab.routing") !== "off",
+      };
+    });
     kernel.registerCommand({
       name: "lab",
       description: "آزمایشگاه: /lab stats · /lab best شماره",

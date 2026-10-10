@@ -39,4 +39,5 @@ Legend: [x] done · [ ] open · (P) postponed by Elias — only start when he as
 - (P) MT4 natural-language chart drawing (EA exports candles)
 - (P) Trading extras: economic news calendar, trade journal analysis
 - (P) Mentorship/students plugin
-- (P) Next.js dashboard, n8n connectors, TikTok, multi-user, plugin marketplace, AI lab
+- [x] Next.js panel (web/, static export served by the daemon; mobile-friendly, installable)
+- (P) n8n connectors, TikTok, multi-user, plugin marketplace, AI lab
