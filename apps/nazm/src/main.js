@@ -30,6 +30,12 @@ function render() {
   }
 }
 
+function placeNavDot() {
+  const nav = $('#nav');
+  const a = nav.querySelector('a[aria-current="page"]');
+  if (a) nav.style.setProperty('--x', `${a.offsetLeft + a.offsetWidth / 2}px`);
+}
+
 function show() {
   const id = currentRoute();
   page = PAGES[id];
@@ -42,13 +48,14 @@ function show() {
     if (a.dataset.route === id) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
   });
   if (page.mount) page.mount();
+  placeNavDot();
   render();
   window.scrollTo(0, 0);
 }
 
 function buildChrome() {
   $('#top').innerHTML = `<button class="tb-btn" data-act="profile" aria-label="پروفایل">${icon('account_circle')}</button><span class="wordmark">نظم</span><button class="tb-btn" data-act="settings" aria-label="تنظیمات">${icon('settings')}</button>`;
-  $('#nav').innerHTML = NAV.map(([id, ic, label]) => `<a href="#/${id}" data-route="${id}">${icon(ic)}<small>${label}</small></a>`).join('');
+  $('#nav').innerHTML = NAV.map(([id, ic, label]) => `<a href="#/${id}" data-route="${id}" aria-label="${label}">${icon(ic)}<small>${label}</small></a>`).join('');
 }
 
 function splash() {
@@ -64,6 +71,7 @@ function boot() {
   bindActions($('#top'), { act: { profile: openProfile, settings: openSettings } });
   subscribe(render);
   window.addEventListener('hashchange', show);
+  window.addEventListener('resize', placeNavDot);
   $('#nav').addEventListener('click', (e) => {
     const a = e.target.closest('a');
     if (a && a.dataset.route === currentRoute() && PAGES[a.dataset.route].act.hub) PAGES[a.dataset.route].act.hub();

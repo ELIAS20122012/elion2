@@ -277,7 +277,6 @@ textarea.input { min-height: 72px; line-height: 1.6; }
 .shop-item.done { opacity: .55; }
 .shop-item.done span:first-child { text-decoration: line-through; }
 .shop-item.done .tick { background: var(--primary); border-color: var(--primary); color: var(--on-primary); }
-#nav a small { font-size: 10px; }
 
 /* ---- single "+" icon in the page corner (replaces add lines and the floating button) ---- */
 .page-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
