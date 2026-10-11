@@ -2957,9 +2957,8 @@ function strip() {
 
 /* ---------- program ---------- */
 function exerciseRow(e) {
-  const sets = Array.from({ length: e.sets }, (_, k) => `<button class="set${k < e.done ? ' on' : ''}" data-act="set" data-id="${e.id}" data-k="${k}" aria-label="ست ${fa(k + 1)}"></button>`).join('');
   return row({ ic: '', title: esc(e.name), cls: `${e.done >= e.sets ? ' is-done' : ''}`, act: 'ex-edit', attrs: `data-id="${e.id}"`,
-    sub: `${fa(e.sets)} ست × ${fa(e.reps)}${e.weight ? ` · ${esc(e.weight)}` : ''}`, trailing: `<div class="sets">${sets}</div>` });
+    sub: `${fa(e.sets)} ست × ${fa(e.reps)}${e.weight ? ` · ${esc(e.weight)}` : ''}` });
 }
 
 function programTab() {
@@ -2975,7 +2974,7 @@ function programTab() {
       ${isToday && has ? `<button class="act-btn fin${s.finished ? ' on' : ''}" data-act="finish" aria-label="${s.finished ? 'بازکردن تمرین' : 'پایان تمرین'}">${icon('check_circle')}</button>` : ''}
     </span>`;
   return `${strip()}
-    <div class="gym-head"><b>${esc((plan && plan.name) || (has && s.name) || 'استراحت')}</b><small>${WD_EN_LONG[parseIso(selected).getDay()]}${has ? ` · ${fa(st.done)}/${fa(st.tot)}` : ''}</small>${tools}</div>
+    <div class="gym-head"><b>${esc((plan && plan.name) || (has && s.name) || 'استراحت')}</b><small>${WD_EN_LONG[parseIso(selected).getDay()]}</small>${tools}</div>
     <div class="list">${has ? s.exercises.map(exerciseRow).join('') : empty(plan ? 'حرکتی در برنامه نیست' : 'روز استراحت، یا برنامه‌ای ثبت نشده')}</div>`;
 }
 
