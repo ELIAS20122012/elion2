@@ -351,3 +351,13 @@ test('budget: custom categories are created from a name and reused', () => {
   fin.dropCustomIfUnused(k);
   assert.equal(fin.customCats().length, 0);
 });
+
+test('budget: built-in categories can be renamed and hidden', () => {
+  replaceState(emptyState());
+  fin.renameCat('shopping', 'خرید خانه');
+  assert.equal(fin.catOf('shopping').label, 'خرید خانه');
+  assert.ok(fin.expenseCats().includes('shopping'));
+  fin.catOver().shopping.hidden = true;
+  assert.ok(!fin.expenseCats().includes('shopping'));
+  assert.equal(fin.catOf('shopping').label, 'خرید خانه'); // old transactions still resolve
+});

@@ -21,8 +21,16 @@ export const SIMPLE_EXP = ['food', 'shopping', 'transport', 'bills', 'health', '
 export const SIMPLE_INC = ['salary', 'gift', 'other'];
 /* Categories the user made themselves (name only) live next to the built-in ones. */
 export const customCats = () => S.wallet.customCats || (S.wallet.customCats = []);
-export const catOf = (key) => TXCAT[key] || customCats().find((c) => c.id === key) && { label: customCats().find((c) => c.id === key).label, icon: 'sell' } || TXCAT.other;
-export const expenseCats = () => [...EXP_CATS, ...customCats().map((c) => c.id)];
+/* Built-in categories can be renamed or hidden too: { key: { label?, hidden? } }. */
+export const catOver = () => S.wallet.catOver || (S.wallet.catOver = {});
+export function catOf(key) {
+  const own = customCats().find((c) => c.id === key);
+  const base = TXCAT[key] || (own ? { label: own.label, icon: 'sell' } : TXCAT.other);
+  const o = catOver()[key];
+  return o && o.label ? { ...base, label: o.label } : base;
+}
+export const isHidden = (key) => !!(catOver()[key] && catOver()[key].hidden);
+export const expenseCats = () => [...EXP_CATS, ...customCats().map((c) => c.id)].filter((k) => !isHidden(k));
 /** The id of the expense category with this name — an existing one, or a new one of the user's own. */
 export function categoryByName(label) {
   const name = label.trim();
@@ -31,6 +39,10 @@ export function categoryByName(label) {
   const c = { id: `c${uid()}`, label: name };
   customCats().push(c);
   return c.id;
+}
+export function renameCat(key, name) {
+  const own = customCats().find((c) => c.id === key);
+  if (own) own.label = name; else catOver()[key] = { ...catOver()[key], label: name };
 }
 export const hasTx = (key) => S.tx.some((t) => t.category === key);
 export function dropCustomIfUnused(key) {

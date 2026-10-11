@@ -366,3 +366,19 @@ textarea.input { min-height: 72px; line-height: 1.6; }
 .act-btn.fin.on { color: var(--primary); }
 .act-btn.fin.on .material-symbols-outlined { font-variation-settings: 'FILL' 1; }
 .gym-tools { gap: 2px; }
+
+/* ---- money home ---- */
+.balance-card.hero { background: linear-gradient(135deg, #2f4f46 0%, #4b6444 100%); position: relative; overflow: hidden; }
+.balance-card.hero::after { content: ''; position: absolute; left: -40px; bottom: -60px; width: 150px; height: 150px; border-radius: 50%; border: 22px solid rgba(255,255,255,.07); pointer-events: none; }
+.mini.flow { position: relative; }
+.mini-ic { position: absolute; inset-inline-end: 10px; top: 10px; width: 26px; height: 26px; border-radius: 8px; display: grid; place-items: center; }
+.mini-ic .material-symbols-outlined { font-size: 16px; }
+.mini-ic.in { background: color-mix(in srgb, var(--primary) 16%, transparent); color: var(--primary); }
+.mini-ic.out { background: var(--accent-soft); color: var(--accent-deep); }
+.budget-sum { display: flex; flex-direction: column; gap: 8px; text-align: start; width: 100%; }
+.tip-card { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: var(--r-md); text-align: start; background: color-mix(in srgb, var(--accent) 12%, transparent); border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent); color: var(--accent-deep); }
+.tip-card b { font-size: 13px; color: var(--ink); }
+.tip-card small { font-size: 11px; color: var(--muted); }
+.tip-ic { width: 30px; height: 30px; border-radius: 9px; display: grid; place-items: center; background: color-mix(in srgb, var(--accent) 25%, transparent); }
+.tip-ic .material-symbols-outlined { font-size: 18px; }
+.tip-card.warn { border-color: var(--danger); color: var(--danger); }

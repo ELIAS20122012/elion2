@@ -471,6 +471,22 @@ textarea.input { min-height: 72px; line-height: 1.6; }
 .act-btn.fin.on .material-symbols-outlined { font-variation-settings: 'FILL' 1; }
 .gym-tools { gap: 2px; }
 
+/* ---- money home ---- */
+.balance-card.hero { background: linear-gradient(135deg, #2f4f46 0%, #4b6444 100%); position: relative; overflow: hidden; }
+.balance-card.hero::after { content: ''; position: absolute; left: -40px; bottom: -60px; width: 150px; height: 150px; border-radius: 50%; border: 22px solid rgba(255,255,255,.07); pointer-events: none; }
+.mini.flow { position: relative; }
+.mini-ic { position: absolute; inset-inline-end: 10px; top: 10px; width: 26px; height: 26px; border-radius: 8px; display: grid; place-items: center; }
+.mini-ic .material-symbols-outlined { font-size: 16px; }
+.mini-ic.in { background: color-mix(in srgb, var(--primary) 16%, transparent); color: var(--primary); }
+.mini-ic.out { background: var(--accent-soft); color: var(--accent-deep); }
+.budget-sum { display: flex; flex-direction: column; gap: 8px; text-align: start; width: 100%; }
+.tip-card { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: var(--r-md); text-align: start; background: color-mix(in srgb, var(--accent) 12%, transparent); border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent); color: var(--accent-deep); }
+.tip-card b { font-size: 13px; color: var(--ink); }
+.tip-card small { font-size: 11px; color: var(--muted); }
+.tip-ic { width: 30px; height: 30px; border-radius: 9px; display: grid; place-items: center; background: color-mix(in srgb, var(--accent) 25%, transparent); }
+.tip-ic .material-symbols-outlined { font-size: 18px; }
+.tip-card.warn { border-color: var(--danger); color: var(--danger); }
+
 /* Everything is shared in components.css; screen-specific rules would go here. */
 
   </style>
@@ -2417,8 +2433,16 @@ const SIMPLE_EXP = ['food', 'shopping', 'transport', 'bills', 'health', 'other']
 const SIMPLE_INC = ['salary', 'gift', 'other'];
 /* Categories the user made themselves (name only) live next to the built-in ones. */
 const customCats = () => S.wallet.customCats || (S.wallet.customCats = []);
-const catOf = (key) => TXCAT[key] || customCats().find((c) => c.id === key) && { label: customCats().find((c) => c.id === key).label, icon: 'sell' } || TXCAT.other;
-const expenseCats = () => [...EXP_CATS, ...customCats().map((c) => c.id)];
+/* Built-in categories can be renamed or hidden too: { key: { label?, hidden? } }. */
+const catOver = () => S.wallet.catOver || (S.wallet.catOver = {});
+function catOf(key) {
+  const own = customCats().find((c) => c.id === key);
+  const base = TXCAT[key] || (own ? { label: own.label, icon: 'sell' } : TXCAT.other);
+  const o = catOver()[key];
+  return o && o.label ? { ...base, label: o.label } : base;
+}
+const isHidden = (key) => !!(catOver()[key] && catOver()[key].hidden);
+const expenseCats = () => [...EXP_CATS, ...customCats().map((c) => c.id)].filter((k) => !isHidden(k));
 /** The id of the expense category with this name — an existing one, or a new one of the user's own. */
 function categoryByName(label) {
   const name = label.trim();
@@ -2427,6 +2451,10 @@ function categoryByName(label) {
   const c = { id: `c${uid()}`, label: name };
   customCats().push(c);
   return c.id;
+}
+function renameCat(key, name) {
+  const own = customCats().find((c) => c.id === key);
+  if (own) own.label = name; else catOver()[key] = { ...catOver()[key], label: name };
 }
 const hasTx = (key) => S.tx.some((t) => t.category === key);
 function dropCustomIfUnused(key) {
@@ -2551,9 +2579,12 @@ __exports.INC_CATS = INC_CATS;
 __exports.SIMPLE_EXP = SIMPLE_EXP;
 __exports.SIMPLE_INC = SIMPLE_INC;
 __exports.customCats = customCats;
+__exports.catOver = catOver;
 __exports.catOf = catOf;
+__exports.isHidden = isHidden;
 __exports.expenseCats = expenseCats;
 __exports.categoryByName = categoryByName;
+__exports.renameCat = renameCat;
 __exports.hasTx = hasTx;
 __exports.dropCustomIfUnused = dropCustomIfUnused;
 __exports.ACC_TYPES = ACC_TYPES;
@@ -3118,7 +3149,7 @@ function txSheet(type, preset = {}, editId) {
   const t = editId ? fin.findTx(editId) : null;
   type = t ? t.type : type;
   const keys = t ? (type === 'income' ? fin.INC_CATS : fin.EXP_CATS) : (type === 'income' ? fin.SIMPLE_INC : fin.SIMPLE_EXP);
-  const cats = (type === 'income' ? keys : [...keys, ...fin.customCats().map((c) => c.id).filter((k) => !keys.includes(k))]).map((k) => ({ value: k, label: fin.catOf(k).label, icon: fin.catOf(k).icon }));
+  const cats = (type === 'income' ? keys : [...keys, ...fin.customCats().map((c) => c.id).filter((k) => !keys.includes(k))].filter((k) => !fin.isHidden(k) || (t && t.category === k))).map((k) => ({ value: k, label: fin.catOf(k).label, icon: fin.catOf(k).icon }));
   const fields = [
     { name: 'amount', label: `مبلغ (${S.profile.currency})`, type: 'number', value: t ? t.amount : preset.amount || '', placeholder: '0' },
     { name: 'category', label: 'دسته', type: 'chips', value: t ? t.category : preset.category || cats[0].value, options: cats },
@@ -3224,38 +3255,43 @@ function removeBudget() {
 }
 
 function removeCatBudget(key) {
-  const old = fin.catBudgets()[key];
+  const oldBudget = fin.catBudgets()[key];
+  const oldOver = fin.catOver()[key] ? { ...fin.catOver()[key] } : undefined;
   const custom = fin.customCats().find((c) => c.id === key);
   const label = fin.catOf(key).label;
   delete fin.catBudgets()[key];
+  fin.catOver()[key] = { ...oldOver, hidden: true };
   fin.dropCustomIfUnused(key);
   commit();
-  toast(`بودجه‌ی «${label}» حذف شد`, { label: 'واگرد', run: () => { if (custom) fin.customCats().push(custom); fin.catBudgets()[key] = old; commit(); } });
+  toast(`«${label}» حذف شد`, { label: 'واگرد', run: () => {
+    if (custom && !fin.customCats().some((c) => c.id === key)) fin.customCats().push(custom);
+    if (oldOver) fin.catOver()[key] = oldOver; else delete fin.catOver()[key];
+    if (oldBudget) fin.catBudgets()[key] = oldBudget;
+    commit();
+  } });
 }
 
-/** key = null → a new budget for any name you type (a new category is created when the name is new). */
+/** key = null → a new budget for any name you type. With a key: rename the category and/or change its budget (empty = no budget). */
 function catBudgetSheet(key) {
-  const custom = key && fin.customCats().find((c) => c.id === key);
-  const fields = [];
-  if (!key || custom) fields.push({ name: 'name', label: 'نام دسته (هر چه می‌خواهید)', value: custom ? custom.label : '' });
+  const fields = [{ name: 'name', label: 'نام دسته', value: key ? fin.catOf(key).label : '' }];
   fields.push({ name: 'b', label: `سقف ماهانه (${S.profile.currency})`, type: 'number', value: key ? fin.catBudgets()[key] || '' : '' });
   form({
-    title: key ? `بودجه ${fin.catOf(key).label}` : 'بودجه‌ی دسته‌ی تازه',
+    title: key ? 'ویرایش دسته' : 'بودجه‌ی دسته‌ی تازه',
     fields, focus: !key,
-    extra: key && fin.catBudgets()[key] ? [{ label: 'حذف', cls: 'danger', run: () => removeCatBudget(key) }] : [],
+    extra: key ? [{ label: 'حذف', cls: 'danger', run: () => removeCatBudget(key) }] : [],
     onSubmit(v) {
+      const name = (v.name || '').trim();
       const b = num(v.b);
-      if (b <= 0) { toast('سقف ماهانه را بنویسید'); return false; }
-      let k = key;
-      if (!k) {
-        const name = (v.name || '').trim();
-        if (!name) { toast('نام دسته را بنویسید'); return false; }
-        k = fin.categoryByName(name);
-      } else if (custom) {
-        const name = (v.name || '').trim();
-        if (name) custom.label = name;
+      if (!name) { toast('نام دسته را بنویسید'); return false; }
+      if (!key) {
+        if (b <= 0) { toast('سقف ماهانه را بنویسید'); return false; }
+        const k = fin.categoryByName(name);
+        if (fin.catOver()[k]) delete fin.catOver()[k].hidden;
+        fin.catBudgets()[k] = b;
+      } else {
+        if (name !== fin.catOf(key).label) fin.renameCat(key, name);
+        if (b > 0) fin.catBudgets()[key] = b; else delete fin.catBudgets()[key];
       }
-      fin.catBudgets()[k] = b;
       commit();
     },
   });
@@ -3348,18 +3384,33 @@ function summary() {
   const bal = fin.balance();
   const left = fin.budgetLeft();
   const used = fin.budgetUsedPct();
+  const inc = fin.monthSum('income');
+  const exp = fin.monthSum('expense');
+  const net = inc - exp;
   const cur = S.profile.currency === 'تومان' ? 'ت' : S.profile.currency;
   const amount = hide ? '••••••' : `${bal < 0 ? '-' : ''}${Math.abs(bal).toLocaleString('en-US', { maximumFractionDigits: 2 })}`;
-  return `<section class="balance-card">
-      <div class="row-between"><small class="eyebrow">موجودی فعلی</small><button class="eye" data-act="privacy" aria-label="نمایش یا پنهان کردن مبالغ">${icon(hide ? 'visibility_off' : 'visibility')}</button></div>
+  const tip = inc === 0 && exp === 0 ? ['هنوز چیزی ثبت نشده', 'اولین هزینه یا درآمدت را بنویس.', 'tips_and_updates']
+    : net >= 0 ? ['این ماه مثبت هستی', 'درآمد از هزینه بیشتر است. گزارش را برای جزئیات باز کن.', 'tips_and_updates']
+      : ['این ماه خرج از درآمد بیشتر است', 'گزارش را باز کن و ببین پول کجا رفته.', 'warning'];
+  return `<section class="balance-card hero">
+      <div class="row-between"><small class="eyebrow">نمای کلی مالی · ${monthLabel(currentMonthKey())}</small><button class="eye" data-act="privacy" aria-label="نمایش یا پنهان کردن مبالغ">${icon(hide ? 'visibility_off' : 'visibility')}</button></div>
+      <small class="eyebrow">موجودی فعلی</small>
       <b class="big-num ltr">${amount} <small>${esc(cur)}</small></b>
-      <div class="lines"><div><span>خرج امروز</span><b class="ltr">${money(fin.daySpend(today()), hide)}</b></div>
-        <div><span>خرج این ماه</span><b class="ltr">${money(fin.monthSum('expense'), hide)}</b></div></div>
+      <div class="lines"><div><span>خالص این ماه</span><b class="ltr">${money(net, hide)}</b></div></div>
     </section>
     <div class="duo">
-      <button class="mini" data-act="to-budget"><small>بودجه‌ی باقی‌مانده</small>${fin.monthBudget() ? `<b class="ltr ${left < 0 ? 'neg' : ''}">${money(Math.max(0, left), hide)}</b>${bar(used, used >= 100)}` : '<b>تعیین نشده</b>'}</button>
-      <button class="mini" data-act="to-monthly"><small>قسط‌های ثابت ماهانه</small><b class="ltr">${money(MO.total(), hide)}</b><small>${fa(MO.list().length)} مورد</small></button>
-    </div>`;
+      <div class="mini static flow"><span class="mini-ic in">${icon('south_west')}</span><small>درآمد ماه</small><b class="ltr">${money(inc, hide)}</b></div>
+      <div class="mini static flow"><span class="mini-ic out">${icon('north_east')}</span><small>هزینه ماه</small><b class="ltr">${money(exp, hide)}</b></div>
+    </div>
+    <button class="card budget-sum" data-act="to-budget">
+      <div class="row-between"><b>وضعیت بودجه</b><small class="link">جزئیات</small></div>
+      ${fin.monthBudget() ? `<div class="row-between"><small>تا پایان ماه مبلغ قابل خرج</small><b class="ltr ${left < 0 ? 'neg' : ''}">${money(left, hide)}</b></div>${bar(used, used >= 100)}` : '<small>بودجه‌ای تعیین نشده.</small>'}
+    </button>
+    <div class="duo">
+      <div class="mini static"><small>خرج امروز</small><b class="ltr">${money(fin.daySpend(today()), hide)}</b></div>
+      <button class="mini" data-act="to-monthly"><small>تعهدات ماهانه</small><b class="ltr">${money(MO.total(), hide)}</b><small>${fa(MO.list().length)} مورد</small></button>
+    </div>
+    <button class="tip-card${net < 0 ? ' warn' : ''}" data-act="to-report"><span class="tip-ic">${icon(tip[2])}</span><span class="grow col"><b>${tip[0]}</b><small>${tip[1]}</small></span>${icon('chevron_left')}</button>`;
 }
 
 /* ---------- tabs ---------- */
@@ -3403,7 +3454,7 @@ function budgetTab() {
     const c = fin.catOf(r.key);
     return row({ ic: '', title: esc(c.label),
       sub: `${M(r.spent)}${r.budget ? ` از ${M(r.budget)}` : ' · بدون بودجه'}${r.budget ? bar((r.spent / r.budget) * 100, r.spent > r.budget) : ''}`,
-      trailing: `<span class="gym-tools"><button class="act-btn" data-act="cat-budget" data-k="${r.key}" aria-label="ویرایش">${icon('edit')}</button>${r.budget ? `<button class="act-btn bad" data-act="cat-remove" data-k="${r.key}" aria-label="حذف">${icon('delete')}</button>` : ''}</span>` });
+      trailing: `<span class="gym-tools"><button class="act-btn" data-act="cat-budget" data-k="${r.key}" aria-label="ویرایش">${icon('edit')}</button><button class="act-btn bad" data-act="cat-remove" data-k="${r.key}" aria-label="حذف">${icon('delete')}</button></span>` });
   }).join('');
   const main = budget
     ? `<section class="card stack-s">
@@ -3446,6 +3497,7 @@ __default = {
     privacy() { S.privacy = !S.privacy; commit(); },
     'to-budget': () => setTab('money', 'budget'),
     'to-monthly': () => setTab('money', 'monthly'),
+    'to-report': () => setTab('money', 'report'),
     filter(el) { filter = el.dataset.v; refresh(); },
     noop() {},
     tx: (el) => txSheet(null, {}, el.dataset.id),

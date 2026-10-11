@@ -18,7 +18,7 @@ export function txSheet(type, preset = {}, editId) {
   const t = editId ? fin.findTx(editId) : null;
   type = t ? t.type : type;
   const keys = t ? (type === 'income' ? fin.INC_CATS : fin.EXP_CATS) : (type === 'income' ? fin.SIMPLE_INC : fin.SIMPLE_EXP);
-  const cats = (type === 'income' ? keys : [...keys, ...fin.customCats().map((c) => c.id).filter((k) => !keys.includes(k))]).map((k) => ({ value: k, label: fin.catOf(k).label, icon: fin.catOf(k).icon }));
+  const cats = (type === 'income' ? keys : [...keys, ...fin.customCats().map((c) => c.id).filter((k) => !keys.includes(k))].filter((k) => !fin.isHidden(k) || (t && t.category === k))).map((k) => ({ value: k, label: fin.catOf(k).label, icon: fin.catOf(k).icon }));
   const fields = [
     { name: 'amount', label: `مبلغ (${S.profile.currency})`, type: 'number', value: t ? t.amount : preset.amount || '', placeholder: '0' },
     { name: 'category', label: 'دسته', type: 'chips', value: t ? t.category : preset.category || cats[0].value, options: cats },
@@ -124,38 +124,43 @@ export function removeBudget() {
 }
 
 export function removeCatBudget(key) {
-  const old = fin.catBudgets()[key];
+  const oldBudget = fin.catBudgets()[key];
+  const oldOver = fin.catOver()[key] ? { ...fin.catOver()[key] } : undefined;
   const custom = fin.customCats().find((c) => c.id === key);
   const label = fin.catOf(key).label;
   delete fin.catBudgets()[key];
+  fin.catOver()[key] = { ...oldOver, hidden: true };
   fin.dropCustomIfUnused(key);
   commit();
-  toast(`بودجه‌ی «${label}» حذف شد`, { label: 'واگرد', run: () => { if (custom) fin.customCats().push(custom); fin.catBudgets()[key] = old; commit(); } });
+  toast(`«${label}» حذف شد`, { label: 'واگرد', run: () => {
+    if (custom && !fin.customCats().some((c) => c.id === key)) fin.customCats().push(custom);
+    if (oldOver) fin.catOver()[key] = oldOver; else delete fin.catOver()[key];
+    if (oldBudget) fin.catBudgets()[key] = oldBudget;
+    commit();
+  } });
 }
 
-/** key = null → a new budget for any name you type (a new category is created when the name is new). */
+/** key = null → a new budget for any name you type. With a key: rename the category and/or change its budget (empty = no budget). */
 export function catBudgetSheet(key) {
-  const custom = key && fin.customCats().find((c) => c.id === key);
-  const fields = [];
-  if (!key || custom) fields.push({ name: 'name', label: 'نام دسته (هر چه می‌خواهید)', value: custom ? custom.label : '' });
+  const fields = [{ name: 'name', label: 'نام دسته', value: key ? fin.catOf(key).label : '' }];
   fields.push({ name: 'b', label: `سقف ماهانه (${S.profile.currency})`, type: 'number', value: key ? fin.catBudgets()[key] || '' : '' });
   form({
-    title: key ? `بودجه ${fin.catOf(key).label}` : 'بودجه‌ی دسته‌ی تازه',
+    title: key ? 'ویرایش دسته' : 'بودجه‌ی دسته‌ی تازه',
     fields, focus: !key,
-    extra: key && fin.catBudgets()[key] ? [{ label: 'حذف', cls: 'danger', run: () => removeCatBudget(key) }] : [],
+    extra: key ? [{ label: 'حذف', cls: 'danger', run: () => removeCatBudget(key) }] : [],
     onSubmit(v) {
+      const name = (v.name || '').trim();
       const b = num(v.b);
-      if (b <= 0) { toast('سقف ماهانه را بنویسید'); return false; }
-      let k = key;
-      if (!k) {
-        const name = (v.name || '').trim();
-        if (!name) { toast('نام دسته را بنویسید'); return false; }
-        k = fin.categoryByName(name);
-      } else if (custom) {
-        const name = (v.name || '').trim();
-        if (name) custom.label = name;
+      if (!name) { toast('نام دسته را بنویسید'); return false; }
+      if (!key) {
+        if (b <= 0) { toast('سقف ماهانه را بنویسید'); return false; }
+        const k = fin.categoryByName(name);
+        if (fin.catOver()[k]) delete fin.catOver()[k].hidden;
+        fin.catBudgets()[k] = b;
+      } else {
+        if (name !== fin.catOf(key).label) fin.renameCat(key, name);
+        if (b > 0) fin.catBudgets()[key] = b; else delete fin.catBudgets()[key];
       }
-      fin.catBudgets()[k] = b;
       commit();
     },
   });

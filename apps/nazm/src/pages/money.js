@@ -25,18 +25,33 @@ function summary() {
   const bal = fin.balance();
   const left = fin.budgetLeft();
   const used = fin.budgetUsedPct();
+  const inc = fin.monthSum('income');
+  const exp = fin.monthSum('expense');
+  const net = inc - exp;
   const cur = S.profile.currency === 'تومان' ? 'ت' : S.profile.currency;
   const amount = hide ? '••••••' : `${bal < 0 ? '-' : ''}${Math.abs(bal).toLocaleString('en-US', { maximumFractionDigits: 2 })}`;
-  return `<section class="balance-card">
-      <div class="row-between"><small class="eyebrow">موجودی فعلی</small><button class="eye" data-act="privacy" aria-label="نمایش یا پنهان کردن مبالغ">${icon(hide ? 'visibility_off' : 'visibility')}</button></div>
+  const tip = inc === 0 && exp === 0 ? ['هنوز چیزی ثبت نشده', 'اولین هزینه یا درآمدت را بنویس.', 'tips_and_updates']
+    : net >= 0 ? ['این ماه مثبت هستی', 'درآمد از هزینه بیشتر است. گزارش را برای جزئیات باز کن.', 'tips_and_updates']
+      : ['این ماه خرج از درآمد بیشتر است', 'گزارش را باز کن و ببین پول کجا رفته.', 'warning'];
+  return `<section class="balance-card hero">
+      <div class="row-between"><small class="eyebrow">نمای کلی مالی · ${monthLabel(currentMonthKey())}</small><button class="eye" data-act="privacy" aria-label="نمایش یا پنهان کردن مبالغ">${icon(hide ? 'visibility_off' : 'visibility')}</button></div>
+      <small class="eyebrow">موجودی فعلی</small>
       <b class="big-num ltr">${amount} <small>${esc(cur)}</small></b>
-      <div class="lines"><div><span>خرج امروز</span><b class="ltr">${money(fin.daySpend(today()), hide)}</b></div>
-        <div><span>خرج این ماه</span><b class="ltr">${money(fin.monthSum('expense'), hide)}</b></div></div>
+      <div class="lines"><div><span>خالص این ماه</span><b class="ltr">${money(net, hide)}</b></div></div>
     </section>
     <div class="duo">
-      <button class="mini" data-act="to-budget"><small>بودجه‌ی باقی‌مانده</small>${fin.monthBudget() ? `<b class="ltr ${left < 0 ? 'neg' : ''}">${money(Math.max(0, left), hide)}</b>${bar(used, used >= 100)}` : '<b>تعیین نشده</b>'}</button>
-      <button class="mini" data-act="to-monthly"><small>قسط‌های ثابت ماهانه</small><b class="ltr">${money(MO.total(), hide)}</b><small>${fa(MO.list().length)} مورد</small></button>
-    </div>`;
+      <div class="mini static flow"><span class="mini-ic in">${icon('south_west')}</span><small>درآمد ماه</small><b class="ltr">${money(inc, hide)}</b></div>
+      <div class="mini static flow"><span class="mini-ic out">${icon('north_east')}</span><small>هزینه ماه</small><b class="ltr">${money(exp, hide)}</b></div>
+    </div>
+    <button class="card budget-sum" data-act="to-budget">
+      <div class="row-between"><b>وضعیت بودجه</b><small class="link">جزئیات</small></div>
+      ${fin.monthBudget() ? `<div class="row-between"><small>تا پایان ماه مبلغ قابل خرج</small><b class="ltr ${left < 0 ? 'neg' : ''}">${money(left, hide)}</b></div>${bar(used, used >= 100)}` : '<small>بودجه‌ای تعیین نشده.</small>'}
+    </button>
+    <div class="duo">
+      <div class="mini static"><small>خرج امروز</small><b class="ltr">${money(fin.daySpend(today()), hide)}</b></div>
+      <button class="mini" data-act="to-monthly"><small>تعهدات ماهانه</small><b class="ltr">${money(MO.total(), hide)}</b><small>${fa(MO.list().length)} مورد</small></button>
+    </div>
+    <button class="tip-card${net < 0 ? ' warn' : ''}" data-act="to-report"><span class="tip-ic">${icon(tip[2])}</span><span class="grow col"><b>${tip[0]}</b><small>${tip[1]}</small></span>${icon('chevron_left')}</button>`;
 }
 
 /* ---------- tabs ---------- */
@@ -80,7 +95,7 @@ function budgetTab() {
     const c = fin.catOf(r.key);
     return row({ ic: '', title: esc(c.label),
       sub: `${M(r.spent)}${r.budget ? ` از ${M(r.budget)}` : ' · بدون بودجه'}${r.budget ? bar((r.spent / r.budget) * 100, r.spent > r.budget) : ''}`,
-      trailing: `<span class="gym-tools"><button class="act-btn" data-act="cat-budget" data-k="${r.key}" aria-label="ویرایش">${icon('edit')}</button>${r.budget ? `<button class="act-btn bad" data-act="cat-remove" data-k="${r.key}" aria-label="حذف">${icon('delete')}</button>` : ''}</span>` });
+      trailing: `<span class="gym-tools"><button class="act-btn" data-act="cat-budget" data-k="${r.key}" aria-label="ویرایش">${icon('edit')}</button><button class="act-btn bad" data-act="cat-remove" data-k="${r.key}" aria-label="حذف">${icon('delete')}</button></span>` });
   }).join('');
   const main = budget
     ? `<section class="card stack-s">
@@ -123,6 +138,7 @@ export default {
     privacy() { S.privacy = !S.privacy; commit(); },
     'to-budget': () => setTab('money', 'budget'),
     'to-monthly': () => setTab('money', 'monthly'),
+    'to-report': () => setTab('money', 'report'),
     filter(el) { filter = el.dataset.v; refresh(); },
     noop() {},
     tx: (el) => txSheet(null, {}, el.dataset.id),
