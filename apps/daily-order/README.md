@@ -12,6 +12,12 @@ python3 -m http.server 8765      # یا: npx http-server -p 8765
 # → http://localhost:8765/
 ```
 
+## فایل یکپارچه (برای آرتیفکت یا باز کردن مستقیم)
+```
+node apps/daily-order/tools/build.mjs   # → apps/daily-order/dist/daily-order.html
+```
+یک HTML مستقل (CSS و JS داخلش) که از `file://` و داخل میزبان‌های sandbox هم باز می‌شود. بعد از هر تغییر در `src/` یا `css/` دوباره بسازید.
+
 ## تست
 ```
 node --test "apps/daily-order/tests/*.test.js"      # (هم‌چنین جزو npm test ریشه است)

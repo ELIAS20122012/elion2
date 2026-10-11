@@ -1,11 +1,11 @@
 /* The single source of truth: one JSON document persisted in localStorage.
-   `S` is a live binding — importers always see the current state object. */
+   `S` is one stable object; replacing the document rewrites its contents in place. */
 import { config } from './config.js';
 import { seed, emptyState } from './seed.js';
 
 export const STORAGE_KEY = 'daily-order-v2';
 
-export let S = null;
+export const S = {};
 let memFallback = null;
 const listeners = new Set();
 
@@ -57,9 +57,14 @@ export function migrate(state) {
   return state;
 }
 
+function setDocument(next) {
+  Object.keys(S).forEach((k) => delete S[k]);
+  Object.assign(S, migrate(next));
+}
+
 export function init() {
   const stored = read();
-  S = migrate(stored && stored.v ? stored : seed());
+  setDocument(stored && stored.v ? stored : seed());
   syncConfig();
   save();
   return S;
@@ -67,7 +72,7 @@ export function init() {
 
 /** Replace the whole document (import, reset, bfcache restore). */
 export function replaceState(next) {
-  S = migrate(next);
+  setDocument(next);
   syncConfig();
   save();
   refresh();
