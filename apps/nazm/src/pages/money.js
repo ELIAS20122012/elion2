@@ -56,7 +56,7 @@ function txTab() {
 function monthlyTab() {
   const rows = MO.list().map((m) => row({ ic: '', title: esc(m.title), cls: MO.isPaid(m) ? 'is-done' : '', sub: M(m.amount), act: 'monthly-edit', attrs: `data-id="${m.id}"`, trailing: check('monthly-pay', m.id, MO.isPaid(m)) })).join('');
   return `<section class="card row-between"><span><small>${monthLabel(currentMonthKey())}</small><b class="big ltr block">${M(MO.remainingTotal())}</b><small>باقی‌مانده از ${M(MO.total())}</small></span><span class="end"><small>پرداخت‌شده</small><b class="ltr block pos">${M(MO.paidTotal())}</b></span></section>
-    <div class="list">${rows || empty('هنوز چیزی ثبت نشده — مثلاً «برق ۵۰» بنویسید')}</div>
+    <div class="list cols2">${rows || empty('هنوز چیزی ثبت نشده — مثلاً «برق ۵۰» بنویسید')}</div>
     <small class="center block">با تیک زدن، هزینه‌ی همین ماه ثبت می‌شود؛ ماه بعد خودکار از اول شروع می‌شود.</small>`;
 }
 

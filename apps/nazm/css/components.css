@@ -286,3 +286,36 @@ textarea.input { min-height: 72px; line-height: 1.6; }
 .enter-btn { width: 32px; height: 32px; flex: none; border-radius: 50%; display: grid; place-items: center; background: var(--accent); color: #fff; }
 .enter-btn .material-symbols-outlined { font-size: 19px; }
 .enter-btn:active { transform: scale(.92); }
+
+/* ---- plain lines: text with a small tick, no white boxes ---- */
+.list { gap: 0; }
+.row { background: none; box-shadow: none; border-radius: 0; padding: 7px 2px; border-bottom: 1px solid var(--line); gap: 8px; }
+.row:last-child { border-bottom: 0; }
+.row-main { gap: 8px; }
+.row .col b { font-size: 13px; font-weight: 600; }
+.row .col small { font-size: 10.5px; line-height: 1.4; }
+.row-ic { width: 20px; height: 20px; border-radius: 0; background: none; }
+.row-ic .material-symbols-outlined { font-size: 16px; }
+.row-ic.coral { background: none; }
+.chk { width: 18px; height: 18px; border-width: 1.4px; }
+.chk .material-symbols-outlined { font-size: 12px; }
+.mini-photo { width: 26px; height: 26px; border-radius: 6px; }
+.sets { gap: 6px; padding-top: 2px; }
+.set { min-width: 28px; height: 24px; font-size: 11px; border-width: 1.3px; }
+.amt { font-size: 12.5px; }
+/* two plain columns side by side */
+.list.cols2 { display: grid; grid-template-columns: 1fr 1fr; column-gap: 18px; }
+.list.cols2 .row:nth-last-child(2):nth-child(odd) { border-bottom: 0; }
+/* shopping: same plain look */
+.shop-grid { column-gap: 18px; row-gap: 0; }
+.shop-item { background: none; box-shadow: none; border-radius: 0; padding: 7px 2px; border-bottom: 1px solid var(--line); font-size: 13px; }
+.shop-item .tick { width: 16px; height: 16px; border-width: 1.4px; }
+.shop-item .tick .material-symbols-outlined { font-size: 11px; }
+/* tighter blocks overall */
+.card { padding: 10px 12px; }
+.view { gap: 10px; }
+.stack { gap: 8px; }
+.sec { gap: 4px; }
+.sec-head h3 { font-size: 13px; }
+.drawer-body { padding-bottom: 8px; }
+.day-card { padding: 8px 12px; }
