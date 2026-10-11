@@ -359,3 +359,10 @@ textarea.input { min-height: 72px; line-height: 1.6; }
 .act-btn .material-symbols-outlined { font-size: 20px; }
 .act-btn.bad { color: var(--danger); }
 .act-btn:active { background: color-mix(in srgb, var(--primary) 12%, transparent); }
+
+.gym-head + .list .set { min-width: 0; width: 18px; height: 18px; padding: 0; }
+.gym-head + .list .sets { gap: 6px; }
+.act-btn.fin { color: var(--muted); }
+.act-btn.fin.on { color: var(--primary); }
+.act-btn.fin.on .material-symbols-outlined { font-variation-settings: 'FILL' 1; }
+.gym-tools { gap: 2px; }

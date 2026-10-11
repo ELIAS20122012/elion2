@@ -33,7 +33,7 @@ function strip() {
 
 /* ---------- program ---------- */
 function exerciseRow(e) {
-  const sets = Array.from({ length: e.sets }, (_, k) => `<button class="set${k < e.done ? ' on' : ''}" data-act="set" data-id="${e.id}" data-k="${k}">${fa(k + 1)}</button>`).join('');
+  const sets = Array.from({ length: e.sets }, (_, k) => `<button class="set${k < e.done ? ' on' : ''}" data-act="set" data-id="${e.id}" data-k="${k}" aria-label="ست ${fa(k + 1)}"></button>`).join('');
   return row({ ic: '', title: esc(e.name), cls: `${e.done >= e.sets ? ' is-done' : ''}`, act: 'ex-edit', attrs: `data-id="${e.id}"`,
     sub: `${fa(e.sets)} ست × ${fa(e.reps)}${e.weight ? ` · ${esc(e.weight)}` : ''}`, trailing: `<div class="sets">${sets}</div>` });
 }
@@ -47,8 +47,8 @@ function programTab() {
   const running = !!S.gym.timerStart && isToday;
   const tools = `<span class="gym-tools">
       ${isToday && has ? `<button class="tm${running ? ' live' : ''}" data-act="timer">${icon(running ? 'pause' : 'timer')}${fa(G.sessionMinutes(s))}${s.target ? `/${fa(s.target)}` : ''}</button>` : ''}
-      <button class="x-btn" data-act="plan" aria-label="ویرایش برنامه">${icon('edit')}</button>
-      ${isToday && has ? `<button class="chk${s.finished ? ' on' : ''}" data-act="finish" aria-label="${s.finished ? 'بازکردن تمرین' : 'پایان تمرین'}">${icon('check')}</button>` : ''}
+      <button class="act-btn" data-act="plan" aria-label="ویرایش برنامه">${icon('edit')}</button>
+      ${isToday && has ? `<button class="act-btn fin${s.finished ? ' on' : ''}" data-act="finish" aria-label="${s.finished ? 'بازکردن تمرین' : 'پایان تمرین'}">${icon('check_circle')}</button>` : ''}
     </span>`;
   return `${strip()}
     <div class="gym-head"><b>${esc((plan && plan.name) || (has && s.name) || 'استراحت')}</b><small>${WD_EN_LONG[parseIso(selected).getDay()]}${has ? ` · ${fa(st.done)}/${fa(st.tot)}` : ''}</small>${tools}</div>
