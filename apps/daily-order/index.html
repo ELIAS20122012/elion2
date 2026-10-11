@@ -1,0 +1,17 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Daily Order App</title>
+<style>
+:root{--bg:#ece8e1;--text:#45474c;--accent:#DE8353}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#1b1b19;--text:#c5c6cd}}
+:root[data-theme="dark"]{--bg:#1b1b19;--text:#c5c6cd}
+html,body{margin:0;min-height:100%;background:var(--bg);color:var(--text);font-family:Vazirmatn,Tahoma,sans-serif}
+.go{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:16px;box-sizing:border-box;text-align:center;direction:rtl}
+.go a{background:var(--accent);color:#fff;text-decoration:none;font-weight:700;padding:12px 22px;border-radius:16px}
+</style>
+<div class="go"><div>در حال باز کردن برنامه…</div><a href="dashboard.html?page=dashboard">ورود به برنامه</a></div>
+<script>
+/* Open the app directly (no nested frame) so the page scrolls natively everywhere */
+try { location.replace('dashboard.html?page=dashboard'); } catch (e) {}
+</script>
+
+</body></html>
