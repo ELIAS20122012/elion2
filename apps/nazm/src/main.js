@@ -1,5 +1,5 @@
 /* App shell: top bar (profile · name · settings), fixed bottom bar with four sections, router and render loop. */
-import { init, subscribe, reloadFromStorage, S } from './core/store.js';
+import { init, subscribe, reloadFromStorage, resetToSample, S } from './core/store.js';
 import { $ } from './core/util.js';
 import { currentRoute } from './router.js';
 import { bindActions, patchHTML } from './ui/dom.js';
@@ -72,7 +72,7 @@ function boot() {
   show();
   splash();
   checkReminders();
-  window.__app = { state: () => S };
+  window.__app = { state: () => S, sample: resetToSample };
 }
 
 boot();

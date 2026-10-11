@@ -70,7 +70,7 @@ function setDocument(next) {
 
 export function init() {
   const stored = read();
-  setDocument(stored && stored.v ? stored : seed());
+  setDocument(stored && stored.v ? stored : emptyState());
   syncConfig();
   save();
   return S;

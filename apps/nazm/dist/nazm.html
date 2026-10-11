@@ -800,7 +800,7 @@ function setDocument(next) {
 
 function init() {
   const stored = read();
-  setDocument(stored && stored.v ? stored : seed());
+  setDocument(stored && stored.v ? stored : emptyState());
   syncConfig();
   save();
   return S;
@@ -3461,7 +3461,7 @@ __exports.default = __default;
 };
 __defs["src/main.js"] = function (__exports) {
 /* App shell: top bar (profile · name · settings), fixed bottom bar with four sections, router and render loop. */
-const { init, subscribe, reloadFromStorage, S } = __r("src/core/store.js");
+const { init, subscribe, reloadFromStorage, resetToSample, S } = __r("src/core/store.js");
 const { $ } = __r("src/core/util.js");
 const { currentRoute } = __r("src/router.js");
 const { bindActions, patchHTML } = __r("src/ui/dom.js");
@@ -3534,7 +3534,7 @@ function boot() {
   show();
   splash();
   checkReminders();
-  window.__app = { state: () => S };
+  window.__app = { state: () => S, sample: resetToSample };
 }
 
 boot();
