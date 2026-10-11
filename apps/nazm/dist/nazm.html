@@ -324,7 +324,7 @@ function __r(p) {
 }
 __defs["src/core/config.js"] = function (__exports) {
 /* Runtime display settings read by the formatters. Synced from the saved state by the store. */
-const config = { calendar: 'jalali', currency: '€', privacy: false };
+const config = { calendar: 'gregorian', currency: '€', privacy: false };
 
 __exports.config = config;
 };
@@ -643,7 +643,7 @@ const STATE_VERSION = 2;
 function emptyState() {
   return {
     v: STATE_VERSION, privacy: false,
-    profile: { name: '', currency: '€', calendar: 'jalali' },
+    profile: { name: '', currency: '€', calendar: 'gregorian' },
     tasks: [], habits: [], blocks: [], plannerHideDone: false, appointments: [], shopping: [],
     wallet: { startBalance: 0, budget: 1500, alerts: true, quickSet: 0 },
     accounts: [{ id: 'main', name: 'حساب اصلی', type: 'bank', opening: 0 }],
@@ -712,7 +712,7 @@ function seed() {
 
   return {
     v: STATE_VERSION, privacy: false,
-    profile: { name: 'الیاس', currency: '€', calendar: 'jalali' },
+    profile: { name: 'الیاس', currency: '€', calendar: 'gregorian' },
     tasks: [
       { id: uid(), title: 'بررسی کدهای هفتگی تیم طراحی', date: d(0), time: '10:00', category: 'work', priority: 'high', starred: true, done: false, archived: false, reminder: false, note: 'پروژه داشبورد' },
       { id: uid(), title: 'ارسال گزارش مالی ماهانه به حسابدار', date: d(0), time: '14:30', category: 'finance', priority: 'med', starred: false, done: true, archived: false, reminder: false, note: 'امور مالی' },
@@ -798,7 +798,7 @@ function save() {
 }
 
 function syncConfig() {
-  config.calendar = S.profile.calendar || 'jalali';
+  config.calendar = S.profile.calendar || 'gregorian';
   config.currency = S.profile.currency || '€';
   config.privacy = !!S.privacy;
 }
@@ -806,7 +806,8 @@ function syncConfig() {
 /** Fill in fields that older saved documents don't have. */
 function migrate(state) {
   state.profile = state.profile || {};
-  state.profile.calendar = state.profile.calendar || 'jalali';
+  /* Dates are Gregorian now; documents saved before this switch are moved over once. */
+  if (!state.profile.calendar || !state.ui || !state.ui.gregorian) state.profile.calendar = 'gregorian';
   state.profile.currency = state.profile.currency || '€';
   state.wallet = state.wallet || {};
   state.gym = state.gym || {};
@@ -828,6 +829,7 @@ function migrate(state) {
   }
   /* UI memory used to live in several places; gather it under `ui`. */
   const ui = state.ui = state.ui || {};
+  ui.gregorian = true;
   ui.open = ui.open || {};
   ui.sub = Object.assign({}, state.wallet.accSub, ui.tasksSub, ui.sub);
   if (ui.tasksOpen !== undefined && ui.open.tasks === undefined) ui.open.tasks = ui.tasksOpen;
@@ -2263,11 +2265,11 @@ function openSettings() {
     fields: [
       { name: 'name', label: 'نام شما', value: S.profile.name },
       { name: 'currency', label: 'واحد پول', type: 'chips', value: S.profile.currency, options: [{ value: '€', label: '€' }, { value: '$', label: '$' }, { value: 'تومان', label: 'تومان' }] },
-      { name: 'calendar', label: 'تقویم', type: 'chips', value: S.profile.calendar || 'jalali', options: [{ value: 'jalali', label: 'شمسی' }, { value: 'gregorian', label: 'میلادی' }] },
+      { name: 'calendar', label: 'تقویم', type: 'chips', value: S.profile.calendar || 'gregorian', options: [{ value: 'gregorian', label: 'میلادی' }, { value: 'jalali', label: 'شمسی' }] },
       { name: 'gemini', label: 'کلید Gemini (برای تشخیص کالری از عکس غذا)', value: getGeminiKey(), placeholder: 'AIza…' },
     ],
     onSubmit(v) {
-      Object.assign(S.profile, { name: (v.name || '').trim(), currency: v.currency, calendar: v.calendar || 'jalali' });
+      Object.assign(S.profile, { name: (v.name || '').trim(), currency: v.currency, calendar: v.calendar || 'gregorian' });
       setGeminiKey(v.gemini || '');
       commit();
     },

@@ -35,11 +35,11 @@ export function openSettings() {
     fields: [
       { name: 'name', label: 'نام شما', value: S.profile.name },
       { name: 'currency', label: 'واحد پول', type: 'chips', value: S.profile.currency, options: [{ value: '€', label: '€' }, { value: '$', label: '$' }, { value: 'تومان', label: 'تومان' }] },
-      { name: 'calendar', label: 'تقویم', type: 'chips', value: S.profile.calendar || 'jalali', options: [{ value: 'jalali', label: 'شمسی' }, { value: 'gregorian', label: 'میلادی' }] },
+      { name: 'calendar', label: 'تقویم', type: 'chips', value: S.profile.calendar || 'gregorian', options: [{ value: 'gregorian', label: 'میلادی' }, { value: 'jalali', label: 'شمسی' }] },
       { name: 'gemini', label: 'کلید Gemini (برای تشخیص کالری از عکس غذا)', value: getGeminiKey(), placeholder: 'AIza…' },
     ],
     onSubmit(v) {
-      Object.assign(S.profile, { name: (v.name || '').trim(), currency: v.currency, calendar: v.calendar || 'jalali' });
+      Object.assign(S.profile, { name: (v.name || '').trim(), currency: v.currency, calendar: v.calendar || 'gregorian' });
       setGeminiKey(v.gemini || '');
       commit();
     },

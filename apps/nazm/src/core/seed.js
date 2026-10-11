@@ -9,7 +9,7 @@ export const STATE_VERSION = 2;
 export function emptyState() {
   return {
     v: STATE_VERSION, privacy: false,
-    profile: { name: '', currency: '€', calendar: 'jalali' },
+    profile: { name: '', currency: '€', calendar: 'gregorian' },
     tasks: [], habits: [], blocks: [], plannerHideDone: false, appointments: [], shopping: [],
     wallet: { startBalance: 0, budget: 1500, alerts: true, quickSet: 0 },
     accounts: [{ id: 'main', name: 'حساب اصلی', type: 'bank', opening: 0 }],
@@ -78,7 +78,7 @@ export function seed() {
 
   return {
     v: STATE_VERSION, privacy: false,
-    profile: { name: 'الیاس', currency: '€', calendar: 'jalali' },
+    profile: { name: 'الیاس', currency: '€', calendar: 'gregorian' },
     tasks: [
       { id: uid(), title: 'بررسی کدهای هفتگی تیم طراحی', date: d(0), time: '10:00', category: 'work', priority: 'high', starred: true, done: false, archived: false, reminder: false, note: 'پروژه داشبورد' },
       { id: uid(), title: 'ارسال گزارش مالی ماهانه به حسابدار', date: d(0), time: '14:30', category: 'finance', priority: 'med', starred: false, done: true, archived: false, reminder: false, note: 'امور مالی' },

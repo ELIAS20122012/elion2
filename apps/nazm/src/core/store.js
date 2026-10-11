@@ -21,7 +21,7 @@ export function save() {
 }
 
 function syncConfig() {
-  config.calendar = S.profile.calendar || 'jalali';
+  config.calendar = S.profile.calendar || 'gregorian';
   config.currency = S.profile.currency || '€';
   config.privacy = !!S.privacy;
 }
@@ -29,7 +29,8 @@ function syncConfig() {
 /** Fill in fields that older saved documents don't have. */
 export function migrate(state) {
   state.profile = state.profile || {};
-  state.profile.calendar = state.profile.calendar || 'jalali';
+  /* Dates are Gregorian now; documents saved before this switch are moved over once. */
+  if (!state.profile.calendar || !state.ui || !state.ui.gregorian) state.profile.calendar = 'gregorian';
   state.profile.currency = state.profile.currency || '€';
   state.wallet = state.wallet || {};
   state.gym = state.gym || {};
@@ -51,6 +52,7 @@ export function migrate(state) {
   }
   /* UI memory used to live in several places; gather it under `ui`. */
   const ui = state.ui = state.ui || {};
+  ui.gregorian = true;
   ui.open = ui.open || {};
   ui.sub = Object.assign({}, state.wallet.accSub, ui.tasksSub, ui.sub);
   if (ui.tasksOpen !== undefined && ui.open.tasks === undefined) ui.open.tasks = ui.tasksOpen;
