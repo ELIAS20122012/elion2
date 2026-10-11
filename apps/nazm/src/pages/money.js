@@ -10,7 +10,7 @@ import * as fin from '../domain/finance.js';
 import * as MO from '../domain/monthly.js';
 import * as SV from '../domain/savings.js';
 import { parseMoneyLine, splitAmount } from '../domain/quick.js';
-import { txSheet, historySheet, monthlySheet, savingSheet, budgetSheet, catBudgetSheet, addCatBudget, exportCsv } from '../features/finance-sheets.js';
+import { txSheet, historySheet, monthlySheet, savingSheet, budgetSheet, removeBudget, removeCatBudget, catBudgetSheet, addCatBudget, exportCsv } from '../features/finance-sheets.js';
 
 const ORDER = ['tx', 'monthly', 'budget', 'savings', 'report'];
 const ICONS = { tx: 'receipt_long', monthly: 'event_repeat', budget: 'donut_large', savings: 'savings', report: 'bar_chart' };
@@ -34,7 +34,7 @@ function summary() {
         <div><span>خرج این ماه</span><b class="ltr">${money(fin.monthSum('expense'), hide)}</b></div></div>
     </section>
     <div class="duo">
-      <button class="mini" data-act="to-budget"><small>بودجه‌ی باقی‌مانده</small><b class="ltr ${left < 0 ? 'neg' : ''}">${money(Math.max(0, left), hide)}</b>${bar(used, used >= 100)}</button>
+      <button class="mini" data-act="to-budget"><small>بودجه‌ی باقی‌مانده</small>${fin.monthBudget() ? `<b class="ltr ${left < 0 ? 'neg' : ''}">${money(Math.max(0, left), hide)}</b>${bar(used, used >= 100)}` : '<b>تعیین نشده</b>'}</button>
       <button class="mini" data-act="to-monthly"><small>قسط‌های ثابت ماهانه</small><b class="ltr">${money(MO.total(), hide)}</b><small>${fa(MO.list().length)} مورد</small></button>
     </div>`;
 }
@@ -79,14 +79,18 @@ function budgetTab() {
   const rows = fin.categoryBudgetRows().map((r) => {
     const c = fin.catOf(r.key);
     return row({ ic: c.icon, title: c.label, act: 'cat-budget', attrs: `data-k="${r.key}"`,
-      sub: `${M(r.spent)}${r.budget ? ` از ${M(r.budget)}` : ' · بدون بودجه'}${r.budget ? bar((r.spent / r.budget) * 100, r.spent > r.budget) : ''}` });
+      sub: `${M(r.spent)}${r.budget ? ` از ${M(r.budget)}` : ' · بدون بودجه'}${r.budget ? bar((r.spent / r.budget) * 100, r.spent > r.budget) : ''}`,
+      trailing: r.budget ? `<button class="x-btn" data-act="cat-remove" data-k="${r.key}" aria-label="حذف بودجه">${icon('close')}</button>` : '' });
   }).join('');
-  return `<section class="card stack-s">
-      <div class="row-between"><b>بودجه‌ی ${monthLabel(currentMonthKey())}</b><button class="link" data-act="set-budget">تنظیم</button></div>
+  const main = budget
+    ? `<section class="card stack-s">
+      <div class="row-between"><b>بودجه‌ی ${monthLabel(currentMonthKey())}</b><span class="gym-tools"><button class="link" data-act="set-budget">ویرایش</button><button class="x-btn" data-act="budget-remove" aria-label="حذف بودجه">${icon('close')}</button></span></div>
       <div class="lines-plain"><div><span>بودجه</span><b class="ltr">${M(budget)}</b></div><div><span>قسط‌های ثابت</span><b class="ltr">− ${M(fixed)}</b></div><div><span>خرج‌شده</span><b class="ltr">− ${M(spent)}</b></div></div>
       <div class="row-between"><small>باقی‌مانده</small><b class="big ltr ${left < 0 ? 'neg' : ''}">${M(left)}</b></div>
       ${bar(fin.budgetUsedPct(), left < 0)}
-    </section>
+    </section>`
+    : `<section class="card stack-s"><div class="row-between"><b>بودجه‌ی ${monthLabel(currentMonthKey())}</b><button class="link" data-act="set-budget">+ تعیین بودجه</button></div><small>بودجه‌ای تعیین نشده.</small></section>`;
+  return `${main}
     ${section('بودجه‌ی دسته‌ها', `<div class="list">${rows || empty('برای دسته‌ها بودجه تعیین نشده')}</div>`)}
     <button class="link center" data-act="new-cat">+ بودجه برای یک دسته</button>`;
 }
@@ -138,6 +142,8 @@ export default {
       toast(`«${r.item.place}» حذف شد`, { label: 'واگرد', run: () => { S.savings.splice(r.index, 0, r.item); commit(); } });
     },
     'set-budget': budgetSheet,
+    'budget-remove': removeBudget,
+    'cat-remove'(el) { removeCatBudget(el.dataset.k); },
     'new-cat': addCatBudget,
     'cat-budget': (el) => catBudgetSheet(el.dataset.k),
     csv: () => exportCsv(S.tx, 'all'),

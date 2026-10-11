@@ -106,6 +106,7 @@ export function budgetSheet() {
   form({
     title: 'بودجه ماهانه', sub: `قسط‌های ثابت: ${M(MO.total())} • خرج این ماه: ${M(fin.monthSum('expense'))}`,
     fields: [{ name: 'b', label: `سقف ماهانه (${S.profile.currency})`, type: 'number', value: fin.monthBudget() || '' }],
+    extra: fin.monthBudget() ? [{ label: 'حذف', cls: 'danger', run: removeBudget }] : [],
     onSubmit(v) {
       const b = num(v.b);
       if (b <= 0) { toast('مبلغ معتبر وارد کنید'); return false; }
@@ -115,10 +116,25 @@ export function budgetSheet() {
   });
 }
 
+export function removeBudget() {
+  const old = S.wallet.budget;
+  S.wallet.budget = 0;
+  commit();
+  toast('بودجه‌ی ماهانه حذف شد', { label: 'واگرد', run: () => { S.wallet.budget = old; commit(); } });
+}
+
+export function removeCatBudget(key) {
+  const old = fin.catBudgets()[key];
+  delete fin.catBudgets()[key];
+  commit();
+  toast(`بودجه‌ی «${fin.catOf(key).label}» حذف شد`, { label: 'واگرد', run: () => { fin.catBudgets()[key] = old; commit(); } });
+}
+
 export function catBudgetSheet(key) {
   const c = fin.catOf(key);
   form({
-    title: `بودجه ${c.label}`, sub: 'خالی بگذارید تا بودجه‌ی این دسته حذف شود.',
+    title: `بودجه ${c.label}`,
+    extra: fin.catBudgets()[key] ? [{ label: 'حذف', cls: 'danger', run: () => removeCatBudget(key) }] : [],
     fields: [{ name: 'b', label: `سقف ماهانه (${S.profile.currency})`, type: 'number', value: fin.catBudgets()[key] || '' }],
     onSubmit(v) {
       const b = num(v.b);
