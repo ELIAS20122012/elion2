@@ -27,6 +27,8 @@ export const daysBetween = (a, b) => Math.round((parseIso(b) - parseIso(a)) / 86
 
 /* index = Date#getDay() (0 = Sunday) */
 export const WD_SHORT = ['ی', 'د', 'س', 'چ', 'پ', 'ج', 'ش'];
+export const WD_EN = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+export const WD_EN_LONG = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 export const WD_LONG = ['یکشنبه', 'دوشنبه', 'سه‌شنبه', 'چهارشنبه', 'پنجشنبه', 'جمعه', 'شنبه'];
 
 /* The Persian week starts on Saturday. */

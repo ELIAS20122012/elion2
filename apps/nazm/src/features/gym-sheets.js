@@ -1,7 +1,7 @@
 /* Workout, calories and weight dialogs — kept deliberately short. */
 import { S, commit } from '../core/store.js';
 import { uid } from '../core/util.js';
-import { today, WD_LONG, parseIso } from '../core/dates.js';
+import { today, WD_EN_LONG, parseIso } from '../core/dates.js';
 import { fa, num } from '../core/format.js';
 import { toast } from '../ui/toast.js';
 import { form, confirmBox, infoSheet, later } from '../ui/sheet.js';
@@ -119,7 +119,7 @@ export function planSheet(date) {
   const wd = parseIso(date).getDay();
   const p = S.gym.weekly[wd] || { name: '', items: '' };
   form({
-    title: `برنامه ${WD_LONG[wd]}`,
+    title: `برنامه ${WD_EN_LONG[wd]}`,
     sub: 'هر حرکت در یک خط: نام | تعداد ست | تکرار | وزنه (اختیاری). برای روز استراحت خالی بگذارید.',
     focus: false,
     fields: [

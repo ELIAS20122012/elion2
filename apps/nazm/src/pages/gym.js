@@ -1,6 +1,6 @@
 /* Gym: workout plan · calories · food photo. A 7-day strip picks the day for every tab. */
 import { S, commit } from '../core/store.js';
-import { iso, addDays, today, weekStart, WD_SHORT, WD_LONG, parseIso } from '../core/dates.js';
+import { iso, addDays, today, WD_EN, WD_EN_LONG, parseIso } from '../core/dates.js';
 import { fa, faInt, esc } from '../core/format.js';
 import { faDayMonth, faDate } from '../core/calendar.js';
 import { toast } from '../ui/toast.js';
@@ -16,20 +16,24 @@ const LABELS = { program: 'برنامه تمرین', calories: 'کالری', pho
 let selected = today();
 
 const planOf = (date) => S.gym.weekly[parseIso(date).getDay()];
-const weekDates = () => Array.from({ length: 7 }, (_, i) => iso(addDays(weekStart(new Date()), i)));
+const weekDates = () => {
+  const t = new Date();
+  const mon = addDays(new Date(t.getFullYear(), t.getMonth(), t.getDate()), -((t.getDay() + 6) % 7));
+  return Array.from({ length: 7 }, (_, i) => iso(addDays(mon, i)));
+};
 const dayName = (d) => (d === today() ? 'امروز' : faDate(parseIso(d), { weekday: 'long', day: 'numeric', month: 'long' }));
 
 function strip() {
-  return `<div class="week">${weekDates().map((d) => {
+  return `<div class="wk">${weekDates().map((d) => {
     const p = planOf(d);
-    return `<button class="wd${d === selected ? ' on' : ''}${d === today() ? ' now' : ''}" data-act="day" data-date="${d}"><small>${WD_SHORT[parseIso(d).getDay()]}</small><b>${p && p.name ? '●' : '○'}</b></button>`;
+    return `<button class="wk-d${d === selected ? ' on' : ''}${d === today() ? ' now' : ''}${p && p.name ? ' has' : ''}" data-act="day" data-date="${d}">${WD_EN[parseIso(d).getDay()]}</button>`;
   }).join('')}</div>`;
 }
 
 /* ---------- program ---------- */
 function exerciseRow(e) {
   const sets = Array.from({ length: e.sets }, (_, k) => `<button class="set${k < e.done ? ' on' : ''}" data-act="set" data-id="${e.id}" data-k="${k}">${fa(k + 1)}</button>`).join('');
-  return row({ ic: 'fitness_center', title: esc(e.name), cls: `wrap${e.done >= e.sets ? ' is-done' : ''}`, act: 'ex-edit', attrs: `data-id="${e.id}"`,
+  return row({ ic: '', title: esc(e.name), cls: `${e.done >= e.sets ? ' is-done' : ''}`, act: 'ex-edit', attrs: `data-id="${e.id}"`,
     sub: `${fa(e.sets)} ست × ${fa(e.reps)}${e.weight ? ` · ${esc(e.weight)}` : ''}`, trailing: `<div class="sets">${sets}</div>` });
 }
 
@@ -40,18 +44,14 @@ function programTab() {
   const st = G.setsOf(s);
   const isToday = selected === today();
   const running = !!S.gym.timerStart && isToday;
+  const tools = `<span class="gym-tools">
+      ${isToday && has ? `<button class="tm${running ? ' live' : ''}" data-act="timer">${icon(running ? 'pause' : 'timer')}${fa(G.sessionMinutes(s))}${s.target ? `/${fa(s.target)}` : ''}</button>` : ''}
+      <button class="x-btn" data-act="plan" aria-label="ویرایش برنامه">${icon('edit')}</button>
+      ${isToday && has ? `<button class="chk${s.finished ? ' on' : ''}" data-act="finish" aria-label="${s.finished ? 'بازکردن تمرین' : 'پایان تمرین'}">${icon('check')}</button>` : ''}
+    </span>`;
   return `${strip()}
-    <section class="card plan-card">
-      ${ring(st.tot ? Math.round((st.done / st.tot) * 100) : 0, has ? `${fa(st.done)}/${fa(st.tot)}` : '—', 'ست', 100)}
-      <div class="grow col">
-        <small>${WD_LONG[parseIso(selected).getDay()]}</small>
-        <b class="t-lg">${esc((plan && plan.name) || (has && s.name) || 'استراحت')}</b>
-        ${isToday && has ? `<button class="btn-sm ${running ? 'live' : ''}" data-act="timer">${icon(running ? 'pause' : 'timer')}${fa(G.sessionMinutes(s))}${s.target ? `/${fa(s.target)}` : ''} دقیقه</button>` : ''}
-      </div>
-    </section>
-    <div class="list">${has ? s.exercises.map(exerciseRow).join('') : empty(plan ? 'حرکتی در برنامه نیست' : 'روز استراحت، یا برنامه‌ای ثبت نشده')}</div>
-    <div class="btns"><button class="btn-ghost" data-act="plan">${icon('edit_calendar')}ویرایش برنامه</button>
-      ${isToday && has ? `<button class="btn-primary" data-act="finish">${icon('flag')}${s.finished ? 'بازکردن تمرین' : 'پایان تمرین'}</button>` : ''}</div>`;
+    <div class="gym-head"><b>${esc((plan && plan.name) || (has && s.name) || 'استراحت')}</b><small>${WD_EN_LONG[parseIso(selected).getDay()]}${has ? ` · ${fa(st.done)}/${fa(st.tot)}` : ''}</small>${tools}</div>
+    <div class="list">${has ? s.exercises.map(exerciseRow).join('') : empty(plan ? 'حرکتی در برنامه نیست' : 'روز استراحت، یا برنامه‌ای ثبت نشده')}</div>`;
 }
 
 /* ---------- calories ---------- */
@@ -65,7 +65,7 @@ function caloriesTab() {
   const pgoal = S.gym.goals.p;
   const meals = G.mealsOn(selected);
   const tot = G.sumMeals(meals);
-  const trend = weekDates().map((d) => ({ v: G.sumMeals(G.mealsOn(d)).kcal, label: WD_SHORT[parseIso(d).getDay()], on: d === selected }));
+  const trend = weekDates().map((d) => ({ v: G.sumMeals(G.mealsOn(d)).kcal, label: WD_EN[parseIso(d).getDay()], on: d === selected }));
   return `${strip()}
     <section class="card plan-card">
       ${ring(Math.round((tot.kcal / goal) * 100), faInt(tot.kcal), 'کیلوکالری', 108)}
