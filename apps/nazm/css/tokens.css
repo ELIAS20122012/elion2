@@ -1,0 +1,20 @@
+/* Design tokens — deep olive green on warm cream. One theme, no dark mode (fewer options). */
+:root {
+  --green: #3f4d3a;
+  --green-deep: #2f3a2c;
+  --green-soft: #5b6c55;
+  --cream: #efe7d6;
+  --paper: #f7f1e4;
+  --line: #ddd2bb;
+  --ink: #2a3226;
+  --muted: #7c806f;
+  --sage: #a8b39a;
+  --on-green: #f1ead9;
+  --danger: #a5502d;
+  --font: 'Vazirmatn', Tahoma, sans-serif;
+  --serif: 'Cormorant Garamond', Georgia, serif;
+  --r-lg: 20px;
+  --r-md: 14px;
+  --gutter: 20px;
+  --shadow: 0 1px 2px rgba(47, 58, 44, .06), 0 6px 16px rgba(47, 58, 44, .06);
+}

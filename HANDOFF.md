@@ -5,6 +5,15 @@ Format: date · agent · what was done · state (finished / half-done + how to c
 
 ---
 
+## 2026-10-11 (7) · Claude (Claude Code, cloud)
+- Elias از طراحی Daily Order راضی نبود (شلوغ/گزینه زیاد). `apps/daily-order` رها شد و اپ جدید `apps/nazm/` ساخته شد:
+  طراحی سبز زیتونی/کرم (مرجع تصویر MOYA)، ۴ تب (خانه/ورزش/پول/من)، بدون حالت تاریک. منطق core/domain از اپ قبلی کپی شد
+  (همان کلید `daily-order-v2`)، UI و صفحه‌ها کاملاً تازه. ورزش: نوار برنامه باشگاه → ۷ روز → برنامه + کالری همان روز + عکس غذا.
+  تست: ۳۴ unit + ۱۷ سناریوی e2e سبز. بیلد: `node apps/nazm/tools/build.mjs` → `dist/nazm.html`.
+- State: finished.
+
+---
+
 ## 2026-10-11 (6) · Claude (Claude Code, cloud)
 - صفحه‌ی ورزش Daily Order طبق خواسته‌ی Elias: نوار «برنامه باشگاه» → ۷ روز → برنامه‌ی هر روز + نوار کالری همان روز + «عکس غذا»
   (کالری تخمینی را تأیید می‌کند و روی همان روز ذخیره می‌شود). تخمین: میزبان Claude یا کلید Gemini در تنظیمات
