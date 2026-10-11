@@ -8,7 +8,7 @@ import { pageHead, addLine, takeLine, drawers, toggleDrawer, row, check, empty, 
 import * as T from '../domain/tasks.js';
 import * as A from '../domain/appointments.js';
 import { taskSheet, toggleTask } from '../features/task-sheets.js';
-import { apptSheet } from '../features/plan-sheets.js';
+import { apptSheet, exportIcs } from '../features/plan-sheets.js';
 
 const ORDER = ['calendar', 'appts', 'daily'];
 const LABELS = { calendar: 'تقویم', appts: 'قرارها', daily: 'کارهای روزانه' };
@@ -55,7 +55,7 @@ function apptsTab() {
   const list = A.upcoming();
   const groups = [];
   list.forEach((a) => { const g = groups[groups.length - 1]; if (g && g.date === a.date) g.items.push(a); else groups.push({ date: a.date, items: [a] }); });
-  return groups.map((g) => section(dayLabel(g.date), `<div class="list">${g.items.map((a) => apptRow(a)).join('')}</div>`)).join('') || empty('قراری در پیش نیست');
+  return `${groups.map((g) => section(dayLabel(g.date), `<div class="list">${g.items.map((a) => apptRow(a)).join('')}</div>`)).join('') || empty('قراری در پیش نیست')}${groups.length ? '<button class="link" data-act="appt-ics">همه‌ی قرارها در تقویم گوشی (.ics)</button>' : ''}`;
 }
 
 function dailyTab() {
@@ -86,6 +86,7 @@ export default {
     step(el) { day = iso(addDays(parseIso(day), +el.dataset.d)); refresh(); },
     'task-check': (el) => toggleTask(el.dataset.id),
     'task-edit': (el) => taskSheet(el.dataset.id),
+    'appt-ics': () => exportIcs(),
     'appt-edit': (el) => apptSheet(el.dataset.id),
     quick(el) {
       const title = takeLine(el);

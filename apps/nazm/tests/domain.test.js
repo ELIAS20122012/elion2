@@ -327,3 +327,15 @@ test('migrate gives old documents an empty savings list', () => {
   const old = emptyState(); delete old.savings;
   assert.deepEqual(migrate(old).savings, []);
 });
+
+test('appointments: ics export carries time, place and an alarm', async () => {
+  const A = await import('../src/domain/appointments.js');
+  const a = A.saveAppt(null, { title: 'دکتر, مغز', kind: 'visit', date: '2026-11-03', time: '23:30', place: 'کلینیک', remind: '15' });
+  const ics = A.toIcs([a]);
+  assert.match(ics, /DTSTART:20261103T233000/);
+  assert.match(ics, /DTEND:20261104T003000/);
+  assert.match(ics, /SUMMARY:دکتر\\, مغز/);
+  assert.match(ics, /TRIGGER:-PT15M/);
+  const off = A.toIcs([A.saveAppt(null, { title: 'x', kind: 'meet', date: '2026-11-03', time: '10:00', remind: 'off' })]);
+  assert.ok(!off.includes('VALARM'));
+});

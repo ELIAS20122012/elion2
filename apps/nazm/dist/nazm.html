@@ -956,6 +956,88 @@ const icon = (name, cls = '') => `<span class="material-symbols-outlined ${cls}"
 
 __exports.icon = icon;
 };
+__defs["src/domain/appointments.js"] = function (__exports) {
+/* Appointments: a dated, timed, optionally located event of a few kinds. Pure data logic — no DOM. */
+const { S } = __r("src/core/store.js");
+const { uid } = __r("src/core/util.js");
+const { today, nowHM } = __r("src/core/dates.js");
+
+const KINDS = {
+  visit: { label: 'ترمین', icon: 'medical_services' },
+  meet: { label: 'ملاقات', icon: 'groups' },
+  meeting: { label: 'جلسه', icon: 'business_center' },
+  reminder: { label: 'یادآور', icon: 'notifications_active' },
+};
+/** Reminder lead times in minutes ('off' = none). */
+const REMIND = { off: 'بدون هشدار', 0: 'سر وقت', 15: '۱۵ دقیقه قبل', 30: '۳۰ دقیقه قبل', 60: '۱ ساعت قبل', 1440: '۱ روز قبل' };
+const remindOf = (a) => (a.remind == null ? '30' : String(a.remind));
+const kindOf = (a) => KINDS[a.kind] || KINDS.reminder;
+
+const findAppt = (id) => S.appointments.find((a) => a.id === id);
+const key = (a) => `${a.date} ${a.time || '99:99'}`;
+const sorted = (list = S.appointments) => list.slice().sort((a, b) => (key(a) < key(b) ? -1 : 1));
+const on = (date) => sorted(S.appointments.filter((a) => a.date === date));
+
+/** Today's later appointments and everything after, soonest first. */
+function upcoming() {
+  const t0 = today();
+  const now = nowHM();
+  return sorted(S.appointments.filter((a) => a.date > t0 || (a.date === t0 && (!a.time || a.time >= now))));
+}
+const nextAppointment = () => upcoming()[0] || null;
+
+function saveAppt(existing, f) {
+  const a = existing || { id: uid() };
+  Object.assign(a, { title: f.title, kind: f.kind, date: f.date, time: f.time || '', place: f.place || '', remind: f.remind == null ? '30' : String(f.remind) });
+  a.notified = false;
+  if (!existing) S.appointments.push(a);
+  return a;
+}
+function removeAppt(id) {
+  const i = S.appointments.findIndex((a) => a.id === id);
+  return i < 0 ? null : { appt: S.appointments.splice(i, 1)[0], index: i };
+}
+
+/* ---- iCalendar export (.ics): every phone/Google calendar can import it and will alert by itself ---- */
+const icsText = (x) => String(x || '').replace(/\\/g, '\\\\').replace(/[,;]/g, (c) => `\\${c}`).replace(/\r?\n/g, '\\n');
+const stamp = (date, time) => `${date.replace(/-/g, '')}T${(time || '09:00').replace(':', '')}00`;
+function endStamp(date, time) {
+  const [h, m] = (time || '09:00').split(':').map(Number);
+  const t = h * 60 + m + 60;
+  const d = new Date(`${date}T00:00:00`);
+  d.setDate(d.getDate() + Math.floor(t / 1440));
+  const p = (n) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}T${p(Math.floor((t % 1440) / 60))}${p(t % 60)}00`;
+}
+function toIcs(list) {
+  const lines = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Nazm//FA', 'CALSCALE:GREGORIAN'];
+  list.forEach((a) => {
+    lines.push('BEGIN:VEVENT', `UID:${a.id}@nazm`, `DTSTAMP:${stamp(today(), nowHM())}`);
+    if (a.time) lines.push(`DTSTART:${stamp(a.date, a.time)}`, `DTEND:${endStamp(a.date, a.time)}`);
+    else lines.push(`DTSTART;VALUE=DATE:${a.date.replace(/-/g, '')}`);
+    lines.push(`SUMMARY:${icsText(a.title)}`);
+    if (a.place) lines.push(`LOCATION:${icsText(a.place)}`);
+    const r = remindOf(a);
+    if (r !== 'off' && a.time) lines.push('BEGIN:VALARM', 'ACTION:DISPLAY', `DESCRIPTION:${icsText(a.title)}`, `TRIGGER:-PT${+r}M`, 'END:VALARM');
+    lines.push('END:VEVENT');
+  });
+  lines.push('END:VCALENDAR');
+  return `${lines.join('\r\n')}\r\n`;
+}
+
+__exports.KINDS = KINDS;
+__exports.REMIND = REMIND;
+__exports.remindOf = remindOf;
+__exports.kindOf = kindOf;
+__exports.findAppt = findAppt;
+__exports.sorted = sorted;
+__exports.on = on;
+__exports.upcoming = upcoming;
+__exports.nextAppointment = nextAppointment;
+__exports.saveAppt = saveAppt;
+__exports.removeAppt = removeAppt;
+__exports.toIcs = toIcs;
+};
 __defs["src/ui/toast.js"] = function (__exports) {
 let el;
 let timer;
@@ -1014,6 +1096,7 @@ __defs["src/features/reminders.js"] = function (__exports) {
 /* In-app reminders for timed tasks (run while the app is open). */
 const { S, persist } = __r("src/core/store.js");
 const { today, nowHM, hmToMin } = __r("src/core/dates.js");
+const { remindOf } = __r("src/domain/appointments.js");
 const { notify } = __r("src/services/notify.js");
 
 const WINDOW_MIN = 30; // fire if we are at most this late
@@ -1026,6 +1109,17 @@ function checkReminders() {
 
   S.tasks.forEach((t) => {
     if (t.reminder && !t.done && !t.notified && t.date === d && t.time && late(t.time)) { t.notified = true; changed = true; notify(`یادآوری: ${t.title}`); }
+  });
+  const stamp = (a) => new Date(`${a.date}T${a.time}:00`).getTime();
+  S.appointments.forEach((a) => {
+    const r = remindOf(a);
+    if (r === 'off' || !a.time || a.notified) return;
+    const start = stamp(a);
+    const nowMs = Date.now();
+    if (nowMs >= start - r * 60000 && nowMs < start + 30 * 60000) {
+      a.notified = true; changed = true;
+      notify(`${a.title} — ${a.time}${a.place ? ` · ${a.place}` : ''}`);
+    }
   });
   if (changed) persist();
 }
@@ -2230,54 +2324,6 @@ __exports.habitDone = habitDone;
 __exports.habitStreak = habitStreak;
 __exports.bumpHabit = bumpHabit;
 };
-__defs["src/domain/appointments.js"] = function (__exports) {
-/* Appointments: a dated, timed, optionally located event of a few kinds. Pure data logic — no DOM. */
-const { S } = __r("src/core/store.js");
-const { uid } = __r("src/core/util.js");
-const { today, nowHM } = __r("src/core/dates.js");
-
-const KINDS = {
-  visit: { label: 'ترمین', icon: 'medical_services' },
-  meet: { label: 'ملاقات', icon: 'groups' },
-  meeting: { label: 'جلسه', icon: 'business_center' },
-  reminder: { label: 'یادآور', icon: 'notifications_active' },
-};
-const kindOf = (a) => KINDS[a.kind] || KINDS.reminder;
-
-const findAppt = (id) => S.appointments.find((a) => a.id === id);
-const key = (a) => `${a.date} ${a.time || '99:99'}`;
-const sorted = (list = S.appointments) => list.slice().sort((a, b) => (key(a) < key(b) ? -1 : 1));
-const on = (date) => sorted(S.appointments.filter((a) => a.date === date));
-
-/** Today's later appointments and everything after, soonest first. */
-function upcoming() {
-  const t0 = today();
-  const now = nowHM();
-  return sorted(S.appointments.filter((a) => a.date > t0 || (a.date === t0 && (!a.time || a.time >= now))));
-}
-const nextAppointment = () => upcoming()[0] || null;
-
-function saveAppt(existing, f) {
-  const a = existing || { id: uid() };
-  Object.assign(a, { title: f.title, kind: f.kind, date: f.date, time: f.time || '', place: f.place || '' });
-  if (!existing) S.appointments.push(a);
-  return a;
-}
-function removeAppt(id) {
-  const i = S.appointments.findIndex((a) => a.id === id);
-  return i < 0 ? null : { appt: S.appointments.splice(i, 1)[0], index: i };
-}
-
-__exports.KINDS = KINDS;
-__exports.kindOf = kindOf;
-__exports.findAppt = findAppt;
-__exports.sorted = sorted;
-__exports.on = on;
-__exports.upcoming = upcoming;
-__exports.nextAppointment = nextAppointment;
-__exports.saveAppt = saveAppt;
-__exports.removeAppt = removeAppt;
-};
 __defs["src/domain/monthly.js"] = function (__exports) {
 /* Fixed monthly payments (electricity, internet, car installment…): a name and a monthly amount.
    They are not ticked off — their total is simply taken out of the monthly budget every month.
@@ -2624,6 +2670,8 @@ const { today } = __r("src/core/dates.js");
 const { toast } = __r("src/ui/toast.js");
 const { form } = __r("src/ui/sheet.js");
 const A = __r("src/domain/appointments.js");
+const { saveFile } = __r("src/services/files.js");
+const { askNotif } = __r("src/services/notify.js");
 const SH = __r("src/domain/shopping.js");
 
 function apptSheet(id, date = today()) {
@@ -2636,19 +2684,26 @@ function apptSheet(id, date = today()) {
       { name: 'date', label: 'تاریخ', type: 'date', value: a ? a.date : date, row: 'a' },
       { name: 'time', label: 'ساعت', type: 'time', value: a ? a.time : '', row: 'a' },
       { name: 'place', label: 'مکان (اختیاری)', value: a ? a.place : '' },
+      { name: 'remind', label: 'هشدار', type: 'chips', value: a ? A.remindOf(a) : '30', options: Object.entries(A.REMIND).map(([value, label]) => ({ value, label })) },
     ],
     focus: !a,
-    extra: a ? [{
+    extra: a ? [{ label: 'افزودن به تقویم', run: () => exportIcs([a]) }, {
       label: 'حذف', cls: 'danger',
       run: () => { const r = A.removeAppt(a.id); commit(); toast('قرار حذف شد', { label: 'واگرد', run: () => { S.appointments.splice(r.index, 0, r.appt); commit(); } }); },
     }] : [],
     onSubmit(v) {
       const title = (v.title || '').trim();
       if (!title) { toast('عنوان را وارد کنید'); return false; }
-      A.saveAppt(a, { title, kind: v.kind, date: v.date || today(), time: v.time, place: (v.place || '').trim() });
+      A.saveAppt(a, { title, kind: v.kind, date: v.date || today(), time: v.time, place: (v.place || '').trim(), remind: v.remind });
+      if (v.remind !== 'off' && v.time) askNotif();
       commit();
     },
   });
+}
+
+function exportIcs(list = A.upcoming()) {
+  if (!list.length) { toast('قراری برای خروجی نیست'); return; }
+  saveFile('nazm-appointments.ics', A.toIcs(list), 'text/calendar', 'فایل تقویم آماده شد — بازش کن تا به تقویم اضافه شود');
 }
 
 function shopSheet(id) {
@@ -2668,6 +2723,7 @@ function shopSheet(id) {
 }
 
 __exports.apptSheet = apptSheet;
+__exports.exportIcs = exportIcs;
 __exports.shopSheet = shopSheet;
 };
 __defs["src/pages/tasks.js"] = function (__exports) {
@@ -2682,7 +2738,7 @@ const { pageHead, addLine, takeLine, drawers, toggleDrawer, row, check, empty, s
 const T = __r("src/domain/tasks.js");
 const A = __r("src/domain/appointments.js");
 const { taskSheet, toggleTask } = __r("src/features/task-sheets.js");
-const { apptSheet } = __r("src/features/plan-sheets.js");
+const { apptSheet, exportIcs } = __r("src/features/plan-sheets.js");
 
 const ORDER = ['calendar', 'appts', 'daily'];
 const LABELS = { calendar: 'تقویم', appts: 'قرارها', daily: 'کارهای روزانه' };
@@ -2729,7 +2785,7 @@ function apptsTab() {
   const list = A.upcoming();
   const groups = [];
   list.forEach((a) => { const g = groups[groups.length - 1]; if (g && g.date === a.date) g.items.push(a); else groups.push({ date: a.date, items: [a] }); });
-  return groups.map((g) => section(dayLabel(g.date), `<div class="list">${g.items.map((a) => apptRow(a)).join('')}</div>`)).join('') || empty('قراری در پیش نیست');
+  return `${groups.map((g) => section(dayLabel(g.date), `<div class="list">${g.items.map((a) => apptRow(a)).join('')}</div>`)).join('') || empty('قراری در پیش نیست')}${groups.length ? '<button class="link" data-act="appt-ics">همه‌ی قرارها در تقویم گوشی (.ics)</button>' : ''}`;
 }
 
 function dailyTab() {
@@ -2760,6 +2816,7 @@ __default = {
     step(el) { day = iso(addDays(parseIso(day), +el.dataset.d)); refresh(); },
     'task-check': (el) => toggleTask(el.dataset.id),
     'task-edit': (el) => taskSheet(el.dataset.id),
+    'appt-ics': () => exportIcs(),
     'appt-edit': (el) => apptSheet(el.dataset.id),
     quick(el) {
       const title = takeLine(el);
