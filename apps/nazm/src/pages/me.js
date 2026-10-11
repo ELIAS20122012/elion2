@@ -1,5 +1,5 @@
 /* Me: weight, targets, settings and data — everything that is not a daily action. */
-import { S, commit } from '../core/store.js';
+import { S } from '../core/store.js';
 import { fa, faInt, esc } from '../core/format.js';
 import { icon } from '../ui/widgets.js';
 import * as G from '../domain/gym.js';
