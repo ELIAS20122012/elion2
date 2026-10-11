@@ -1,6 +1,7 @@
 /* App shell: top bar (profile · name · settings), fixed bottom bar with four sections, router and render loop. */
 import { init, subscribe, reloadFromStorage, resetToSample, S } from './core/store.js';
 import { $ } from './core/util.js';
+import { esc } from './core/format.js';
 import { currentRoute } from './router.js';
 import { bindActions, patchHTML } from './ui/dom.js';
 import { icon } from './ui/widgets.js';
@@ -25,7 +26,7 @@ function render() {
     patchHTML(view, page.render());
   } catch (e) {
     console.error(e);
-    view.innerHTML = `<p class="empty">خطایی رخ داد.<br><small>${String(e.message || e)}</small></p>`;
+    view.innerHTML = `<p class="empty">خطایی رخ داد.<br><small>${esc(String(e.message || e))}</small></p>`;
   }
 }
 

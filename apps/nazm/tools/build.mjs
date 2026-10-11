@@ -1,6 +1,7 @@
 /* Bundle the app into one self-contained HTML file (no module fetches, works from file:// and in sandboxed hosts).
-   Usage: node apps/daily-order/tools/build.mjs  →  apps/daily-order/dist/nazm.html */
-import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
+   Usage: node apps/nazm/tools/build.mjs [--check]  →  apps/nazm/dist/nazm.html
+   --check writes nothing and exits 1 when the committed dist is out of date with src/. */
+import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
 import { dirname, join, posix } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -82,6 +83,12 @@ const html = read('index.html')
   .replace('</head>', () => `  <style>\n${css}\n  </style>\n</head>`)
   .replace('<script type="module" src="src/main.js"></script>', () => `<script>\n${script.replace(/<\/script/gi, '<\\/script')}\n</script>`);
 
+if (process.argv.includes('--check')) {
+  const file = join(root, 'dist/nazm.html');
+  if (!existsSync(file) || readFileSync(file, 'utf8') !== html) { console.error('dist/nazm.html is out of date — run: node apps/nazm/tools/build.mjs'); process.exit(1); }
+  console.log('dist/nazm.html is up to date');
+  process.exit(0);
+}
 mkdirSync(join(root, 'dist'), { recursive: true });
 writeFileSync(join(root, 'dist/nazm.html'), html);
 console.log(`dist/nazm.html  ${(html.length / 1024).toFixed(0)} KB, ${order.length} modules`);

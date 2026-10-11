@@ -57,7 +57,7 @@ function programTab() {
 /* ---------- calories ---------- */
 function mealRow(m) {
   return row({ ic: 'restaurant', title: esc(m.name), sub: `${fa(m.kcal)} کیلوکالری${m.p ? ` · ${fa(m.p)} گرم پروتئین` : ''}`, act: 'meal', attrs: `data-id="${m.id}"`,
-    trailing: m.photo ? `<img class="mini-photo" src="${m.photo}" alt="">` : '' });
+    trailing: m.photo ? `<img class="mini-photo" src="${esc(m.photo)}" alt="">` : '' });
 }
 
 function caloriesTab() {
@@ -90,7 +90,7 @@ function photoTab() {
       <button class="btn-accent" data-act="photo">${icon('add_a_photo')}افزودن عکس</button>
     </section>
     ${strip()}
-    ${section('تاریخچه‌ی غذاها', `<div class="list">${hist.map((m) => row({ ic: 'restaurant', title: esc(m.name), sub: `${faDayMonth(parseIso(m.date))} · ${fa(m.kcal)} کیلوکالری${m.p ? ` · ${fa(m.p)}g پروتئین` : ''}`, act: 'hist', attrs: `data-id="${m.id}" data-date="${m.date}"`, trailing: `<img class="mini-photo" src="${m.photo}" alt="">` })).join('') || empty('هنوز عکسی ثبت نشده')}</div>`)}`;
+    ${section('تاریخچه‌ی غذاها', `<div class="list">${hist.map((m) => row({ ic: 'restaurant', title: esc(m.name), sub: `${faDayMonth(parseIso(m.date))} · ${fa(m.kcal)} کیلوکالری${m.p ? ` · ${fa(m.p)}g پروتئین` : ''}`, act: 'hist', attrs: `data-id="${m.id}" data-date="${m.date}"`, trailing: `<img class="mini-photo" src="${esc(m.photo)}" alt="">` })).join('') || empty('هنوز عکسی ثبت نشده')}</div>`)}`;
 }
 
 const lineFor = (tab) => (tab === 'program' ? addLine('حرکت تازه… و Enter') : tab === 'calories' ? addLine('غذا و کالری، مثلاً ماست ۱۲۰ — و Enter') : '');

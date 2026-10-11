@@ -32,8 +32,12 @@ export function makeSpeaker(home: string, voice = "fa-IR-FaridNeural", python?: 
       let err = "";
       p.stderr.on("data", (d) => (err += d));
       p.on("error", reject);
-      p.on("close", (code) => (code === 0 && fs.existsSync(out) ? resolve(out) : reject(new Error(`tts failed (${code}): ${err.slice(-300)}`))));
+      const killer = setTimeout(() => p.kill(), 120_000);
+      p.on("close", (code) => {
+        clearTimeout(killer);
+        if (code === 0 && fs.existsSync(out)) resolve(out);
+        else reject(new Error(`tts failed (${code}): ${err.slice(-300)}`));
+      });
       p.stdin.end(speakable(text), "utf8");
-      setTimeout(() => p.kill(), 120_000);
     });
 }

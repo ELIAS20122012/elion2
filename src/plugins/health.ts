@@ -6,6 +6,7 @@ import type { Kernel } from "../kernel/kernel.ts";
 import type { ExecutionProvider } from "../providers/types.ts";
 import { GoogleAuth } from "../connectors/google.ts";
 import type { Plugin } from "./types.ts";
+import { withTimeout } from "../kernel/timeout.ts";
 
 export interface CheckResult {
   key: string;
@@ -47,7 +48,7 @@ export async function runChecks(k: Kernel, home: string, o: { google?: GoogleAut
       note = `محدود تا ${new Date(until).toLocaleTimeString("fa-IR", { hour: "2-digit", minute: "2-digit" })}`;
     } else {
       try {
-        const h = await Promise.race([p.health(), new Promise<{ ok: boolean; detail: string }>((r) => setTimeout(() => r({ ok: false, detail: "timeout" }), 20_000))]);
+        const h = await withTimeout<{ ok: boolean; detail: string }>(p.health(), 20_000, { ok: false, detail: "timeout" });
         ok = h.ok;
         if (!ok) note = h.detail.slice(0, 60);
       } catch (e) {

@@ -78,7 +78,7 @@ function budgetTab() {
   const left = fin.budgetLeft();
   const rows = fin.categoryBudgetRows().map((r) => {
     const c = fin.catOf(r.key);
-    return row({ ic: '', title: c.label,
+    return row({ ic: '', title: esc(c.label),
       sub: `${M(r.spent)}${r.budget ? ` از ${M(r.budget)}` : ' · بدون بودجه'}${r.budget ? bar((r.spent / r.budget) * 100, r.spent > r.budget) : ''}`,
       trailing: `<span class="gym-tools"><button class="act-btn" data-act="cat-budget" data-k="${r.key}" aria-label="ویرایش">${icon('edit')}</button>${r.budget ? `<button class="act-btn bad" data-act="cat-remove" data-k="${r.key}" aria-label="حذف">${icon('delete')}</button>` : ''}</span>` });
   }).join('');
@@ -101,7 +101,7 @@ function reportTab() {
   const cols = flow.map((r, i) => ({ v: r.expense, label: monthLabel(r.key).split(' ')[0], on: i === flow.length - 1 }));
   const tile = (label, value, cls = '') => `<div class="mini static"><small>${label}</small><b class="ltr ${cls}">${value}</b></div>`;
   return `<div class="duo">${tile('خرج این ماه', M(fin.monthSum('expense')), 'neg')}${tile('درآمد این ماه', M(fin.monthSum('income')), 'pos')}</div>
-    <div class="duo">${tile('قسط‌های ثابت', M(MO.total()))}${tile('بیشترین هزینه', top ? `${fin.catOf(top.key).label}` : '—')}</div>
+    <div class="duo">${tile('قسط‌های ثابت', M(MO.total()))}${tile('بیشترین هزینه', top ? esc(fin.catOf(top.key).label) : '—')}</div>
     ${section('خرج ۶ ماه اخیر', `<div class="card">${bars(cols)}</div>`)}
     <button class="link center" data-act="csv">خروجی اکسل (CSV)</button>`;
 }

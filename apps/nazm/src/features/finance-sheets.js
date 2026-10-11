@@ -96,7 +96,7 @@ export function reportSheet() {
   html += cats.length ? cats.map((k) => {
     const c = fin.catOf(k);
     const pct = Math.round((by[k] / exp) * 100);
-    return `<div class="item"><span class="item-icon"><span class="material-symbols-outlined">${c.icon}</span></span><span class="grow"><span class="item-title">${c.label} <span class="item-sub">${fa(pct)}٪</span></span><span class="progress"><i style="width:${pct}%"></i></span></span><b class="amt">${M(by[k])}</b></div>`;
+    return `<div class="item"><span class="item-icon"><span class="material-symbols-outlined">${c.icon}</span></span><span class="grow"><span class="item-title">${esc(c.label)} <span class="item-sub">${fa(pct)}٪</span></span><span class="progress"><i style="width:${pct}%"></i></span></span><b class="amt">${M(by[k])}</b></div>`;
   }).join('') : '<div class="empty">هنوز هزینه‌ای ثبت نشده</div>';
   infoSheet('گزارش مالی', html, [{ label: 'خروجی اکسل (CSV)', run: () => exportCsv(S.tx, 'all') }]);
 }

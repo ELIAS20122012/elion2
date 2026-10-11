@@ -11,6 +11,9 @@ import { registerStatic } from "../interfaces/dashboard.ts";
 import { readConfig } from "./research.ts";
 import type { Plugin } from "./types.ts";
 
+/** Pinned so a deploy never changes behaviour because a new wrangler was released. Bump deliberately. */
+const WRANGLER = "wrangler@4.149.0";
+
 export const SITE_PLAN_TITLE = "🌐 ویرایش سایت";
 const MAX_FILES = 12;
 
@@ -95,7 +98,7 @@ export const websitePlugin: Plugin = {
         new Promise((resolve, reject) => {
           if (!fs.existsSync(draftDir)) return reject(new Error("no draft to publish"));
           writeDir(siteDir, readSite(draftDir));
-          const p = spawn("npx", ["-y", "wrangler@latest", "pages", "deploy", "site", "--project-name", project, "--branch", "main", "--commit-dirty=true"], {
+          const p = spawn("npx", ["-y", WRANGLER, "pages", "deploy", "site", "--project-name", project, "--branch", "main", "--commit-dirty=true"], {
             cwd: home,
             shell: process.platform === "win32",
             windowsHide: true,

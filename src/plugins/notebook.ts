@@ -76,7 +76,7 @@ export function parse(text: string, rel = ""): Note | null {
     }
     body = body.slice(0, at);
   }
-  const type = (f.type in TYPES ? f.type : "raw") as NoteType;
+  const type = (f.type !== undefined && f.type in TYPES ? f.type : "raw") as NoteType;
   return {
     id: f.id, type, title: f.title ?? "", topic: f.topic ?? "", tags: (f.tags ?? "").split(",").map((t) => t.trim()).filter(Boolean),
     created: f.created ?? "", source: f.source ?? "", summary: f.summary ?? "", status: f.status ?? "ok", rel, body: body.replace(/\s+$/, ""), links,

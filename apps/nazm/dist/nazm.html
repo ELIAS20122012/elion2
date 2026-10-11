@@ -874,6 +874,53 @@ __exports.refresh = refresh;
 __exports.commit = commit;
 __exports.persist = persist;
 };
+__defs["src/core/format.js"] = function (__exports) {
+const { config } = __r("src/core/config.js");
+
+const FA = '۰۱۲۳۴۵۶۷۸۹';
+const AR = '٠١٢٣٤٥٦٧٨٩';
+
+/** Latin digits → Persian digits. */
+const fa = (x) => String(x).replace(/\d/g, (d) => FA[d]);
+
+/** Persian / Arabic digits → Latin digits. */
+const en = (x) => String(x)
+  .replace(/[۰-۹]/g, (d) => FA.indexOf(d))
+  .replace(/[٠-٩]/g, (d) => AR.indexOf(d));
+
+/** Lenient number parser for form input (accepts Persian digits and thousands separators). */
+function num(x) {
+  const n = parseFloat(en(String(x == null ? '' : x)).replace(/,/g, ''));
+  return Number.isFinite(n) ? n : 0;
+}
+
+const faInt = (n) => fa(Math.round(n).toLocaleString('en-US'));
+
+function esc(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+/** Format an amount in the configured currency. Pass `hide` (or enable privacy mode) to mask it. */
+function money(v, hide = config.privacy) {
+  if (hide) return '••••';
+  const c = config.currency || '€';
+  const neg = v < 0;
+  const a = Math.abs(v);
+  const n = a >= 1000 || Math.round(a) === a
+    ? Math.round(a).toLocaleString('en-US')
+    : a.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  return c === 'تومان'
+    ? `⁧${neg ? '-' : ''}${n} تومان⁩`
+    : `⁦${neg ? '-' : ''}${c} ${n}⁩`;
+}
+
+__exports.fa = fa;
+__exports.en = en;
+__exports.num = num;
+__exports.faInt = faInt;
+__exports.esc = esc;
+__exports.money = money;
+};
 __defs["src/router.js"] = function (__exports) {
 /* Hash routing: the bottom-bar sections. Unknown hashes (including old ones) go to Today. */
 const ROUTES = ['today', 'tasks', 'gym', 'money', 'shop'];
@@ -1149,53 +1196,6 @@ function checkReminders() {
 }
 
 __exports.checkReminders = checkReminders;
-};
-__defs["src/core/format.js"] = function (__exports) {
-const { config } = __r("src/core/config.js");
-
-const FA = '۰۱۲۳۴۵۶۷۸۹';
-const AR = '٠١٢٣٤٥٦٧٨٩';
-
-/** Latin digits → Persian digits. */
-const fa = (x) => String(x).replace(/\d/g, (d) => FA[d]);
-
-/** Persian / Arabic digits → Latin digits. */
-const en = (x) => String(x)
-  .replace(/[۰-۹]/g, (d) => FA.indexOf(d))
-  .replace(/[٠-٩]/g, (d) => AR.indexOf(d));
-
-/** Lenient number parser for form input (accepts Persian digits and thousands separators). */
-function num(x) {
-  const n = parseFloat(en(String(x == null ? '' : x)).replace(/,/g, ''));
-  return Number.isFinite(n) ? n : 0;
-}
-
-const faInt = (n) => fa(Math.round(n).toLocaleString('en-US'));
-
-function esc(s) {
-  return String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-}
-
-/** Format an amount in the configured currency. Pass `hide` (or enable privacy mode) to mask it. */
-function money(v, hide = config.privacy) {
-  if (hide) return '••••';
-  const c = config.currency || '€';
-  const neg = v < 0;
-  const a = Math.abs(v);
-  const n = a >= 1000 || Math.round(a) === a
-    ? Math.round(a).toLocaleString('en-US')
-    : a.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  return c === 'تومان'
-    ? `⁧${neg ? '-' : ''}${n} تومان⁩`
-    : `⁦${neg ? '-' : ''}${c} ${n}⁩`;
-}
-
-__exports.fa = fa;
-__exports.en = en;
-__exports.num = num;
-__exports.faInt = faInt;
-__exports.esc = esc;
-__exports.money = money;
 };
 __defs["src/ui/sheet.js"] = function (__exports) {
 /* Bottom sheets: generic container, form builder, action menu, confirm and info dialogs. */
@@ -2981,7 +2981,7 @@ function programTab() {
 /* ---------- calories ---------- */
 function mealRow(m) {
   return row({ ic: 'restaurant', title: esc(m.name), sub: `${fa(m.kcal)} کیلوکالری${m.p ? ` · ${fa(m.p)} گرم پروتئین` : ''}`, act: 'meal', attrs: `data-id="${m.id}"`,
-    trailing: m.photo ? `<img class="mini-photo" src="${m.photo}" alt="">` : '' });
+    trailing: m.photo ? `<img class="mini-photo" src="${esc(m.photo)}" alt="">` : '' });
 }
 
 function caloriesTab() {
@@ -3014,7 +3014,7 @@ function photoTab() {
       <button class="btn-accent" data-act="photo">${icon('add_a_photo')}افزودن عکس</button>
     </section>
     ${strip()}
-    ${section('تاریخچه‌ی غذاها', `<div class="list">${hist.map((m) => row({ ic: 'restaurant', title: esc(m.name), sub: `${faDayMonth(parseIso(m.date))} · ${fa(m.kcal)} کیلوکالری${m.p ? ` · ${fa(m.p)}g پروتئین` : ''}`, act: 'hist', attrs: `data-id="${m.id}" data-date="${m.date}"`, trailing: `<img class="mini-photo" src="${m.photo}" alt="">` })).join('') || empty('هنوز عکسی ثبت نشده')}</div>`)}`;
+    ${section('تاریخچه‌ی غذاها', `<div class="list">${hist.map((m) => row({ ic: 'restaurant', title: esc(m.name), sub: `${faDayMonth(parseIso(m.date))} · ${fa(m.kcal)} کیلوکالری${m.p ? ` · ${fa(m.p)}g پروتئین` : ''}`, act: 'hist', attrs: `data-id="${m.id}" data-date="${m.date}"`, trailing: `<img class="mini-photo" src="${esc(m.photo)}" alt="">` })).join('') || empty('هنوز عکسی ثبت نشده')}</div>`)}`;
 }
 
 const lineFor = (tab) => (tab === 'program' ? addLine('حرکت تازه… و Enter') : tab === 'calories' ? addLine('غذا و کالری، مثلاً ماست ۱۲۰ — و Enter') : '');
@@ -3196,7 +3196,7 @@ function reportSheet() {
   html += cats.length ? cats.map((k) => {
     const c = fin.catOf(k);
     const pct = Math.round((by[k] / exp) * 100);
-    return `<div class="item"><span class="item-icon"><span class="material-symbols-outlined">${c.icon}</span></span><span class="grow"><span class="item-title">${c.label} <span class="item-sub">${fa(pct)}٪</span></span><span class="progress"><i style="width:${pct}%"></i></span></span><b class="amt">${M(by[k])}</b></div>`;
+    return `<div class="item"><span class="item-icon"><span class="material-symbols-outlined">${c.icon}</span></span><span class="grow"><span class="item-title">${esc(c.label)} <span class="item-sub">${fa(pct)}٪</span></span><span class="progress"><i style="width:${pct}%"></i></span></span><b class="amt">${M(by[k])}</b></div>`;
   }).join('') : '<div class="empty">هنوز هزینه‌ای ثبت نشده</div>';
   infoSheet('گزارش مالی', html, [{ label: 'خروجی اکسل (CSV)', run: () => exportCsv(S.tx, 'all') }]);
 }
@@ -3401,7 +3401,7 @@ function budgetTab() {
   const left = fin.budgetLeft();
   const rows = fin.categoryBudgetRows().map((r) => {
     const c = fin.catOf(r.key);
-    return row({ ic: '', title: c.label,
+    return row({ ic: '', title: esc(c.label),
       sub: `${M(r.spent)}${r.budget ? ` از ${M(r.budget)}` : ' · بدون بودجه'}${r.budget ? bar((r.spent / r.budget) * 100, r.spent > r.budget) : ''}`,
       trailing: `<span class="gym-tools"><button class="act-btn" data-act="cat-budget" data-k="${r.key}" aria-label="ویرایش">${icon('edit')}</button>${r.budget ? `<button class="act-btn bad" data-act="cat-remove" data-k="${r.key}" aria-label="حذف">${icon('delete')}</button>` : ''}</span>` });
   }).join('');
@@ -3424,7 +3424,7 @@ function reportTab() {
   const cols = flow.map((r, i) => ({ v: r.expense, label: monthLabel(r.key).split(' ')[0], on: i === flow.length - 1 }));
   const tile = (label, value, cls = '') => `<div class="mini static"><small>${label}</small><b class="ltr ${cls}">${value}</b></div>`;
   return `<div class="duo">${tile('خرج این ماه', M(fin.monthSum('expense')), 'neg')}${tile('درآمد این ماه', M(fin.monthSum('income')), 'pos')}</div>
-    <div class="duo">${tile('قسط‌های ثابت', M(MO.total()))}${tile('بیشترین هزینه', top ? `${fin.catOf(top.key).label}` : '—')}</div>
+    <div class="duo">${tile('قسط‌های ثابت', M(MO.total()))}${tile('بیشترین هزینه', top ? esc(fin.catOf(top.key).label) : '—')}</div>
     ${section('خرج ۶ ماه اخیر', `<div class="card">${bars(cols)}</div>`)}
     <button class="link center" data-act="csv">خروجی اکسل (CSV)</button>`;
 }
@@ -3533,6 +3533,7 @@ __defs["src/main.js"] = function (__exports) {
 /* App shell: top bar (profile · name · settings), fixed bottom bar with four sections, router and render loop. */
 const { init, subscribe, reloadFromStorage, resetToSample, S } = __r("src/core/store.js");
 const { $ } = __r("src/core/util.js");
+const { esc } = __r("src/core/format.js");
 const { currentRoute } = __r("src/router.js");
 const { bindActions, patchHTML } = __r("src/ui/dom.js");
 const { icon } = __r("src/ui/widgets.js");
@@ -3557,7 +3558,7 @@ function render() {
     patchHTML(view, page.render());
   } catch (e) {
     console.error(e);
-    view.innerHTML = `<p class="empty">خطایی رخ داد.<br><small>${String(e.message || e)}</small></p>`;
+    view.innerHTML = `<p class="empty">خطایی رخ داد.<br><small>${esc(String(e.message || e))}</small></p>`;
   }
 }
 

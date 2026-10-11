@@ -7,6 +7,7 @@
 import type { Kernel } from "../kernel/kernel.ts";
 import type { Plugin } from "./types.ts";
 import { registerPanel } from "../interfaces/dashboard.ts";
+import { withTimeout } from "../kernel/timeout.ts";
 
 export const LAB_PREFIX = "🧪 lab:";
 export const LAB_MODELS = ["claude-code", "codex", "antigravity", "gemini", "ollama"] as const; // gemini-cli: Google ended it for individuals (use Antigravity)
@@ -56,7 +57,7 @@ export async function workingModels(k: Kernel, wanted: readonly string[] = LAB_M
     .filter((n) => have.has(n) && Number(k.getKv(`lab.skip.${n}`) ?? 0) < now) // failed recently → rest for a while
     .map(async (n) => {
       try {
-        const h = await Promise.race([have.get(n)!.health(), new Promise<{ ok: boolean }>((r) => setTimeout(() => r({ ok: false }), 20_000))]);
+        const h = await withTimeout<{ ok: boolean }>(have.get(n)!.health(), 20_000, { ok: false });
         return h.ok ? n : null;
       } catch {
         return null;

@@ -5,6 +5,22 @@ Format: date · agent · what was done · state (finished / half-done + how to c
 
 ---
 
+## 2026-10-11 (10) · Claude (Claude Code, cloud)
+- نظم (`apps/nazm`) تا اینجا: هر بخش صفحه‌ی آیکونی دارد (کارها/ورزش/مالی)، ورزش با نوار هفته‌ی میلادی و بدون دایره‌ی ست،
+  قسط‌های ثابت ماهانه (بدون تیک، از بودجه کم می‌شود)، پس‌انداز، بودجه‌ی ماهانه/دسته‌ها با ویرایش و حذف و دسته‌ی خودساخته،
+  هشدار قرارها (داخل برنامه + خروجی `.ics` با الارم). برنامه خالی شروع می‌شود (نمونه فقط از تنظیمات). منتشر: Netlify
+  `nazm-rouzane.netlify.app` (آپلود دستی zip) و artifactهای claude.ai.
+- بررسی کل پروژه: (۱) `npm test` بعد از پایان گیر می‌کرد: تایمرهای بدون clear در `tts.ts`، `lab.ts`، `health.ts` →
+  `src/kernel/timeout.ts` (`withTimeout`) + clear در tts؛ زمان تست‌ها ۱۲۸ث → ۵ث. (۲) `wrangler@latest` → `wrangler@4.149.0` در
+  `website.ts`. (۳) یک خطای tsc در `notebook.ts` درست شد؛ `tsc --noEmit` تمیز (۴ ثانیه). (۴) audit `innerHTML` در نظم: ۵ جا escape
+  نشده بود (برچسب دسته‌ی خودساخته، عکس غذا، پیام خطا) درست شد؛ با تزریق `<img onerror>` در همه‌ی فیلدها تست شد (قبل: ۷ اجرا، بعد: ۰).
+  (۵) `apps/daily-order` (کپی رهاشده) حذف شد (در تاریخچه‌ی git هست). (۶) `tests/dist.test.js`: اگر `dist/nazm.html` با `src/` هماهنگ
+  نباشد شکست می‌خورد (`node apps/nazm/tools/build.mjs`). dist نظم عمداً commit می‌شود (منبع انتشار).
+- هنوز: تست واقعی Telegram/Google OAuth/tunnel/PC agent/deploy نداریم (mock هستند)؛ typecheck پنل وب روی ویندوز دوباره بررسی شود.
+- State: finished.
+
+---
+
 ## 2026-10-11 (7) · Claude (Claude Code, cloud)
 - Elias از طراحی Daily Order راضی نبود (شلوغ/گزینه زیاد). `apps/daily-order` رها شد و اپ جدید `apps/nazm/` ساخته شد:
   طراحی سبز زیتونی/کرم (مرجع تصویر MOYA)، ۴ تب (خانه/ورزش/پول/من)، بدون حالت تاریک. منطق core/domain از اپ قبلی کپی شد
