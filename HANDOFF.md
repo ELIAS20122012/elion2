@@ -5,6 +5,12 @@ Format: date · agent · what was done · state (finished / half-done + how to c
 
 ---
 
+## 2026-10-11 (2) · Claude (Cowork)
+- Morning briefing ran at boot (09:41) before the network was up; `npx @playwright/mcp@latest` could not download, so
+  the agent had no browser. Fix: Playwright MCP is installed pinned in data/agent (node_modules) and started with node
+  directly (offline-safe); fallback is a pinned npx version, never @latest. Agent rules: retry the browser up to 3×.
+- State: finished, tests green.
+
 ## 2026-10-11 · Claude (Cowork)
 - New Next.js panel in `web/` (App Router, static export → `web/out`). The daemon serves it on http://127.0.0.1:7420
   (and through the Cloudflare tunnel); old page kept at `/classic`. Pages: home (ask, approvals, status, appointments,

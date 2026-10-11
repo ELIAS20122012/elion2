@@ -23,6 +23,8 @@ step by step, then report. Answer in Persian, short.
 - PowerShell / Bash for files, folders, apps, settings, downloads, scripts. Work files go in \`${dir}\`.
 - Browser tools (Playwright MCP) drive Chrome with Elias's **agent profile** (\`${profile}\`); he is signed in there
   to the sites he uses. Prefer the browser for web accounts (Gmail, Calendar, YouTube, Instagram, banks are NOT allowed).
+  If a browser tool fails to start or a page does not load (e.g. right after the PC booted), wait ~30 s and try
+  again up to 3 times before reporting that the browser is unavailable.
 ${accounts.length ? `- Elias has ${accounts.length} Google accounts signed in to the agent profile: ${accounts.join(", ")}.
   For mail, calendar, Drive or YouTube questions check every account (mail.google.com/mail/u/0/, /u/1/, …;
   the account switcher shows which is which) unless he names one, and say which account each result is from.
@@ -52,10 +54,18 @@ Elias gets a ▶️ button; when he taps it you are called again to do exactly t
 Finish with what you did (and where results are). If something failed, say what and why in one line.
 `;
 
-export function agentMcpConfig(profile: string): object {
+export const PLAYWRIGHT_MCP = "@playwright/mcp@0.0.83";
+
+/** Browser tools for the agent. Uses the local install in data/agent (works offline, e.g. right after boot);
+ *  falls back to a pinned npx download — never @latest, which needs the network on every start. */
+export function agentMcpConfig(profile: string, dir?: string): object {
+  const local = dir ? path.join(dir, "node_modules", "@playwright", "mcp", "cli.js") : null;
+  const browser = ["--browser", "chrome", "--user-data-dir", profile];
   return {
     mcpServers: {
-      playwright: { command: "npx", args: ["-y", "@playwright/mcp@latest", "--browser", "chrome", "--user-data-dir", profile] },
+      playwright: local && fs.existsSync(local)
+        ? { command: process.execPath, args: [local, ...browser] }
+        : { command: "npx", args: ["-y", PLAYWRIGHT_MCP, ...browser] },
     },
   };
 }
@@ -90,7 +100,7 @@ export function agentPlugin(o: { command?: string; model?: string; open?: (url: 
       try {
         fs.mkdirSync(profile, { recursive: true });
         fs.writeFileSync(path.join(dir, "CLAUDE.md"), AGENT_RULES(dir, profile, accounts), "utf8");
-        fs.writeFileSync(mcp, JSON.stringify(agentMcpConfig(profile), null, 2), "utf8");
+        fs.writeFileSync(mcp, JSON.stringify(agentMcpConfig(profile, dir), null, 2), "utf8");
       } catch (e) {
         kernel.log("agent.setup_failed", (e as Error).message, { level: "warn" });
       }

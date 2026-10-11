@@ -112,3 +112,22 @@ test("briefing reads every Gmail account through the agent; the stored daily sch
   assert.equal(t.provider, AGENT_PROVIDER);
   assert.equal(briefingTask().provider, undefined); // without the agent: unchanged
 });
+
+test("agent: browser MCP uses the local install when present, else a pinned npx (never @latest)", async () => {
+  const fs = await import("node:fs");
+  const os = await import("node:os");
+  const path = await import("node:path");
+  const { agentMcpConfig, PLAYWRIGHT_MCP } = await import("../src/plugins/agent.ts");
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "eos-agent-"));
+  const npx = agentMcpConfig("P", dir) as { mcpServers: { playwright: { command: string; args: string[] } } };
+  assert.equal(npx.mcpServers.playwright.command, "npx");
+  assert.ok(npx.mcpServers.playwright.args.includes(PLAYWRIGHT_MCP));
+  assert.ok(!npx.mcpServers.playwright.args.some((a) => a.endsWith("@latest")));
+  const cli = path.join(dir, "node_modules", "@playwright", "mcp", "cli.js");
+  fs.mkdirSync(path.dirname(cli), { recursive: true });
+  fs.writeFileSync(cli, "");
+  const local = agentMcpConfig("P", dir) as { mcpServers: { playwright: { command: string; args: string[] } } };
+  assert.equal(local.mcpServers.playwright.command, process.execPath);
+  assert.equal(local.mcpServers.playwright.args[0], cli);
+  assert.ok(local.mcpServers.playwright.args.includes("P"));
+});

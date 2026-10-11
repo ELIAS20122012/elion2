@@ -3,9 +3,10 @@ import assert from "node:assert/strict";
 import http from "node:http";
 import { Kernel } from "../src/kernel/kernel.ts";
 import { EchoProvider } from "../src/providers/mock.ts";
-import { handler } from "../src/interfaces/dashboard.ts";
+import { handler, setWebRoot } from "../src/interfaces/dashboard.ts";
 
 test("dashboard: page + overview, writes need X-Elias, bad Host rejected", async () => {
+  setWebRoot("/nonexistent-web-out"); // classic page, independent of a built web/out
   const k = new Kernel({ dbPath: ":memory:", providers: [new EchoProvider()], defaultProvider: "echo", retryBaseMs: 0 });
   k.registerSkill({ name: "sum", description: "s", plugin: "t", build: (i) => ({ title: "sum", prompt: i }) });
   const srv = http.createServer();
