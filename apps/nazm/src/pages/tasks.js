@@ -1,20 +1,18 @@
 /* Tasks: calendar · appointments · daily tasks · shopping. One "+" always opens a small form. */
-import { S, commit, refresh } from '../core/store.js';
+import { S, refresh } from '../core/store.js';
 import { iso, addDays, parseIso, today, weekStart, WD_SHORT } from '../core/dates.js';
 import { fa, esc } from '../core/format.js';
 import { faDate, faDayNum, relDay } from '../core/calendar.js';
-import { toast } from '../ui/toast.js';
 import { menu } from '../ui/sheet.js';
 import { icon } from '../ui/widgets.js';
 import { pageHead, drawers, toggleDrawer, row, check, fab, empty, section, ring, tabOf, openOr } from '../ui/kit.js';
 import * as T from '../domain/tasks.js';
 import * as A from '../domain/appointments.js';
-import * as SH from '../domain/shopping.js';
 import { taskSheet, toggleTask, quickAddTask } from '../features/task-sheets.js';
-import { apptSheet, shopSheet, quickShop } from '../features/plan-sheets.js';
+import { apptSheet } from '../features/plan-sheets.js';
 
-const ORDER = ['calendar', 'appts', 'daily', 'shop'];
-const LABELS = { calendar: 'تقویم', appts: 'قرارها', daily: 'کارهای روزانه', shop: 'خریدها' };
+const ORDER = ['calendar', 'appts', 'daily'];
+const LABELS = { calendar: 'تقویم', appts: 'قرارها', daily: 'کارهای روزانه' };
 let day = today();
 
 const dayLabel = (d) => (d === today() ? 'امروز' : relDay(d) === 'فردا' ? 'فردا' : faDate(parseIso(d), { weekday: 'long', day: 'numeric', month: 'long' }));
@@ -74,21 +72,12 @@ function dailyTab() {
     <div class="list">${list.map(taskRow).join('') || empty('کاری برای این روز نیست')}</div>`;
 }
 
-function shopTab() {
-  const groups = SH.grouped();
-  const bought = S.shopping.filter((i) => i.done).length;
-  return `<section class="card row-between"><span><b class="big">${fa(SH.remaining())}</b> <small>مورد باقی‌مانده</small></span>
-      ${bought ? `<button class="link" data-act="clear-bought">پاک کردن خریده‌شده‌ها (${fa(bought)})</button>` : ''}</section>
-    <form class="add-line" data-submit="quick-shop">${icon('add_shopping_cart', 'muted')}<input data-key="qs" name="qs" autocomplete="off" placeholder="چه چیزی بخریم؟"><button class="btn-sm" type="submit">افزودن</button></form>
-    ${groups.map((g) => section(SH.CATS[g.cat].label, `<div class="list">${g.items.map((i) => row({ ic: '', title: esc(i.title), cls: i.done ? 'is-done' : '', act: 'shop-edit', attrs: `data-id="${i.id}"`, trailing: check('shop-check', i.id, i.done) })).join('')}</div>`)).join('') || empty('فهرست خرید خالی است')}`;
-}
-
 export default {
   id: 'tasks',
   title: 'کارها',
   mount() { day = today(); },
   render() {
-    const bodies = { calendar: calendarTab, appts: apptsTab, daily: dailyTab, shop: shopTab };
+    const bodies = { calendar: calendarTab, appts: apptsTab, daily: dailyTab };
     const items = ORDER.map((key) => ({ key, label: LABELS[key], body: () => `<div class="stack">${bodies[key]()}</div>` }));
     return `${pageHead('کارها', 'برنامه‌ی روز و هفته')}${drawers(items, tabOf('tasks', 'daily'))}${fab('add')}`;
   },
@@ -100,15 +89,10 @@ export default {
     'task-check': (el) => toggleTask(el.dataset.id),
     'task-edit': (el) => taskSheet(el.dataset.id),
     'appt-edit': (el) => apptSheet(el.dataset.id),
-    'shop-check'(el) { const i = SH.findItem(el.dataset.id); i.done = !i.done; commit(); },
-    'shop-edit': (el) => shopSheet(el.dataset.id),
-    'clear-bought'() { const n = SH.clearBought(); commit(); toast(`${fa(n)} مورد پاک شد`); },
     'quick-task'(el) { const input = el.querySelector('input'); if (quickAddTask(input.value, day)) input.value = ''; },
-    'quick-shop'(el) { const input = el.querySelector('input'); if (quickShop(input.value)) input.value = ''; },
     add() {
       const tab = openOr('tasks', 'daily');
       if (tab === 'appts') apptSheet(null, day);
-      else if (tab === 'shop') shopSheet();
       else if (tab === 'calendar') menu('افزودن به ' + dayLabel(day), [{ icon: 'task_alt', label: 'کار', run: () => taskSheet(null, day) }, { icon: 'event', label: 'قرار', run: () => apptSheet(null, day) }]);
       else taskSheet(null, day);
     },

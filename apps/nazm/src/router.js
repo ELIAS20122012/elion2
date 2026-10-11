@@ -1,5 +1,5 @@
-/* Hash routing: the four bottom-bar sections. Unknown hashes (including old ones) go to Today. */
-export const ROUTES = ['today', 'tasks', 'gym', 'money'];
+/* Hash routing: the bottom-bar sections. Unknown hashes (including old ones) go to Today. */
+export const ROUTES = ['today', 'tasks', 'gym', 'money', 'shop'];
 export const DEFAULT_ROUTE = 'today';
 
 export function currentRoute() {

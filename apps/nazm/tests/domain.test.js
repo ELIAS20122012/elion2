@@ -280,16 +280,19 @@ test('appointments are sorted and the next one skips the past', () => {
   assert.equal(A.findAppt(later.id).place, 'کافه');
 });
 
-test('shopping list groups by category, counts and clears bought items', () => {
+test('shopping list: add, tick, order and clear bought items', () => {
   S.shopping = [];
-  SH.addItem('سیب', 'produce');
-  const milk = SH.addItem('شیر', 'dairy');
-  SH.addItem('چیز عجیب', 'nope');
+  const apple = SH.addItem('  سیب ');
+  const milk = SH.addItem('شیر');
+  SH.addItem('نان');
+  assert.equal(apple.title, 'سیب');
   assert.equal(SH.remaining(), 3);
-  milk.done = true;
+  apple.done = true;
   assert.equal(SH.remaining(), 2);
-  assert.deepEqual(SH.grouped().map((g) => g.cat), ['produce', 'dairy', 'other']);
+  assert.deepEqual(SH.ordered().map((i) => i.title), ['شیر', 'نان', 'سیب'], 'bought items sink to the end');
+  assert.equal(SH.boughtCount(), 1);
   assert.equal(SH.clearBought(), 1);
+  assert.deepEqual(S.shopping.map((i) => i.id).includes(milk.id), true);
   assert.equal(S.shopping.length, 2);
 });
 

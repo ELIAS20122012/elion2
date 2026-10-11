@@ -273,3 +273,13 @@ textarea.input { min-height: 72px; line-height: 1.6; }
 .item-title { font-size: 13px; }
 .stat-grid > div { padding: 8px 10px; border-radius: 10px; }
 .stat-grid b { font-size: 14px; }
+
+/* ---- shopping grid ---- */
+.shop-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.shop-item { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 9px 12px; border-radius: 10px; background: var(--card); box-shadow: var(--shadow-sm); font-size: 13.5px; font-weight: 600; min-width: 0; text-align: start; }
+.shop-item .tick { width: 18px; height: 18px; flex: none; border-radius: 50%; display: grid; place-items: center; border: 1.5px solid var(--primary-soft); color: transparent; font-style: normal; }
+.shop-item .tick .material-symbols-outlined { font-size: 13px; }
+.shop-item.done { opacity: .55; }
+.shop-item.done span:first-child { text-decoration: line-through; }
+.shop-item.done .tick { background: var(--primary); border-color: var(--primary); color: var(--on-primary); }
+#nav a small { font-size: 10px; }

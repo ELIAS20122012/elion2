@@ -31,33 +31,27 @@ export function apptSheet(id, date = today()) {
   });
 }
 
-let lastCat = 'produce';
-
 export function shopSheet(id) {
   const it = id ? SH.findItem(id) : null;
   form({
-    title: it ? 'ویرایش خرید' : 'خرید جدید',
-    fields: [
-      { name: 'title', label: 'چه چیزی؟', value: it ? it.title : '' },
-      { name: 'cat', label: 'دسته', type: 'chips', value: it ? it.cat : lastCat, options: Object.entries(SH.CATS).map(([value, c]) => ({ value, label: c.label, icon: c.icon })) },
-    ],
+    title: it ? 'ویرایش' : 'خرید جدید',
+    fields: [{ name: 'title', label: 'چه چیزی؟', value: it ? it.title : '' }],
     focus: !it,
     extra: it ? [{ label: 'حذف', cls: 'danger', run: () => { S.shopping.splice(S.shopping.indexOf(it), 1); commit(); } }] : [],
     onSubmit(v) {
       const title = (v.title || '').trim();
       if (!title) { toast('نام را وارد کنید'); return false; }
-      lastCat = v.cat;
-      if (it) Object.assign(it, { title, cat: v.cat }); else SH.addItem(title, v.cat);
+      if (it) it.title = title; else SH.addItem(title);
       commit();
     },
   });
 }
 
-/** Add by typing a name on the quick line (uses the last chosen category). */
+/** Add by typing a name on the quick line. */
 export function quickShop(raw) {
   const title = raw.trim();
   if (!title) return false;
-  SH.addItem(title, lastCat);
+  SH.addItem(title);
   commit();
   return true;
 }

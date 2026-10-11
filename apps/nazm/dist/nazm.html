@@ -378,6 +378,16 @@ textarea.input { min-height: 72px; line-height: 1.6; }
 .stat-grid > div { padding: 8px 10px; border-radius: 10px; }
 .stat-grid b { font-size: 14px; }
 
+/* ---- shopping grid ---- */
+.shop-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.shop-item { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 9px 12px; border-radius: 10px; background: var(--card); box-shadow: var(--shadow-sm); font-size: 13.5px; font-weight: 600; min-width: 0; text-align: start; }
+.shop-item .tick { width: 18px; height: 18px; flex: none; border-radius: 50%; display: grid; place-items: center; border: 1.5px solid var(--primary-soft); color: transparent; font-style: normal; }
+.shop-item .tick .material-symbols-outlined { font-size: 13px; }
+.shop-item.done { opacity: .55; }
+.shop-item.done span:first-child { text-decoration: line-through; }
+.shop-item.done .tick { background: var(--primary); border-color: var(--primary); color: var(--on-primary); }
+#nav a small { font-size: 10px; }
+
 /* Everything is shared in components.css; screen-specific rules would go here. */
 
   </style>
@@ -988,8 +998,8 @@ __exports.commit = commit;
 __exports.persist = persist;
 };
 __defs["src/router.js"] = function (__exports) {
-/* Hash routing: the four bottom-bar sections. Unknown hashes (including old ones) go to Today. */
-const ROUTES = ['today', 'tasks', 'gym', 'money'];
+/* Hash routing: the bottom-bar sections. Unknown hashes (including old ones) go to Today. */
+const ROUTES = ['today', 'tasks', 'gym', 'money', 'shop'];
 const DEFAULT_ROUTE = 'today';
 
 function currentRoute() {
@@ -2766,43 +2776,29 @@ __default = {
 __exports.default = __default;
 };
 __defs["src/domain/shopping.js"] = function (__exports) {
-/* Weekly shopping list. Pure data logic — no DOM. */
+/* Weekly shopping list: just names with a bought tick. Pure data logic — no DOM. */
 const { S } = __r("src/core/store.js");
 const { uid } = __r("src/core/util.js");
 
-const CATS = {
-  produce: { label: 'میوه و سبزی', icon: 'nutrition' },
-  dairy: { label: 'لبنیات', icon: 'egg_alt' },
-  bakery: { label: 'نان و غلات', icon: 'bakery_dining' },
-  meat: { label: 'گوشت و مرغ', icon: 'set_meal' },
-  home: { label: 'خانه و بهداشت', icon: 'cleaning_services' },
-  other: { label: 'سایر', icon: 'shopping_basket' },
-};
-const catOf = (it) => CATS[it.cat] || CATS.other;
-
-function addItem(title, cat = 'other') {
-  const it = { id: uid(), title: title.trim(), cat, done: false };
+function addItem(title) {
+  const it = { id: uid(), title: title.trim(), cat: 'other', done: false };
   S.shopping.push(it);
   return it;
 }
 const findItem = (id) => S.shopping.find((i) => i.id === id);
 const remaining = () => S.shopping.filter((i) => !i.done).length;
-const clearBought = () => { const n = S.shopping.filter((i) => i.done).length; S.shopping = S.shopping.filter((i) => !i.done); return n; };
+const boughtCount = () => S.shopping.filter((i) => i.done).length;
+const clearBought = () => { const n = boughtCount(); S.shopping = S.shopping.filter((i) => !i.done); return n; };
 
-/** Items grouped by category (open items first inside each group). */
-function grouped() {
-  return Object.keys(CATS).map((cat) => ({
-    cat, items: S.shopping.filter((i) => (CATS[i.cat] ? i.cat : 'other') === cat).sort((a, b) => Number(a.done) - Number(b.done)),
-  })).filter((g) => g.items.length);
-}
+/** Open items first (in the order they were added), bought ones after. */
+const ordered = () => S.shopping.slice().sort((a, b) => Number(a.done) - Number(b.done));
 
-__exports.CATS = CATS;
-__exports.catOf = catOf;
 __exports.addItem = addItem;
 __exports.findItem = findItem;
 __exports.remaining = remaining;
+__exports.boughtCount = boughtCount;
 __exports.clearBought = clearBought;
-__exports.grouped = grouped;
+__exports.ordered = ordered;
 };
 __defs["src/features/plan-sheets.js"] = function (__exports) {
 /* Appointments and shopping dialogs — kept to a handful of short fields. */
@@ -2838,33 +2834,27 @@ function apptSheet(id, date = today()) {
   });
 }
 
-let lastCat = 'produce';
-
 function shopSheet(id) {
   const it = id ? SH.findItem(id) : null;
   form({
-    title: it ? 'ویرایش خرید' : 'خرید جدید',
-    fields: [
-      { name: 'title', label: 'چه چیزی؟', value: it ? it.title : '' },
-      { name: 'cat', label: 'دسته', type: 'chips', value: it ? it.cat : lastCat, options: Object.entries(SH.CATS).map(([value, c]) => ({ value, label: c.label, icon: c.icon })) },
-    ],
+    title: it ? 'ویرایش' : 'خرید جدید',
+    fields: [{ name: 'title', label: 'چه چیزی؟', value: it ? it.title : '' }],
     focus: !it,
     extra: it ? [{ label: 'حذف', cls: 'danger', run: () => { S.shopping.splice(S.shopping.indexOf(it), 1); commit(); } }] : [],
     onSubmit(v) {
       const title = (v.title || '').trim();
       if (!title) { toast('نام را وارد کنید'); return false; }
-      lastCat = v.cat;
-      if (it) Object.assign(it, { title, cat: v.cat }); else SH.addItem(title, v.cat);
+      if (it) it.title = title; else SH.addItem(title);
       commit();
     },
   });
 }
 
-/** Add by typing a name on the quick line (uses the last chosen category). */
+/** Add by typing a name on the quick line. */
 function quickShop(raw) {
   const title = raw.trim();
   if (!title) return false;
-  SH.addItem(title, lastCat);
+  SH.addItem(title);
   commit();
   return true;
 }
@@ -2876,22 +2866,20 @@ __exports.quickShop = quickShop;
 __defs["src/pages/tasks.js"] = function (__exports) {
 let __default;
 /* Tasks: calendar · appointments · daily tasks · shopping. One "+" always opens a small form. */
-const { S, commit, refresh } = __r("src/core/store.js");
+const { S, refresh } = __r("src/core/store.js");
 const { iso, addDays, parseIso, today, weekStart, WD_SHORT } = __r("src/core/dates.js");
 const { fa, esc } = __r("src/core/format.js");
 const { faDate, faDayNum, relDay } = __r("src/core/calendar.js");
-const { toast } = __r("src/ui/toast.js");
 const { menu } = __r("src/ui/sheet.js");
 const { icon } = __r("src/ui/widgets.js");
 const { pageHead, drawers, toggleDrawer, row, check, fab, empty, section, ring, tabOf, openOr } = __r("src/ui/kit.js");
 const T = __r("src/domain/tasks.js");
 const A = __r("src/domain/appointments.js");
-const SH = __r("src/domain/shopping.js");
 const { taskSheet, toggleTask, quickAddTask } = __r("src/features/task-sheets.js");
-const { apptSheet, shopSheet, quickShop } = __r("src/features/plan-sheets.js");
+const { apptSheet } = __r("src/features/plan-sheets.js");
 
-const ORDER = ['calendar', 'appts', 'daily', 'shop'];
-const LABELS = { calendar: 'تقویم', appts: 'قرارها', daily: 'کارهای روزانه', shop: 'خریدها' };
+const ORDER = ['calendar', 'appts', 'daily'];
+const LABELS = { calendar: 'تقویم', appts: 'قرارها', daily: 'کارهای روزانه' };
 let day = today();
 
 const dayLabel = (d) => (d === today() ? 'امروز' : relDay(d) === 'فردا' ? 'فردا' : faDate(parseIso(d), { weekday: 'long', day: 'numeric', month: 'long' }));
@@ -2951,21 +2939,12 @@ function dailyTab() {
     <div class="list">${list.map(taskRow).join('') || empty('کاری برای این روز نیست')}</div>`;
 }
 
-function shopTab() {
-  const groups = SH.grouped();
-  const bought = S.shopping.filter((i) => i.done).length;
-  return `<section class="card row-between"><span><b class="big">${fa(SH.remaining())}</b> <small>مورد باقی‌مانده</small></span>
-      ${bought ? `<button class="link" data-act="clear-bought">پاک کردن خریده‌شده‌ها (${fa(bought)})</button>` : ''}</section>
-    <form class="add-line" data-submit="quick-shop">${icon('add_shopping_cart', 'muted')}<input data-key="qs" name="qs" autocomplete="off" placeholder="چه چیزی بخریم؟"><button class="btn-sm" type="submit">افزودن</button></form>
-    ${groups.map((g) => section(SH.CATS[g.cat].label, `<div class="list">${g.items.map((i) => row({ ic: '', title: esc(i.title), cls: i.done ? 'is-done' : '', act: 'shop-edit', attrs: `data-id="${i.id}"`, trailing: check('shop-check', i.id, i.done) })).join('')}</div>`)).join('') || empty('فهرست خرید خالی است')}`;
-}
-
 __default = {
   id: 'tasks',
   title: 'کارها',
   mount() { day = today(); },
   render() {
-    const bodies = { calendar: calendarTab, appts: apptsTab, daily: dailyTab, shop: shopTab };
+    const bodies = { calendar: calendarTab, appts: apptsTab, daily: dailyTab };
     const items = ORDER.map((key) => ({ key, label: LABELS[key], body: () => `<div class="stack">${bodies[key]()}</div>` }));
     return `${pageHead('کارها', 'برنامه‌ی روز و هفته')}${drawers(items, tabOf('tasks', 'daily'))}${fab('add')}`;
   },
@@ -2977,15 +2956,10 @@ __default = {
     'task-check': (el) => toggleTask(el.dataset.id),
     'task-edit': (el) => taskSheet(el.dataset.id),
     'appt-edit': (el) => apptSheet(el.dataset.id),
-    'shop-check'(el) { const i = SH.findItem(el.dataset.id); i.done = !i.done; commit(); },
-    'shop-edit': (el) => shopSheet(el.dataset.id),
-    'clear-bought'() { const n = SH.clearBought(); commit(); toast(`${fa(n)} مورد پاک شد`); },
     'quick-task'(el) { const input = el.querySelector('input'); if (quickAddTask(input.value, day)) input.value = ''; },
-    'quick-shop'(el) { const input = el.querySelector('input'); if (quickShop(input.value)) input.value = ''; },
     add() {
       const tab = openOr('tasks', 'daily');
       if (tab === 'appts') apptSheet(null, day);
-      else if (tab === 'shop') shopSheet();
       else if (tab === 'calendar') menu('افزودن به ' + dayLabel(day), [{ icon: 'task_alt', label: 'کار', run: () => taskSheet(null, day) }, { icon: 'event', label: 'قرار', run: () => apptSheet(null, day) }]);
       else taskSheet(null, day);
     },
@@ -3625,7 +3599,7 @@ let __default;
 const { S, commit, refresh } = __r("src/core/store.js");
 const { parseIso, today } = __r("src/core/dates.js");
 const { fa, esc, money } = __r("src/core/format.js");
-const { faDayMonth, fullDate, relDay, monthLabel, shiftMonthKey, currentMonthKey } = __r("src/core/calendar.js");
+const { faDayMonth, fullDate, relDay, monthLabel, currentMonthKey } = __r("src/core/calendar.js");
 const { toast } = __r("src/ui/toast.js");
 const { menu } = __r("src/ui/sheet.js");
 const { icon } = __r("src/ui/widgets.js");
@@ -3757,6 +3731,39 @@ __default = {
 
 __exports.default = __default;
 };
+__defs["src/pages/shop.js"] = function (__exports) {
+let __default;
+/* Weekly shopping: a two-column grid of names, each with a small tick. */
+const { commit } = __r("src/core/store.js");
+const { fa, esc } = __r("src/core/format.js");
+const { toast } = __r("src/ui/toast.js");
+const { icon } = __r("src/ui/widgets.js");
+const { pageHead, empty } = __r("src/ui/kit.js");
+const SH = __r("src/domain/shopping.js");
+const { shopSheet, quickShop } = __r("src/features/plan-sheets.js");
+
+__default = {
+  id: 'shop',
+  title: 'خرید',
+  render() {
+    const items = SH.ordered();
+    const bought = SH.boughtCount();
+    return `${pageHead('خرید هفتگی', `${fa(SH.remaining())} مورد باقی‌مانده`)}
+      <form class="add-line" data-submit="add">${icon('add_shopping_cart', 'muted')}<input data-key="qs" name="qs" autocomplete="off" placeholder="مثلاً ماست…"><button class="btn-sm" type="submit">افزودن</button></form>
+      ${items.length ? `<div class="shop-grid">${items.map((i) => `<button class="shop-item${i.done ? ' done' : ''}" data-act="toggle" data-hold="item" data-id="${i.id}"><span class="truncate">${esc(i.title)}</span><i class="tick">${icon('check')}</i></button>`).join('')}</div>
+        <div class="row-between"><small>نگه‌داشتن روی یک مورد: ویرایش یا حذف</small>${bought ? `<button class="link" data-act="clear">پاک کردن خریده‌شده‌ها (${fa(bought)})</button>` : ''}</div>` : empty('فهرست خرید خالی است')}`;
+  },
+  act: {
+    add(el) { const input = el.querySelector('input'); if (quickShop(input.value)) input.value = ''; },
+    toggle(el) { const i = SH.findItem(el.dataset.id); if (i) { i.done = !i.done; commit(); } },
+    clear() { const n = SH.clearBought(); commit(); toast(`${fa(n)} مورد پاک شد`); },
+  },
+  hold: { item: (el) => shopSheet(el.dataset.id) },
+};
+
+
+__exports.default = __default;
+};
 __defs["src/main.js"] = function (__exports) {
 /* App shell: top bar (profile · name · settings), fixed bottom bar with four sections, router and render loop. */
 const { init, subscribe, reloadFromStorage, S } = __r("src/core/store.js");
@@ -3771,9 +3778,10 @@ const today = __r("src/pages/today.js").default;
 const tasks = __r("src/pages/tasks.js").default;
 const gym = __r("src/pages/gym.js").default;
 const money = __r("src/pages/money.js").default;
+const shop = __r("src/pages/shop.js").default;
 
-const PAGES = { today, tasks, gym, money };
-const NAV = [['today', 'wb_sunny', 'امروز'], ['tasks', 'task_alt', 'کارها'], ['gym', 'fitness_center', 'ورزش'], ['money', 'account_balance_wallet', 'مالی']];
+const PAGES = { today, tasks, gym, money, shop };
+const NAV = [['today', 'wb_sunny', 'امروز'], ['tasks', 'task_alt', 'کارها'], ['gym', 'fitness_center', 'ورزش'], ['money', 'account_balance_wallet', 'مالی'], ['shop', 'shopping_basket', 'خرید']];
 
 let page = null;
 let view = null;

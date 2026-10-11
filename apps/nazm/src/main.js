@@ -11,9 +11,10 @@ import today from './pages/today.js';
 import tasks from './pages/tasks.js';
 import gym from './pages/gym.js';
 import money from './pages/money.js';
+import shop from './pages/shop.js';
 
-const PAGES = { today, tasks, gym, money };
-const NAV = [['today', 'wb_sunny', 'امروز'], ['tasks', 'task_alt', 'کارها'], ['gym', 'fitness_center', 'ورزش'], ['money', 'account_balance_wallet', 'مالی']];
+const PAGES = { today, tasks, gym, money, shop };
+const NAV = [['today', 'wb_sunny', 'امروز'], ['tasks', 'task_alt', 'کارها'], ['gym', 'fitness_center', 'ورزش'], ['money', 'account_balance_wallet', 'مالی'], ['shop', 'shopping_basket', 'خرید']];
 
 let page = null;
 let view = null;

@@ -2,7 +2,7 @@
 import { S, commit, refresh } from '../core/store.js';
 import { parseIso, today } from '../core/dates.js';
 import { fa, esc, money } from '../core/format.js';
-import { faDayMonth, fullDate, relDay, monthLabel, shiftMonthKey, currentMonthKey } from '../core/calendar.js';
+import { faDayMonth, fullDate, relDay, monthLabel, currentMonthKey } from '../core/calendar.js';
 import { toast } from '../ui/toast.js';
 import { menu } from '../ui/sheet.js';
 import { icon } from '../ui/widgets.js';
