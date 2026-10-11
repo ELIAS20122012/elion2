@@ -9,9 +9,9 @@ import type { Plugin } from "./types.ts";
 import { registerPanel } from "../interfaces/dashboard.ts";
 
 export const LAB_PREFIX = "🧪 lab:";
-export const LAB_MODELS = ["claude-code", "codex", "antigravity", "gemini", "ollama"] as const; // gemini-cli: Google ended it for individuals (use Antigravity)
+export const LAB_MODELS = ["claude-code", "codex", "antigravity", "gemini", "ollama", "ollama-coder", "ollama-gemma", "ollama-deepseek"] as const; // gemini-cli: Google ended it for individuals (use Antigravity)
 const LABEL: Record<string, string> = {
-  "claude-code": "Claude", codex: "ChatGPT (Codex)", antigravity: "Gemini (Antigravity)", "gemini-cli": "Gemini CLI", gemini: "Gemini API", ollama: "Ollama (local)",
+  "claude-code": "Claude", codex: "ChatGPT (Codex)", antigravity: "Gemini (Antigravity)", "gemini-cli": "Gemini CLI", gemini: "Gemini API", ollama: "Ollama (local)", "ollama-coder": "Qwen Coder (local)", "ollama-gemma": "Gemma (local)", "ollama-deepseek": "DeepSeek R1 (local)",
 };
 
 /** Rough kind of request, from keywords (no AI call): the lab learns the best model per kind. */

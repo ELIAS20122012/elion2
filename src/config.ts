@@ -39,6 +39,8 @@ export interface EliasConfig {
     vertex?: { model?: string; location?: string };
     gemini?: { command?: string; model?: string };
     ollama?: { url?: string; model?: string };
+    /** Extra local models for the AI lab (name → Ollama model). Models not pulled are skipped by the lab. */
+    ollamaExtra?: Record<string, string>;
   };
   /** Disable plugins or pass them options: { "disabled": ["google"], "options": { "<plugin>": {...} } } */
   plugins?: PluginsConfig;
@@ -187,6 +189,9 @@ function vertexGemini(cfg: EliasConfig): GeminiVertexProvider {
   });
 }
 
+/** Local models only the AI lab uses (not in the fallback chain). Pull with: ollama pull <model>. */
+export const LAB_OLLAMA_EXTRA: Record<string, string> = { "ollama-coder": "qwen2.5-coder:7b", "ollama-gemma": "gemma2:9b", "ollama-deepseek": "deepseek-r1:7b" };
+
 export function createKernel(cfg = loadConfig(), onEvent?: (e: Omit<KernelEvent, "id">) => void): Kernel {
   const policy: Policy = mergePolicy(DEFAULT_POLICY, cfg.policy);
   const kernel = new Kernel({
@@ -209,6 +214,7 @@ export function createKernel(cfg = loadConfig(), onEvent?: (e: Omit<KernelEvent,
         system: personaText,
       }),
       new OllamaProvider({ ...(cfg.providers?.ollama ?? {}), system: personaText }),
+      ...Object.entries(cfg.providers?.ollamaExtra ?? LAB_OLLAMA_EXTRA).map(([name, model]) => new OllamaProvider({ ...(cfg.providers?.ollama ?? {}), name, model, system: personaText })),
     ],
     onEvent,
   });

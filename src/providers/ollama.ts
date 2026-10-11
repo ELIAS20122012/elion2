@@ -2,11 +2,12 @@
 import { ProviderUnavailableError, type ExecutionProvider, type ExecutionRequest, type ExecutionResult, type ProviderHealth } from "./types.ts";
 
 export class OllamaProvider implements ExecutionProvider {
-  readonly name = "ollama";
+  readonly name: string;
   private url: string;
   private model: string;
   private system: () => string | null;
-  constructor(o: { url?: string; model?: string; system?: () => string | null } = {}) {
+  constructor(o: { name?: string; url?: string; model?: string; system?: () => string | null } = {}) {
+    this.name = o.name ?? "ollama";
     this.url = o.url ?? "http://127.0.0.1:11434";
     this.model = o.model ?? "qwen2.5:7b";
     this.system = o.system ?? (() => null);
@@ -40,6 +41,6 @@ export class OllamaProvider implements ExecutionProvider {
     }
     const j = (await r.json()) as { response?: string; error?: string };
     if (!r.ok || j.error) throw new ProviderUnavailableError(`ollama: ${j.error ?? r.status}`);
-    return { output: (j.response ?? "").trim(), meta: { provider: "ollama" } };
+    return { output: (j.response ?? "").replace(/<think>[\s\S]*?<\/think>/g, "").trim(), meta: { provider: this.name } };
   }
 }

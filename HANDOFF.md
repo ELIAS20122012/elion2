@@ -5,6 +5,13 @@ Format: date · agent · what was done · state (finished / half-done + how to c
 
 ---
 
+## 2026-10-11 (4) · Claude
+- AI lab: 3 more local Ollama models (LAB_OLLAMA_EXTRA in config.ts; override with providers.ollamaExtra {name: model}):
+  ollama-coder (qwen2.5-coder:7b), ollama-gemma (gemma2:9b), ollama-deepseek (deepseek-r1:7b; <think> stripped).
+  Only in /compare (LAB_MODELS), not in the auto chain/health watchdog. Models not pulled are skipped silently.
+  On the PC run once: ollama pull qwen2.5-coder:7b · gemma2:9b · deepseek-r1:7b. CPU-only → slower /compare.
+- State: finished, tests green (not yet deployed/restarted — daemon restart needed).
+
 ## 2026-10-11 (3) · Claude (Cowork)
 - Notebook (src/plugins/notebook.ts): every text Elias forwards in Telegram (or "#یادداشت …", "#خام …" = no AI) is
   saved as one Markdown note in C:\Elion\notebook (plugins.options.notebook.dir), local git keeps every version.
