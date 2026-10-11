@@ -1,0 +1,8 @@
+bin/
+obj/
+publish/
+_to_delete/
+*.log
+*.pdb
+*.user
+.vs/

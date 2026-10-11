@@ -1,0 +1,3 @@
+<Window x:Class="InkFlow.MainWindow" Icon="elion.ico" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" Title="InkFlow Overlay" WindowStyle="None" AllowsTransparency="True" Background="#00FFFFFF" Topmost="True" ShowInTaskbar="False" ResizeMode="NoResize" WindowStartupLocation="Manual" xmlns:inkflow="clr-namespace:InkFlow;assembly=InkFlow">
+  <Canvas Name="DrawCanvas" Background="#01000000" MouseLeftButtonDown="DrawCanvas_MouseLeftButtonDown" MouseMove="DrawCanvas_MouseMove" MouseLeftButtonUp="DrawCanvas_MouseLeftButtonUp" />
+</Window>
