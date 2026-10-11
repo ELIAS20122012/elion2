@@ -40,6 +40,7 @@ function show() {
   document.querySelectorAll('#nav a').forEach((a) => {
     if (a.dataset.route === id) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
   });
+  if (page.mount) page.mount();
   render();
   window.scrollTo(0, 0);
 }
@@ -62,6 +63,10 @@ function boot() {
   bindActions($('#top'), { act: { profile: openProfile, settings: openSettings } });
   subscribe(render);
   window.addEventListener('hashchange', show);
+  $('#nav').addEventListener('click', (e) => {
+    const a = e.target.closest('a');
+    if (a && a.dataset.route === currentRoute() && PAGES[a.dataset.route].act.hub) PAGES[a.dataset.route].act.hub();
+  });
   window.addEventListener('pageshow', (e) => { if (e.persisted) { reloadFromStorage(); render(); } });
   setInterval(checkReminders, 30000);
   show();

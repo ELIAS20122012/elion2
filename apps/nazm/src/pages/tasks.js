@@ -4,13 +4,14 @@ import { iso, addDays, parseIso, today, weekStart, WD_SHORT } from '../core/date
 import { fa, esc } from '../core/format.js';
 import { faDate, faDayNum, relDay } from '../core/calendar.js';
 import { icon } from '../ui/widgets.js';
-import { pageHead, addLine, takeLine, drawers, toggleDrawer, row, check, empty, section, ring, tabOf, openOr } from '../ui/kit.js';
+import { pageHead, addLine, takeLine, hubGrid, subHead, toHub, enter, setTab, row, check, empty, section, ring, tabOf, openOr } from '../ui/kit.js';
 import * as T from '../domain/tasks.js';
 import * as A from '../domain/appointments.js';
 import { taskSheet, toggleTask } from '../features/task-sheets.js';
 import { apptSheet, exportIcs } from '../features/plan-sheets.js';
 
 const ORDER = ['calendar', 'appts', 'daily'];
+const ICONS = { calendar: 'calendar_month', appts: 'event', daily: 'checklist' };
 const LABELS = { calendar: 'تقویم', appts: 'قرارها', daily: 'کارهای روزانه' };
 let day = today();
 
@@ -73,14 +74,16 @@ function dailyTab() {
 export default {
   id: 'tasks',
   title: 'کارها',
-  mount() { day = today(); },
+  mount() { day = today(); enter('tasks'); },
   render() {
     const bodies = { calendar: calendarTab, appts: apptsTab, daily: dailyTab };
-    const items = ORDER.map((key) => ({ key, label: LABELS[key], body: () => `<div class="stack">${bodies[key]()}</div>` }));
-    return `${pageHead('کارها', 'برنامه‌ی روز و هفته')}${addLine(openOr('tasks', 'daily') === 'appts' ? 'قرار تازه… و Enter' : 'کار تازه… و Enter')}${drawers(items, tabOf('tasks', 'daily'))}`;
+    const cur = tabOf('tasks', '');
+    if (!bodies[cur]) return `${pageHead('کارها', 'برنامه‌ی روز و هفته')}${hubGrid(ORDER.map((key) => ({ key, label: LABELS[key], ic: ICONS[key] })))}`;
+    return `${subHead(LABELS[cur])}${cur === 'calendar' ? '' : addLine(cur === 'appts' ? 'قرار تازه… و Enter' : 'کار تازه… و Enter')}<div class="stack">${bodies[cur]()}</div>`;
   },
   act: {
-    tab: toggleDrawer('tasks'),
+    tab: (el) => setTab('tasks', el.dataset.v),
+    hub: () => toHub('tasks'),
     'pick-day'(el) { day = el.dataset.date; refresh(); },
     week(el) { day = iso(addDays(parseIso(day), +el.dataset.d)); refresh(); },
     step(el) { day = iso(addDays(parseIso(day), +el.dataset.d)); refresh(); },

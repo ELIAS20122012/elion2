@@ -447,6 +447,17 @@ textarea.input { min-height: 72px; line-height: 1.6; }
 .gym-head + .list .sets { flex-basis: auto; padding: 0; gap: 4px; direction: ltr; }
 .gym-head + .list .set { min-width: 20px; height: 20px; font-size: 10px; border-width: 1.2px; }
 
+/* ---- section home: icon grid; sub-pages get a slim back header ---- */
+.hub { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px 8px; padding: 10px 0 4px; }
+.hub-i { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 4px 0; text-align: center; }
+.hub-ic { width: 54px; height: 54px; border-radius: 18px; display: grid; place-items: center; background: color-mix(in srgb, var(--primary) 12%, transparent); color: var(--primary); transition: transform .12s; }
+.hub-i:active .hub-ic { transform: scale(.94); }
+.hub-ic .material-symbols-outlined { font-size: 26px; }
+.hub-i b { font-size: 12px; font-weight: 700; color: var(--ink); }
+.hub-i small { font-size: 10px; color: var(--muted); }
+.sub-head { display: flex; align-items: center; gap: 4px; margin-top: -4px; }
+.sub-head h2 { font-size: 16px; font-weight: 800; color: var(--ink); margin: 0; }
+
 /* Everything is shared in components.css; screen-specific rules would go here. */
 
   </style>
@@ -2149,7 +2160,11 @@ const { icon } = __r("src/ui/widgets.js");
 const tabOf = (page, def) => { const v = S.ui.tabs && S.ui.tabs[page]; return v === undefined ? def : v; };
 const openOr = (page, def) => tabOf(page, def) || def;
 function setTab(page, key) { S.ui.tabs = S.ui.tabs || {}; S.ui.tabs[page] = key; commit(); }
-function goTab(page, key) { S.ui.tabs = S.ui.tabs || {}; S.ui.tabs[page] = key; go(page); }
+function goTab(page, key) { pending[page] = key; go(page); }
+const pending = {};
+/** Called when a section is entered: land on its icon hub, unless another page asked for a sub-page. */
+function enter(page) { S.ui.tabs = S.ui.tabs || {}; S.ui.tabs[page] = pending[page] || ''; delete pending[page]; }
+function toHub(page) { S.ui.tabs = S.ui.tabs || {}; if (S.ui.tabs[page]) { S.ui.tabs[page] = ''; commit(); } }
 
 const pageHead = (title, desc = '') => `<header class="page-head"><div><h1>${title}</h1>${desc ? `<p>${desc}</p>` : ''}</div></header>`;
 
@@ -2176,6 +2191,13 @@ const drawers = (items, current, act = 'tab') =>
       <button class="drawer-head" data-act="${act}" data-v="${d.key}" aria-expanded="${on}"><span>${d.label}</span>${icon('expand_more', 'dchev')}</button>
       ${on ? `<div class="drawer-body">${d.body()}</div>` : ''}</section>`;
   }).join('')}</div>`;
+
+/** Section home: a grid of icons. items [{ key, label, ic, sub? }]. */
+const hubGrid = (items, act = 'tab') =>
+  `<div class="hub">${items.map((d) => `<button class="hub-i" data-act="${act}" data-v="${d.key}"><span class="hub-ic">${icon(d.ic)}</span><b>${d.label}</b>${d.sub ? `<small>${d.sub}</small>` : ''}</button>`).join('')}</div>`;
+
+/** The sub-page header: back arrow + title. */
+const subHead = (title, act = 'hub') => `<div class="sub-head"><button class="icon-btn" data-act="${act}" aria-label="بازگشت">${icon('arrow_forward')}</button><h2>${title}</h2></div>`;
 
 /** Click handler for the drawer headers of a page. */
 const toggleDrawer = (page) => (el) => setTab(page, tabOf(page, '') === el.dataset.v ? '' : el.dataset.v);
@@ -2214,11 +2236,15 @@ __exports.tabOf = tabOf;
 __exports.openOr = openOr;
 __exports.setTab = setTab;
 __exports.goTab = goTab;
+__exports.enter = enter;
+__exports.toHub = toHub;
 __exports.pageHead = pageHead;
 __exports.addLine = addLine;
 __exports.putBack = putBack;
 __exports.takeLine = takeLine;
 __exports.drawers = drawers;
+__exports.hubGrid = hubGrid;
+__exports.subHead = subHead;
 __exports.toggleDrawer = toggleDrawer;
 __exports.pills = pills;
 __exports.row = row;
@@ -2734,13 +2760,14 @@ const { iso, addDays, parseIso, today, weekStart, WD_SHORT } = __r("src/core/dat
 const { fa, esc } = __r("src/core/format.js");
 const { faDate, faDayNum, relDay } = __r("src/core/calendar.js");
 const { icon } = __r("src/ui/widgets.js");
-const { pageHead, addLine, takeLine, drawers, toggleDrawer, row, check, empty, section, ring, tabOf, openOr } = __r("src/ui/kit.js");
+const { pageHead, addLine, takeLine, hubGrid, subHead, toHub, enter, setTab, row, check, empty, section, ring, tabOf, openOr } = __r("src/ui/kit.js");
 const T = __r("src/domain/tasks.js");
 const A = __r("src/domain/appointments.js");
 const { taskSheet, toggleTask } = __r("src/features/task-sheets.js");
 const { apptSheet, exportIcs } = __r("src/features/plan-sheets.js");
 
 const ORDER = ['calendar', 'appts', 'daily'];
+const ICONS = { calendar: 'calendar_month', appts: 'event', daily: 'checklist' };
 const LABELS = { calendar: 'تقویم', appts: 'قرارها', daily: 'کارهای روزانه' };
 let day = today();
 
@@ -2803,14 +2830,16 @@ function dailyTab() {
 __default = {
   id: 'tasks',
   title: 'کارها',
-  mount() { day = today(); },
+  mount() { day = today(); enter('tasks'); },
   render() {
     const bodies = { calendar: calendarTab, appts: apptsTab, daily: dailyTab };
-    const items = ORDER.map((key) => ({ key, label: LABELS[key], body: () => `<div class="stack">${bodies[key]()}</div>` }));
-    return `${pageHead('کارها', 'برنامه‌ی روز و هفته')}${addLine(openOr('tasks', 'daily') === 'appts' ? 'قرار تازه… و Enter' : 'کار تازه… و Enter')}${drawers(items, tabOf('tasks', 'daily'))}`;
+    const cur = tabOf('tasks', '');
+    if (!bodies[cur]) return `${pageHead('کارها', 'برنامه‌ی روز و هفته')}${hubGrid(ORDER.map((key) => ({ key, label: LABELS[key], ic: ICONS[key] })))}`;
+    return `${subHead(LABELS[cur])}${cur === 'calendar' ? '' : addLine(cur === 'appts' ? 'قرار تازه… و Enter' : 'کار تازه… و Enter')}<div class="stack">${bodies[cur]()}</div>`;
   },
   act: {
-    tab: toggleDrawer('tasks'),
+    tab: (el) => setTab('tasks', el.dataset.v),
+    hub: () => toHub('tasks'),
     'pick-day'(el) { day = el.dataset.date; refresh(); },
     week(el) { day = iso(addDays(parseIso(day), +el.dataset.d)); refresh(); },
     step(el) { day = iso(addDays(parseIso(day), +el.dataset.d)); refresh(); },
@@ -2867,11 +2896,12 @@ const { toast } = __r("src/ui/toast.js");
 const { splitAmount } = __r("src/domain/quick.js");
 const { uid } = __r("src/core/util.js");
 const { icon } = __r("src/ui/widgets.js");
-const { pageHead, addLine, takeLine, putBack, drawers, toggleDrawer, row, empty, section, ring, bar, bars, tabOf, openOr } = __r("src/ui/kit.js");
+const { pageHead, addLine, takeLine, putBack, hubGrid, subHead, toHub, enter, setTab, row, empty, section, ring, bar, bars, tabOf, openOr } = __r("src/ui/kit.js");
 const G = __r("src/domain/gym.js");
 const { exerciseSheet, finishOrReopen, mealSheet, goalSheet, planSheet, foodPhoto, toggleTimer } = __r("src/features/gym-sheets.js");
 
 const ORDER = ['program', 'calories', 'photo'];
+const ICONS = { program: 'fitness_center', calories: 'local_fire_department', photo: 'photo_camera' };
 const LABELS = { program: 'برنامه تمرین', calories: 'کالری', photo: 'عکس غذا' };
 let selected = today();
 
@@ -2958,14 +2988,16 @@ const lineFor = (tab) => (tab === 'program' ? addLine('حرکت تازه… و E
 __default = {
   id: 'gym',
   title: 'ورزش',
-  mount() { selected = today(); },
+  mount() { selected = today(); enter('gym'); },
   render() {
     const bodies = { program: programTab, calories: caloriesTab, photo: photoTab };
-    const items = ORDER.map((key) => ({ key, label: LABELS[key], body: () => `<div class="stack">${bodies[key]()}</div>` }));
-    return `${pageHead('ورزش', 'تمرین، کالری و غذا')}${lineFor(tabOf('gym', 'program'))}${drawers(items, tabOf('gym', 'program'))}`;
+    const cur = tabOf('gym', '');
+    if (!bodies[cur]) return `${pageHead('ورزش', 'تمرین، کالری و غذا')}${hubGrid(ORDER.map((key) => ({ key, label: LABELS[key], ic: ICONS[key] })))}`;
+    return `${subHead(LABELS[cur])}${lineFor(cur)}<div class="stack">${bodies[cur]()}</div>`;
   },
   act: {
-    tab: toggleDrawer('gym'),
+    tab: (el) => setTab('gym', el.dataset.v),
+    hub: () => toHub('gym'),
     day(el) { selected = el.dataset.date; G.sessionFromPlan(selected); commit(); },
     trend(el) { selected = weekDates()[+el.dataset.i]; commit(); },
     plan: () => planSheet(selected),
@@ -2986,7 +3018,7 @@ __default = {
     quick(el) {
       const line = takeLine(el);
       if (!line) return;
-      if (openOr('gym', 'program') === 'calories') {
+      if (tabOf('gym', '') === 'calories') {
         const { title, amount } = splitAmount(line);
         if (!amount) { toast('کالری را هم بنویسید، مثلاً ماست ۱۲۰'); putBack(el, line); return; }
         G.addMeal({ name: title || 'وعده', kcal: Math.round(amount), p: 0, c: 0, f: 0 }, selected);
@@ -3232,7 +3264,7 @@ const { fa, esc, money } = __r("src/core/format.js");
 const { faDayMonth, monthLabel, currentMonthKey } = __r("src/core/calendar.js");
 const { toast } = __r("src/ui/toast.js");
 const { icon } = __r("src/ui/widgets.js");
-const { pageHead, addLine, takeLine, putBack, drawers, toggleDrawer, pills, row, empty, section, bar, bars, tabOf, setTab } = __r("src/ui/kit.js");
+const { pageHead, addLine, takeLine, putBack, hubGrid, subHead, toHub, enter, pills, row, empty, section, bar, bars, tabOf, setTab } = __r("src/ui/kit.js");
 const fin = __r("src/domain/finance.js");
 const MO = __r("src/domain/monthly.js");
 const SV = __r("src/domain/savings.js");
@@ -3240,6 +3272,7 @@ const { parseMoneyLine, splitAmount } = __r("src/domain/quick.js");
 const { txSheet, historySheet, monthlySheet, savingSheet, budgetSheet, catBudgetSheet, addCatBudget, exportCsv } = __r("src/features/finance-sheets.js");
 
 const ORDER = ['tx', 'monthly', 'budget', 'savings', 'report'];
+const ICONS = { tx: 'receipt_long', monthly: 'event_repeat', budget: 'donut_large', savings: 'savings', report: 'bar_chart' };
 const LABELS = { tx: 'تراکنش‌ها', monthly: 'قسط‌ها', budget: 'بودجه', savings: 'پس‌انداز', report: 'گزارش' };
 let filter = 'all';
 let q = '';
@@ -3331,16 +3364,17 @@ function reportTab() {
 __default = {
   id: 'money',
   title: 'مالی',
-  mount() { filter = 'all'; q = ''; },
+  mount() { filter = 'all'; q = ''; enter('money'); },
   render() {
     const bodies = { tx: txTab, monthly: monthlyTab, budget: budgetTab, savings: savingsTab, report: reportTab };
-    const items = ORDER.map((key) => ({ key, label: LABELS[key], body: () => `<div class="stack">${bodies[key]()}</div>` }));
-    const stored = tabOf('money', 'tx');
-    const open = ORDER.includes(stored) || stored === '' ? stored : 'tx';
-    return `${pageHead('مالی', 'موجودی، خرج و قسط‌ها')}${summary()}${open === 'tx' ? addLine('مثلاً نهار ۱۲۰ — برای درآمد: +حقوق ۱۵۰۰') : open === 'monthly' ? addLine('مثلاً برق ۵۰ — و Enter') : open === 'savings' ? addLine('مثلاً طلا ۸۰۰ — و Enter') : ''}${drawers(items, open)}`;
+    const cur = tabOf('money', '');
+    if (!bodies[cur]) return `${pageHead('مالی', 'موجودی، خرج و قسط‌ها')}${summary()}${hubGrid(ORDER.map((key) => ({ key, label: LABELS[key], ic: ICONS[key] })))}`;
+    const line = cur === 'tx' ? addLine('مثلاً نهار ۱۲۰ — برای درآمد: +حقوق ۱۵۰۰') : cur === 'monthly' ? addLine('مثلاً برق ۵۰ — و Enter') : cur === 'savings' ? addLine('مثلاً طلا ۸۰۰ — و Enter') : '';
+    return `${subHead(LABELS[cur])}${line}<div class="stack">${bodies[cur]()}</div>`;
   },
   act: {
-    tab: toggleDrawer('money'),
+    tab: (el) => setTab('money', el.dataset.v),
+    hub: () => toHub('money'),
     privacy() { S.privacy = !S.privacy; commit(); },
     'to-budget': () => setTab('money', 'budget'),
     'to-monthly': () => setTab('money', 'monthly'),
@@ -3468,6 +3502,7 @@ function show() {
   document.querySelectorAll('#nav a').forEach((a) => {
     if (a.dataset.route === id) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
   });
+  if (page.mount) page.mount();
   render();
   window.scrollTo(0, 0);
 }
@@ -3490,6 +3525,10 @@ function boot() {
   bindActions($('#top'), { act: { profile: openProfile, settings: openSettings } });
   subscribe(render);
   window.addEventListener('hashchange', show);
+  $('#nav').addEventListener('click', (e) => {
+    const a = e.target.closest('a');
+    if (a && a.dataset.route === currentRoute() && PAGES[a.dataset.route].act.hub) PAGES[a.dataset.route].act.hub();
+  });
   window.addEventListener('pageshow', (e) => { if (e.persisted) { reloadFromStorage(); render(); } });
   setInterval(checkReminders, 30000);
   show();

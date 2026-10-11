@@ -5,7 +5,7 @@ import { fa, esc, money } from '../core/format.js';
 import { faDayMonth, monthLabel, currentMonthKey } from '../core/calendar.js';
 import { toast } from '../ui/toast.js';
 import { icon } from '../ui/widgets.js';
-import { pageHead, addLine, takeLine, putBack, drawers, toggleDrawer, pills, row, empty, section, bar, bars, tabOf, setTab } from '../ui/kit.js';
+import { pageHead, addLine, takeLine, putBack, hubGrid, subHead, toHub, enter, pills, row, empty, section, bar, bars, tabOf, setTab } from '../ui/kit.js';
 import * as fin from '../domain/finance.js';
 import * as MO from '../domain/monthly.js';
 import * as SV from '../domain/savings.js';
@@ -13,6 +13,7 @@ import { parseMoneyLine, splitAmount } from '../domain/quick.js';
 import { txSheet, historySheet, monthlySheet, savingSheet, budgetSheet, catBudgetSheet, addCatBudget, exportCsv } from '../features/finance-sheets.js';
 
 const ORDER = ['tx', 'monthly', 'budget', 'savings', 'report'];
+const ICONS = { tx: 'receipt_long', monthly: 'event_repeat', budget: 'donut_large', savings: 'savings', report: 'bar_chart' };
 const LABELS = { tx: 'تراکنش‌ها', monthly: 'قسط‌ها', budget: 'بودجه', savings: 'پس‌انداز', report: 'گزارش' };
 let filter = 'all';
 let q = '';
@@ -104,16 +105,17 @@ function reportTab() {
 export default {
   id: 'money',
   title: 'مالی',
-  mount() { filter = 'all'; q = ''; },
+  mount() { filter = 'all'; q = ''; enter('money'); },
   render() {
     const bodies = { tx: txTab, monthly: monthlyTab, budget: budgetTab, savings: savingsTab, report: reportTab };
-    const items = ORDER.map((key) => ({ key, label: LABELS[key], body: () => `<div class="stack">${bodies[key]()}</div>` }));
-    const stored = tabOf('money', 'tx');
-    const open = ORDER.includes(stored) || stored === '' ? stored : 'tx';
-    return `${pageHead('مالی', 'موجودی، خرج و قسط‌ها')}${summary()}${open === 'tx' ? addLine('مثلاً نهار ۱۲۰ — برای درآمد: +حقوق ۱۵۰۰') : open === 'monthly' ? addLine('مثلاً برق ۵۰ — و Enter') : open === 'savings' ? addLine('مثلاً طلا ۸۰۰ — و Enter') : ''}${drawers(items, open)}`;
+    const cur = tabOf('money', '');
+    if (!bodies[cur]) return `${pageHead('مالی', 'موجودی، خرج و قسط‌ها')}${summary()}${hubGrid(ORDER.map((key) => ({ key, label: LABELS[key], ic: ICONS[key] })))}`;
+    const line = cur === 'tx' ? addLine('مثلاً نهار ۱۲۰ — برای درآمد: +حقوق ۱۵۰۰') : cur === 'monthly' ? addLine('مثلاً برق ۵۰ — و Enter') : cur === 'savings' ? addLine('مثلاً طلا ۸۰۰ — و Enter') : '';
+    return `${subHead(LABELS[cur])}${line}<div class="stack">${bodies[cur]()}</div>`;
   },
   act: {
-    tab: toggleDrawer('money'),
+    tab: (el) => setTab('money', el.dataset.v),
+    hub: () => toHub('money'),
     privacy() { S.privacy = !S.privacy; commit(); },
     'to-budget': () => setTab('money', 'budget'),
     'to-monthly': () => setTab('money', 'monthly'),

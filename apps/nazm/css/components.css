@@ -342,3 +342,14 @@ textarea.input { min-height: 72px; line-height: 1.6; }
 .wk { direction: ltr; }
 .gym-head + .list .sets { flex-basis: auto; padding: 0; gap: 4px; direction: ltr; }
 .gym-head + .list .set { min-width: 20px; height: 20px; font-size: 10px; border-width: 1.2px; }
+
+/* ---- section home: icon grid; sub-pages get a slim back header ---- */
+.hub { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px 8px; padding: 10px 0 4px; }
+.hub-i { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 4px 0; text-align: center; }
+.hub-ic { width: 54px; height: 54px; border-radius: 18px; display: grid; place-items: center; background: color-mix(in srgb, var(--primary) 12%, transparent); color: var(--primary); transition: transform .12s; }
+.hub-i:active .hub-ic { transform: scale(.94); }
+.hub-ic .material-symbols-outlined { font-size: 26px; }
+.hub-i b { font-size: 12px; font-weight: 700; color: var(--ink); }
+.hub-i small { font-size: 10px; color: var(--muted); }
+.sub-head { display: flex; align-items: center; gap: 4px; margin-top: -4px; }
+.sub-head h2 { font-size: 16px; font-weight: 800; color: var(--ink); margin: 0; }

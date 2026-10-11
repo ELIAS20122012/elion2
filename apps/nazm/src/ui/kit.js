@@ -8,7 +8,11 @@ import { icon } from './widgets.js';
 export const tabOf = (page, def) => { const v = S.ui.tabs && S.ui.tabs[page]; return v === undefined ? def : v; };
 export const openOr = (page, def) => tabOf(page, def) || def;
 export function setTab(page, key) { S.ui.tabs = S.ui.tabs || {}; S.ui.tabs[page] = key; commit(); }
-export function goTab(page, key) { S.ui.tabs = S.ui.tabs || {}; S.ui.tabs[page] = key; go(page); }
+export function goTab(page, key) { pending[page] = key; go(page); }
+const pending = {};
+/** Called when a section is entered: land on its icon hub, unless another page asked for a sub-page. */
+export function enter(page) { S.ui.tabs = S.ui.tabs || {}; S.ui.tabs[page] = pending[page] || ''; delete pending[page]; }
+export function toHub(page) { S.ui.tabs = S.ui.tabs || {}; if (S.ui.tabs[page]) { S.ui.tabs[page] = ''; commit(); } }
 
 export const pageHead = (title, desc = '') => `<header class="page-head"><div><h1>${title}</h1>${desc ? `<p>${desc}</p>` : ''}</div></header>`;
 
@@ -35,6 +39,13 @@ export const drawers = (items, current, act = 'tab') =>
       <button class="drawer-head" data-act="${act}" data-v="${d.key}" aria-expanded="${on}"><span>${d.label}</span>${icon('expand_more', 'dchev')}</button>
       ${on ? `<div class="drawer-body">${d.body()}</div>` : ''}</section>`;
   }).join('')}</div>`;
+
+/** Section home: a grid of icons. items [{ key, label, ic, sub? }]. */
+export const hubGrid = (items, act = 'tab') =>
+  `<div class="hub">${items.map((d) => `<button class="hub-i" data-act="${act}" data-v="${d.key}"><span class="hub-ic">${icon(d.ic)}</span><b>${d.label}</b>${d.sub ? `<small>${d.sub}</small>` : ''}</button>`).join('')}</div>`;
+
+/** The sub-page header: back arrow + title. */
+export const subHead = (title, act = 'hub') => `<div class="sub-head"><button class="icon-btn" data-act="${act}" aria-label="بازگشت">${icon('arrow_forward')}</button><h2>${title}</h2></div>`;
 
 /** Click handler for the drawer headers of a page. */
 export const toggleDrawer = (page) => (el) => setTab(page, tabOf(page, '') === el.dataset.v ? '' : el.dataset.v);

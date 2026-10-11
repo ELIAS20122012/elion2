@@ -7,11 +7,12 @@ import { toast } from '../ui/toast.js';
 import { splitAmount } from '../domain/quick.js';
 import { uid } from '../core/util.js';
 import { icon } from '../ui/widgets.js';
-import { pageHead, addLine, takeLine, putBack, drawers, toggleDrawer, row, empty, section, ring, bar, bars, tabOf, openOr } from '../ui/kit.js';
+import { pageHead, addLine, takeLine, putBack, hubGrid, subHead, toHub, enter, setTab, row, empty, section, ring, bar, bars, tabOf, openOr } from '../ui/kit.js';
 import * as G from '../domain/gym.js';
 import { exerciseSheet, finishOrReopen, mealSheet, goalSheet, planSheet, foodPhoto, toggleTimer } from '../features/gym-sheets.js';
 
 const ORDER = ['program', 'calories', 'photo'];
+const ICONS = { program: 'fitness_center', calories: 'local_fire_department', photo: 'photo_camera' };
 const LABELS = { program: 'برنامه تمرین', calories: 'کالری', photo: 'عکس غذا' };
 let selected = today();
 
@@ -98,14 +99,16 @@ const lineFor = (tab) => (tab === 'program' ? addLine('حرکت تازه… و E
 export default {
   id: 'gym',
   title: 'ورزش',
-  mount() { selected = today(); },
+  mount() { selected = today(); enter('gym'); },
   render() {
     const bodies = { program: programTab, calories: caloriesTab, photo: photoTab };
-    const items = ORDER.map((key) => ({ key, label: LABELS[key], body: () => `<div class="stack">${bodies[key]()}</div>` }));
-    return `${pageHead('ورزش', 'تمرین، کالری و غذا')}${lineFor(tabOf('gym', 'program'))}${drawers(items, tabOf('gym', 'program'))}`;
+    const cur = tabOf('gym', '');
+    if (!bodies[cur]) return `${pageHead('ورزش', 'تمرین، کالری و غذا')}${hubGrid(ORDER.map((key) => ({ key, label: LABELS[key], ic: ICONS[key] })))}`;
+    return `${subHead(LABELS[cur])}${lineFor(cur)}<div class="stack">${bodies[cur]()}</div>`;
   },
   act: {
-    tab: toggleDrawer('gym'),
+    tab: (el) => setTab('gym', el.dataset.v),
+    hub: () => toHub('gym'),
     day(el) { selected = el.dataset.date; G.sessionFromPlan(selected); commit(); },
     trend(el) { selected = weekDates()[+el.dataset.i]; commit(); },
     plan: () => planSheet(selected),
@@ -126,7 +129,7 @@ export default {
     quick(el) {
       const line = takeLine(el);
       if (!line) return;
-      if (openOr('gym', 'program') === 'calories') {
+      if (tabOf('gym', '') === 'calories') {
         const { title, amount } = splitAmount(line);
         if (!amount) { toast('کالری را هم بنویسید، مثلاً ماست ۱۲۰'); putBack(el, line); return; }
         G.addMeal({ name: title || 'وعده', kcal: Math.round(amount), p: 0, c: 0, f: 0 }, selected);
