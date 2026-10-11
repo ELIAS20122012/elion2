@@ -347,6 +347,37 @@ textarea.input { min-height: 110px; resize: vertical; line-height: 1.8; }
 .view { gap: 14px; }
 .page-head h1, .greet h1 { font-size: 21px; }
 
+/* ---- compact dialogs (forms, menus, confirms) ---- */
+.sheet { padding: 8px 16px calc(14px + env(safe-area-inset-bottom, 0px)); border-radius: 20px 20px 0 0; max-height: 80vh; }
+.sheet-grip { width: 34px; height: 3px; margin: 0 auto 10px; }
+.sheet h3 { font-size: 15px; margin: 0 0 2px; }
+.sheet-sub { font-size: 11px; margin: 0 0 8px; line-height: 1.6; }
+.field { margin: 8px 0; }
+.field > span { font-size: 11px; margin-bottom: 4px; }
+.input { padding: 8px 12px; font-size: 13.5px; border-radius: 10px; min-height: 36px; }
+textarea.input { min-height: 72px; line-height: 1.6; }
+.row2 { gap: 8px; } .row3 { gap: 6px; }
+.chips { gap: 6px; }
+.chip { padding: 5px 11px; font-size: 12px; }
+.chip .material-symbols-outlined { font-size: 15px; }
+.switch { padding: 6px 0; font-size: 13px; }
+.switch i { width: 38px; height: 22px; }
+.switch i::after { width: 16px; height: 16px; top: 3px; right: 3px; }
+.switch.on i::after { transform: translateX(-16px); }
+.sheet-actions { gap: 8px; margin-top: 12px; }
+.sheet .btn { flex: 1; padding: 9px 12px; border-radius: 999px; font-weight: 700; font-size: 13px; text-align: center; background: var(--well); color: var(--ink); border: 0; }
+.sheet .btn.primary { background: var(--primary); color: var(--on-primary); }
+.sheet .btn.danger { color: var(--danger); background: color-mix(in srgb, var(--danger) 10%, var(--well)); }
+.menu { margin-top: 2px; }
+.menu button { padding: 10px 2px; font-size: 13.5px; font-weight: 600; gap: 10px; }
+.menu button .material-symbols-outlined { font-size: 20px; }
+.item { padding: 8px 10px; font-size: 13px; border-radius: 10px; }
+.item-icon { width: 28px; height: 28px; border-radius: 9px; }
+.item-icon .material-symbols-outlined { font-size: 16px; }
+.item-title { font-size: 13px; }
+.stat-grid > div { padding: 8px 10px; border-radius: 10px; }
+.stat-grid b { font-size: 14px; }
+
 /* Everything is shared in components.css; screen-specific rules would go here. */
 
   </style>
