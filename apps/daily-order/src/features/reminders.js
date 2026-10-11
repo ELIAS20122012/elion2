@@ -31,8 +31,5 @@ export function checkReminders() {
   S.tasks.forEach((t) => {
     if (t.reminder && !t.done && !t.notified && t.date === d && t.time && late(t.time)) { t.notified = true; changed = true; notify(`یادآوری: ${t.title}`); }
   });
-  S.blocks.forEach((b) => {
-    if (b.notify && !b.done && !b.notified && b.date === d && late(b.start)) { b.notified = true; changed = true; notify(`شروع بلوک: ${b.title} (${b.start})`); }
-  });
   if (changed) persist();
 }

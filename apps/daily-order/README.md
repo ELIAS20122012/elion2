@@ -23,25 +23,28 @@ node apps/daily-order/tools/build.mjs   # → apps/daily-order/dist/daily-order.
 node --test "apps/daily-order/tests/*.test.js"      # (هم‌چنین جزو npm test ریشه است)
 ```
 
+## صفحه‌ها (ساده، سه تا)
+- **امروز**: کارهای باقی‌مانده (+ معوق)، افزودن سریع با Enter، عادت‌ها (لمس = یک قدم). «انجام‌شده» و «بعداً» جمع‌شده‌اند.
+- **پول**: موجودی، دکمه‌ی هزینه/درآمد، سررسیدهای ۷ روز آینده با «پرداخت» یک‌لمسی (واگرد دارد)، آخرین تراکنش‌ها.
+  قسط/قبض/حساب/گزارش پشت یک لینک «قسط، قبض و حساب‌ها» هستند.
+- **ورزش**: تمرین امروز (لمس ست‌ها)، کالری امروز، وزن.
+
 ## ساختار
 ```
-index.html            شِل: هدر، ناوبری پایین، <main id="app">
-css/
-  tokens.css          رنگ و سایه (روشن/تاریک با html.dark)
-  base.css            ریست، شِل، ابزارهای چیدمان، toast و sheet
-  components.css      کارت، دکمه، فرم، آکاردئون (hub)، نمودار…
-  pages.css           استایل مخصوص هر صفحه
+index.html            شِل: هدر (عنوان + تنظیمات)، ناوبری پایین، <main id="app">
+css/                  tokens (رنگ/سایه، روشن و تاریک) · base · components · pages
 src/
-  main.js             راه‌اندازی، روتر hash، حلقه‌ی رندر
-  router.js           مسیرها (#/dashboard …) و go()
+  main.js, router.js  راه‌اندازی، روتر hash (#/today #/money #/gym)
   core/               بدون DOM: config, util, dates, jalali, calendar, format, seed, store
-  domain/             منطق داده (finance, tasks, gym, planner) — فقط روی state، بدون DOM
-  ui/                 dom (delegate/patchHTML), sheet (فرم/منو/تأیید), toast, hub (آکاردئون), widgets, theme
-  services/           files (ذخیره/انتخاب فایل), ai (قابلیت‌های اختیاری میزبان), notify
-  features/           دیالوگ‌های مشترک بین صفحه‌ها (مالی، کارها، ورزش، برنامه‌ریز، تنظیمات، یادآور)
-  pages/              dashboard, tasks, planner, gym, wallet (+ wallet-hub)
+  domain/             منطق داده (finance, tasks, gym) — فقط روی state
+  ui/                 dom (delegate/patchHTML), sheet (فرم/منو/تأیید), toast, widgets, theme
+  services/           files, ai (قابلیت‌های اختیاری میزبان), notify
+  features/           دیالوگ‌ها: finance-sheets, task-sheets, gym-sheets, settings, reminders
+  pages/              today, money, gym
+tools/build.mjs       ساخت dist/daily-order.html
 tests/                node:test برای core و domain
 ```
+داده‌های قدیمی (بلوک‌های برنامه‌ریز، مرور هفتگی، اولویت و دسته‌ی کارها…) در سند باقی می‌مانند ولی دیگر نمایش داده نمی‌شوند.
 
 ## قراردادها
 - **State**: یک سند JSON (`S` از `core/store.js`). بعد از هر تغییر `commit()` (ذخیره + رندر مجدد)؛ برای متنِ در حال تایپ `persist()`.

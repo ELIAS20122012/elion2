@@ -98,13 +98,6 @@ body { max-width: 430px; margin: 0 auto; box-shadow: 0 0 0 1px rgba(0, 0, 0, .04
 }
 .header-bar { height: 64px; padding: 0 var(--gutter); display: flex; align-items: center; justify-content: space-between; }
 .header-bar h1 { font-size: 18px; font-weight: 700; }
-.avatar {
-  position: relative; width: 34px; height: 34px; border-radius: 50%;
-  display: grid; place-items: center; background: #091426; color: #fff;
-}
-html.dark .avatar { background: #bcc7de; color: #111c2d; }
-.avatar .material-symbols-outlined { font-size: 19px; }
-.avatar i { position: absolute; top: -2px; right: -2px; width: 11px; height: 11px; border-radius: 50%; background: var(--sage); border: 2px solid var(--bg); }
 
 #app { padding: calc(72px + env(safe-area-inset-top, 0px)) var(--gutter) 116px; }
 .view { display: flex; flex-direction: column; gap: 16px; animation: view-in .22s ease; }
@@ -117,19 +110,20 @@ html.dark .avatar { background: #bcc7de; color: #111c2d; }
 }
 #nav .dock {
   pointer-events: auto; width: 100%; max-width: 384px; height: 64px; padding: 0 10px;
-  display: flex; align-items: center; justify-content: space-around; border-radius: 999px;
+  display: flex; align-items: center; gap: 6px; border-radius: 999px;
   background: color-mix(in srgb, var(--card) 95%, transparent);
   -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px);
   box-shadow: -6px -6px 16px #fff, 7px 7px 18px rgba(180, 172, 160, .6);
 }
 html.dark #nav .dock { box-shadow: 0 8px 24px rgba(0, 0, 0, .45); }
 #nav a {
-  width: 48px; height: 48px; border-radius: 999px; display: grid; place-items: center;
+  flex: 1; height: 52px; border-radius: 999px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px;
   color: #8a8478; text-decoration: none; transition: transform .15s, color .15s;
 }
 html.dark #nav a { color: #a9a69e; }
 #nav a:active { transform: scale(.94); }
 #nav a[aria-current="page"] { color: var(--accent); box-shadow: var(--sh-inset-sm); }
+#nav a small { font-size: 10px; font-weight: 700; }
 #nav a .material-symbols-outlined { font-size: 24px; }
 
 /* ---- layout helpers ---- */
@@ -372,179 +366,52 @@ textarea.input { min-height: 110px; resize: vertical; line-height: 1.8; }
 .bar-col.active span { color: var(--accent); font-weight: 700; }
 .chart-well { padding: 14px 12px 8px; }
 
-/* ---- accordion hub ---- */
-.hub-card { background: var(--card); border-radius: var(--r-card); box-shadow: var(--sh-raised); overflow: hidden; }
-.hub-card.is-open { box-shadow: var(--sh-raised), 0 0 0 1px color-mix(in srgb, var(--accent) 30%, transparent); }
-.hub-head { width: 100%; display: flex; align-items: center; gap: 12px; padding: 14px; }
-.hub-icon { width: 44px; height: 44px; flex: none; border-radius: 16px; display: grid; place-items: center; background: var(--well); box-shadow: var(--sh-inset-sm); }
-.hub-text { flex: 1; min-width: 0; display: flex; flex-direction: column; }
-.hub-title { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 700; }
-.hub-sum { font-size: 12px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.hub-body { padding: 0 14px 14px; display: flex; flex-direction: column; gap: 10px; }
-.chev { color: var(--muted); font-size: 20px; transition: transform .2s; }
-.chev.open { transform: rotate(-90deg); }
-.group { background: var(--well); border-radius: var(--r-md); box-shadow: var(--sh-inset-sm); overflow: hidden; }
-button.group { width: 100%; display: flex; align-items: center; gap: 10px; padding: 11px 12px; }
-.group-head { width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 12px; }
-.group-title { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 700; }
-.group-extra { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; color: var(--muted); }
-.group-body { display: flex; flex-direction: column; gap: 8px; padding: 0 8px 10px; }
-.group-head + .group-body { padding-top: 2px; }
-
-/* ===== shared page pieces ===== */
-.clock-card { display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; border-radius: 28px; }
-.clock { font-size: 30px; font-weight: 800; letter-spacing: -.02em; direction: ltr; }
-.clock.sm { font-size: 20px; letter-spacing: .08em; }
+/* ===== shared ===== */
 .metric { padding: 10px 12px; display: flex; flex-direction: column; align-items: flex-start; gap: 2px; text-align: start; border-radius: 16px; }
-.metric.col { align-items: flex-start; }
-button.metric:active { transform: scale(.98); }
 .metric small { font-size: 10.5px; color: var(--muted); }
-.metric b { font-size: 15px; }
+.metric b { font-size: 15px; white-space: nowrap; }
 .section-head { padding: 0 4px; }
-
-/* ===== dashboard ===== */
-.dash-card { display: flex; flex-direction: column; justify-content: space-between; min-height: 340px; padding: 18px 14px; border-radius: 32px; }
-.dash-card .card-head { margin-bottom: 12px; } .dash-card .card-title { font-size: 14px; gap: 6px; }
-.dash-card .metric { flex-direction: row; justify-content: space-between; align-items: center; width: 100%; }
-.dash-card .grid2 .metric { flex-direction: column; align-items: flex-start; justify-content: center; }
-.dash-wide { min-height: 0; gap: 14px; }
-.mini-task { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 16px; background: var(--well); box-shadow: var(--sh-inset-sm); }
-.check-dot { width: 24px; height: 24px; flex: none; border-radius: 50%; display: grid; place-items: center; background: var(--card); box-shadow: var(--sh-raised-sm); color: var(--muted); }
-.check-dot .material-symbols-outlined { font-size: 14px; opacity: .3; }
-.mini-task-text { flex: 1; min-width: 0; display: flex; flex-direction: column; font-size: 12px; font-weight: 600; text-align: start; }
-.mini-task-text small { font-size: 10px; color: var(--muted); font-weight: 400; }
-.zen { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 4px; margin: 10px 0; }
-.zen-well { width: 64px; height: 64px; margin-bottom: 6px; border-radius: 50%; display: grid; place-items: center; background: var(--canvas); box-shadow: var(--sh-inset-sm); color: var(--sage); outline: 8px solid color-mix(in srgb, var(--sage) 14%, transparent); }
-.zen-well .material-symbols-outlined { font-size: 32px; }
-.zen b { font-size: 13px; } .zen small { color: var(--muted); font-size: 10.5px; }
-.gym-row { display: flex; align-items: center; gap: 14px; }
-.ring-well { width: 92px; height: 92px; flex: none; border-radius: 50%; display: grid; place-items: center; background: var(--canvas); box-shadow: var(--sh-inset); }
-.ring-well .ring-fg { stroke: var(--accent); } .ring-well .ring > span { font-size: 14px; }
-.ring-well .ring circle { stroke-width: 3.2; }
-.session-btn { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 12px 14px; border-radius: 18px; font-size: 13px; }
-
-/* ===== tasks ===== */
 .summary { display: flex; align-items: center; gap: 14px; padding: 16px; }
 .summary .ring > span { font-size: 13px; }
+
+/* ===== today ===== */
 .quick-add { display: flex; align-items: center; gap: 8px; padding: 6px 6px 6px 8px; padding-inline-start: 16px; border-radius: 22px; box-shadow: var(--sh-inset); }
-.quick-add input { flex: 1; min-width: 0; border: 0; outline: 0; background: none; font-size: 14px; padding: 8px 0; }
-.trow { background: var(--card); border-radius: var(--r-md); box-shadow: var(--sh-raised-sm); overflow: hidden; }
-.trow.is-done { opacity: .6; }
-.trow-main { display: flex; align-items: center; gap: 10px; padding: 10px; }
-.trow-text { flex: 1; min-width: 0; display: flex; flex-direction: column; text-align: start; }
-.trow-title { font-size: 14px; font-weight: 700; }
-.trow.is-done .trow-title { text-decoration: line-through; }
-.trow-text small { font-size: 11px; }
-.prio-bar { width: 6px; height: 32px; border-radius: 99px; flex: none; }
-.trow-detail { padding: 0 12px 12px; display: flex; flex-direction: column; gap: 8px; }
-.subtask { display: flex; align-items: center; gap: 8px; font-size: 13px; text-align: start; }
-.subtask .material-symbols-outlined { font-size: 18px; color: var(--muted); }
-.subtask.done { color: var(--muted); text-decoration: line-through; } .subtask.done .material-symbols-outlined { color: var(--sage); }
-.habit { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 12px 6px; border-radius: 18px; background: var(--card); box-shadow: var(--sh-raised-sm); font-size: 12px; text-align: center; max-width: 100%; }
+.quick-add input { flex: 1; min-width: 0; border: 0; outline: 0; background: none; font-size: 15px; padding: 10px 0; }
+.task { display: flex; align-items: center; gap: 12px; padding: 12px; background: var(--card); border-radius: var(--r-md); box-shadow: var(--sh-raised-sm); }
+.task.is-done { opacity: .55; }
+.task.is-done .task-text > span { text-decoration: line-through; }
+.task-text { flex: 1; min-width: 0; display: flex; flex-direction: column; text-align: start; font-size: 15px; font-weight: 600; }
+.task-text small { font-size: 11px; font-weight: 400; }
+.habit-row { display: flex; gap: 10px; overflow-x: auto; padding: 4px 2px 10px; scroll-snap-type: x proximity; }
+.habit { flex: none; width: 104px; display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 12px 6px; border-radius: 18px; background: var(--card); box-shadow: var(--sh-raised-sm); font-size: 12px; text-align: center; scroll-snap-align: start; }
 .habit .material-symbols-outlined { font-size: 26px; color: var(--accent); }
-.habit.ok { box-shadow: var(--sh-raised-sm), 0 0 0 2px color-mix(in srgb, var(--sage) 45%, transparent); }
-.habit.ok .material-symbols-outlined:first-child { color: var(--sage-text); }
+.habit.ok { box-shadow: var(--sh-raised-sm), 0 0 0 2px color-mix(in srgb, var(--sage) 50%, transparent); }
+.habit.ok .material-symbols-outlined { color: var(--sage-text); }
 .habit b { max-width: 100%; }
-.habit-count { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; padding: 2px 8px; border-radius: 999px; background: var(--well); color: var(--muted); font-weight: 700; }
-.week-cells { display: flex; gap: 6px; }
-.week-cells > span { width: 20px; text-align: center; }
-.hcell { display: block; width: 20px; height: 20px; border-radius: 6px; background: color-mix(in srgb, var(--muted) 16%, transparent); }
-.hcell.full { background: var(--sage); } .hcell.part { background: color-mix(in srgb, var(--sage) 40%, transparent); }
-.hcell.future { background: none; border: 1px dashed color-mix(in srgb, var(--muted) 40%, transparent); }
-.hcell.today { box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 55%, transparent); }
-.mood { width: 36px; height: 36px; border-radius: 12px; font-size: 20px; opacity: .6; text-align: center; }
-.mood.on { opacity: 1; background: var(--accent-soft); box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 50%, transparent); }
+.habit-count { font-size: 11px; padding: 2px 8px; border-radius: 999px; background: var(--well); color: var(--muted); font-weight: 700; }
 
-/* ===== planner ===== */
-.week { padding: 12px; border-radius: 20px; }
-.week-nav { margin-bottom: 10px; }
-.week-label { font-size: 14px; font-weight: 700; padding: 4px 10px; }
-.day-btn { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px 2px; border-radius: 14px; background: var(--card); color: var(--muted); box-shadow: var(--sh-raised-sm); transition: transform .15s; text-align: center; }
-.day-btn small { opacity: .75; font-weight: 600; }
-.day-btn b { font-size: 15px; }
-.day-btn .dot { width: 6px; height: 6px; }
-.day-btn.is-today b { color: var(--accent); }
-.day-btn.on { background: var(--well); color: var(--accent); box-shadow: var(--sh-inset); transform: scale(.95); }
-.timeline { padding: 12px; display: flex; flex-direction: column; gap: 8px; }
-.stamps { display: flex; justify-content: space-between; padding: 0 4px; font-size: 11px; color: var(--muted); direction: ltr; }
-.track { position: relative; height: 34px; border-radius: 999px; direction: ltr; cursor: pointer; box-shadow: var(--sh-inset); }
-.seg { position: absolute; top: 4px; bottom: 4px; border-radius: 999px; display: grid; place-items: center; color: #fff; overflow: hidden; }
-.seg .material-symbols-outlined { font-size: 14px; }
-.seg.done { opacity: .45; }
-.knob { position: absolute; top: 2px; bottom: 2px; width: 12px; border-radius: 99px; background: var(--card); box-shadow: var(--sh-raised-sm), 0 0 0 2px var(--accent); pointer-events: none; }
-.block { display: flex; align-items: center; gap: 10px; }
-.block.is-done { opacity: .7; }
-.block-text { display: flex; flex-direction: column; text-align: start; }
-.block-title { font-size: 15px; }
-.block.is-done .block-title { text-decoration: line-through; }
-.badge-icon { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; background: var(--well); color: var(--muted); box-shadow: var(--sh-inset-sm); }
-.badge-icon .material-symbols-outlined { font-size: 16px; }
-.badge-icon.accent { color: var(--accent); }
-
-/* ===== gym ===== */
-.gym-head { padding: 0 4px; }
-.tabs { display: flex; padding: 6px; gap: 6px; border-radius: 22px; }
-.tab { flex: 1; padding: 11px 0; border-radius: 16px; display: grid; place-items: center; color: var(--muted); }
-.tab .material-symbols-outlined { font-size: 24px; }
-.tab.on { background: var(--well); color: var(--accent); box-shadow: var(--sh-inset); }
-.exercise { display: flex; flex-direction: column; gap: 10px; }
-.exercise.active { padding: 14px; box-shadow: var(--sh-raised); }
-.ex-text { display: flex; flex-direction: column; text-align: start; min-width: 0; }
-.set-chip { padding: 5px 12px; border-radius: 12px; font-size: 12.5px; font-weight: 700; color: var(--accent); background: var(--well); box-shadow: var(--sh-inset-sm); }
-.set-chip.on { background: var(--sage); color: #fff; box-shadow: var(--sh-raised-sm); }
-.plan-row { display: flex; align-items: center; gap: 12px; text-align: start; width: 100%; }
-.plan-row.today { box-shadow: var(--sh-raised); }
-.plan-day { width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; background: var(--well); font-weight: 800; color: var(--muted); flex: none; }
-.plan-row.today .plan-day { color: var(--accent); }
-.macro { display: flex; flex-direction: column; gap: 2px; padding: 10px 6px; align-items: center; text-align: center; border-radius: 16px; }
-.macro b { font-size: 15px; }
-.meal { width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 12px; border-radius: 16px; text-align: start; }
-.drop { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 22px; border: 1.5px dashed color-mix(in srgb, var(--muted) 45%, transparent); }
-.drop .material-symbols-outlined { font-size: 32px; color: var(--accent); }
-.scan-result { display: flex; align-items: center; gap: 12px; padding: 10px; border-radius: 18px; }
-.scan-result img, .scan-thumb { width: 64px; height: 64px; border-radius: 14px; object-fit: cover; flex: none; background: var(--card); display: grid; place-items: center; color: var(--muted); }
-.weight-now { padding: 4px 0; }
-.spark { display: flex; align-items: flex-end; justify-content: space-between; gap: 6px; height: 76px; width: 100%; }
-.spark.tall { height: 110px; }
-.spark-col { flex: 1; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 4px; }
-.spark-col i { display: block; width: 100%; max-width: 18px; border-radius: 99px; background: color-mix(in srgb, var(--sage) 70%, transparent); }
-.spark-col.active i { background: var(--accent); }
-.spark-col small { font-size: 10px; color: var(--muted); }
-
-/* ===== wallet ===== */
-.hero { padding: 20px; position: relative; }
-.hero-amount { font-size: 34px; font-weight: 800; letter-spacing: -.02em; line-height: 1.2; }
-.dots { display: flex; gap: 6px; }
-.pod { display: flex; align-items: center; gap: 10px; padding: 12px; border-radius: 18px; box-shadow: var(--sh-inset); text-align: start; }
-.pod .material-symbols-outlined { font-size: 22px; padding: 9px; box-sizing: content-box; border-radius: 12px; background: var(--card); box-shadow: var(--sh-raised-sm); }
-.pod small { font-size: 10px; } .pod b { font-size: 15px; }
-.action-tile { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 12px 4px; border-radius: 18px; }
-.action-icon { width: 46px; height: 46px; border-radius: 50%; display: grid; place-items: center; background: var(--well); box-shadow: var(--sh-inset); }
-.action-icon.solid { background: var(--sage); color: #fff; box-shadow: 0 4px 10px rgba(142, 170, 151, .5); }
-.action-icon .material-symbols-outlined { font-size: 24px; }
+/* ===== money ===== */
+.hero-amount { font-size: 36px; font-weight: 800; letter-spacing: -.02em; line-height: 1.2; }
 .tx-row { width: 100%; display: flex; align-items: center; gap: 10px; padding: 10px 12px; text-align: start; border-radius: 16px; }
 .tx-row b { font-size: 13px; }
-.due-row { display: flex; align-items: center; gap: 10px; padding: 10px; }
+.due-row { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 16px; }
 .due-row b { font-size: 13px; }
-.account-row b { font-size: 13.5px; }
-.quick-card { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 14px 6px; border-radius: 18px; text-align: center; }
-.quick-card .material-symbols-outlined { font-size: 26px; color: var(--accent); }
-.quick-card .progress { width: 100%; }
-button.budget { width: 100%; text-align: start; padding: 14px; }
-.dash-card .card-title { white-space: nowrap; }
-.metric b { white-space: nowrap; }
+
+/* ===== gym ===== */
+.exercise { display: flex; flex-direction: column; gap: 10px; }
+.ex-text { display: flex; flex-direction: column; text-align: start; min-width: 0; }
+.set-chip { min-width: 40px; padding: 7px 0; border-radius: 12px; font-size: 13px; font-weight: 800; text-align: center; color: var(--accent); background: var(--well); box-shadow: var(--sh-inset-sm); }
+.set-chip.on { background: var(--sage); color: #fff; box-shadow: var(--sh-raised-sm); }
+.meal { width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 11px 12px; border-radius: 16px; text-align: start; }
+.weight-now { padding: 4px 0; }
 
   </style>
 </head>
 <body>
   <header id="header">
     <div class="header-bar">
-      <div class="row">
-        <button class="icon-btn" data-act="settings" aria-label="تنظیمات"><span class="material-symbols-outlined">settings</span></button>
-        <button class="icon-btn" data-act="theme" aria-label="حالت شب"><span class="material-symbols-outlined">dark_mode</span></button>
-      </div>
       <h1 id="title"></h1>
-      <button class="avatar" data-act="profile" aria-label="پروفایل"><span class="material-symbols-outlined">person</span><i></i></button>
+      <button class="icon-btn sm" data-act="settings" aria-label="تنظیمات"><span class="material-symbols-outlined">settings</span></button>
     </div>
   </header>
   <main id="app"></main>
@@ -1132,9 +999,9 @@ __exports.commit = commit;
 __exports.persist = persist;
 };
 __defs["src/router.js"] = function (__exports) {
-/* Hash routing: "#/dashboard", "#/wallet", … The shell (main.js) listens for changes. */
-const ROUTES = ['dashboard', 'tasks', 'planner', 'gym', 'wallet'];
-const DEFAULT_ROUTE = 'dashboard';
+/* Hash routing: "#/today", "#/money", "#/gym". Unknown hashes (including old ones) go to Today. */
+const ROUTES = ['today', 'money', 'gym'];
+const DEFAULT_ROUTE = 'today';
 
 function currentRoute() {
   const id = location.hash.replace(/^#\/?/, '').split('?')[0];
@@ -1225,54 +1092,16 @@ __exports.bindActions = bindActions;
 __exports.patchHTML = patchHTML;
 __exports.scrollToCard = scrollToCard;
 };
-__defs["src/ui/toast.js"] = function (__exports) {
-let el;
-let timer;
-
-/** Show a short message; `action` ({label, run}) adds an inline button (e.g. undo). */
-function toast(msg, action) {
-  if (!el) {
-    el = document.createElement('div');
-    el.id = 'toast';
-    el.setAttribute('role', 'status');
-    document.body.appendChild(el);
-  }
-  el.innerHTML = '<span></span>';
-  el.firstChild.textContent = msg;
-  if (action) {
-    const b = document.createElement('button');
-    b.textContent = action.label;
-    b.onclick = () => { el.classList.remove('show'); action.run(); };
-    el.appendChild(b);
-  }
-  el.classList.add('show');
-  clearTimeout(timer);
-  timer = setTimeout(() => el.classList.remove('show'), action ? 4000 : 2400);
-}
-
-__exports.toast = toast;
-};
 __defs["src/ui/theme.js"] = function (__exports) {
-const { S, commit } = __r("src/core/store.js");
-const { toast } = __r("src/ui/toast.js");
+const { S } = __r("src/core/store.js");
 
 function applyTheme() {
   document.documentElement.classList.toggle('dark', !!S.dark);
-  const btn = document.querySelector('[data-act="theme"] .material-symbols-outlined');
-  if (btn) btn.textContent = S.dark ? 'light_mode' : 'dark_mode';
   const meta = document.querySelector('meta[name="theme-color"]');
   if (meta) meta.setAttribute('content', S.dark ? '#1b1b19' : '#ece8e1');
 }
 
-function toggleDark() {
-  S.dark = !S.dark;
-  commit();
-  applyTheme();
-  toast(S.dark ? 'حالت تاریک فعال شد' : 'حالت روشن فعال شد');
-}
-
 __exports.applyTheme = applyTheme;
-__exports.toggleDark = toggleDark;
 };
 __defs["src/ui/widgets.js"] = function (__exports) {
 /* Small HTML fragments shared by the pages. Everything returns strings (already escaped). */
@@ -1322,6 +1151,33 @@ __exports.addButton = addButton;
 __exports.progress = progress;
 __exports.ring = ring;
 __exports.barChart = barChart;
+};
+__defs["src/ui/toast.js"] = function (__exports) {
+let el;
+let timer;
+
+/** Show a short message; `action` ({label, run}) adds an inline button (e.g. undo). */
+function toast(msg, action) {
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'toast';
+    el.setAttribute('role', 'status');
+    document.body.appendChild(el);
+  }
+  el.innerHTML = '<span></span>';
+  el.firstChild.textContent = msg;
+  if (action) {
+    const b = document.createElement('button');
+    b.textContent = action.label;
+    b.onclick = () => { el.classList.remove('show'); action.run(); };
+    el.appendChild(b);
+  }
+  el.classList.add('show');
+  clearTimeout(timer);
+  timer = setTimeout(() => el.classList.remove('show'), action ? 4000 : 2400);
+}
+
+__exports.toast = toast;
 };
 __defs["src/ui/sheet.js"] = function (__exports) {
 /* Bottom sheets: generic container, form builder, action menu, confirm and info dialogs. */
@@ -1618,6 +1474,67 @@ __exports.saveFile = saveFile;
 __exports.pickFile = pickFile;
 __exports.shrinkImage = shrinkImage;
 };
+__defs["src/features/settings.js"] = function (__exports) {
+/* Settings and data backup. */
+const { S, commit, replaceState, resetToSample, clearAll } = __r("src/core/store.js");
+const { today } = __r("src/core/dates.js");
+const { toast } = __r("src/ui/toast.js");
+const { form, menu, confirmBox } = __r("src/ui/sheet.js");
+const { applyTheme } = __r("src/ui/theme.js");
+const { saveFile, pickFile } = __r("src/services/files.js");
+
+function exportData() {
+  saveFile(`daily-order-backup-${today()}.json`, JSON.stringify(S, null, 2), 'application/json', 'فایل پشتیبان آماده شد');
+}
+
+function importData() {
+  pickFile('application/json,.json', false, (file) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const o = JSON.parse(reader.result);
+        if (!o || !o.v || !o.tasks) throw new Error('bad file');
+        replaceState(o);
+        applyTheme();
+        toast('اطلاعات بازیابی شد');
+      } catch { toast('فایل معتبر نیست'); }
+    };
+    reader.readAsText(file);
+  });
+}
+
+function dataMenu() {
+  menu('داده‌ها', [
+    { icon: 'download', label: 'گرفتن نسخه پشتیبان', run: exportData },
+    { icon: 'upload', label: 'بازیابی از نسخه پشتیبان', run: importData },
+    { icon: 'restart_alt', label: 'بازگشت به داده‌های نمونه', run: () => confirmBox('بازگشت به داده‌های نمونه؟', 'همه اطلاعات فعلی جایگزین می‌شود.', 'بله', () => { resetToSample(); applyTheme(); }) },
+    { icon: 'delete_forever', label: 'پاک کردن همه اطلاعات', danger: true, run: () => confirmBox('همه اطلاعات پاک شود؟', 'قابل بازگشت نیست.', 'پاک کن', () => { clearAll(); applyTheme(); }) },
+  ]);
+}
+
+function openSettings() {
+  form({
+    title: 'تنظیمات',
+    fields: [
+      { name: 'name', label: 'نام شما', value: S.profile.name },
+      { name: 'currency', label: 'واحد پول', type: 'chips', value: S.profile.currency, options: [{ value: '€', label: '€' }, { value: '$', label: '$' }, { value: 'تومان', label: 'تومان' }] },
+      { name: 'calendar', label: 'تقویم', type: 'chips', value: S.profile.calendar || 'jalali', options: [{ value: 'jalali', label: 'شمسی' }, { value: 'gregorian', label: 'میلادی' }] },
+      { name: 'dark', label: 'حالت تاریک', type: 'switch', value: S.dark },
+    ],
+    extra: [{ label: 'داده‌ها…', run: dataMenu }],
+    onSubmit(v) {
+      Object.assign(S.profile, { name: (v.name || '').trim(), currency: v.currency, calendar: v.calendar || 'jalali' });
+      S.dark = !!v.dark;
+      commit();
+      applyTheme();
+    },
+  });
+}
+
+__exports.exportData = exportData;
+__exports.importData = importData;
+__exports.openSettings = openSettings;
+};
 __defs["src/services/notify.js"] = function (__exports) {
 const { toast } = __r("src/ui/toast.js");
 
@@ -1664,7 +1581,9 @@ const TXCAT = {
 };
 const EXP_CATS = ['shopping', 'food', 'cafe', 'bills', 'installment', 'transport', 'sport', 'travel', 'health', 'other'];
 const INC_CATS = ['salary', 'gift', 'transfer', 'other'];
-const QUICK_SETS = [['shopping', 'bills', 'cafe'], ['food', 'transport', 'sport'], ['travel', 'health', 'other']];
+/* The short lists offered when adding something new. */
+const SIMPLE_EXP = ['food', 'shopping', 'transport', 'bills', 'health', 'other'];
+const SIMPLE_INC = ['salary', 'gift', 'other'];
 const catOf = (key) => TXCAT[key] || TXCAT.other;
 
 const ACC_TYPES = {
@@ -1955,7 +1874,8 @@ function ledgerRows({ month, type = 'all', acc = 'all', q = '' }) {
 __exports.TXCAT = TXCAT;
 __exports.EXP_CATS = EXP_CATS;
 __exports.INC_CATS = INC_CATS;
-__exports.QUICK_SETS = QUICK_SETS;
+__exports.SIMPLE_EXP = SIMPLE_EXP;
+__exports.SIMPLE_INC = SIMPLE_INC;
 __exports.catOf = catOf;
 __exports.ACC_TYPES = ACC_TYPES;
 __exports.BILL_KINDS = BILL_KINDS;
@@ -2005,245 +1925,6 @@ __exports.deleteBill = deleteBill;
 __exports.saveAccount = saveAccount;
 __exports.ledgerRows = ledgerRows;
 };
-__defs["src/domain/gym.js"] = function (__exports) {
-/* Workout sessions, meals and body weight. Pure data logic — no DOM. */
-const { S } = __r("src/core/store.js");
-const { uid, sum } = __r("src/core/util.js");
-const { iso, addDays, parseIso, today } = __r("src/core/dates.js");
-const { en, num } = __r("src/core/format.js");
-
-const TABS = [
-  { key: 'workout', icon: 'fitness_center', label: 'برنامه تمرینی' },
-  { key: 'calorie', icon: 'restaurant', label: 'کالری و تغذیه' },
-  { key: 'weight', icon: 'monitor_weight', label: 'پایش وزن' },
-  { key: 'analysis', icon: 'insights', label: 'آنالیز' },
-];
-
-/* ---------- sessions ---------- */
-function session(date = today(), create = false) {
-  let s = S.gym.sessions[date];
-  if (!s && create) {
-    const plan = S.gym.weekly[parseIso(date).getDay()];
-    s = S.gym.sessions[date] = { name: plan ? plan.name : 'جلسه تمرین', minutes: 0, target: 45, finished: false, exercises: [] };
-  }
-  return s;
-}
-
-function setsOf(s) {
-  let total = 0;
-  let done = 0;
-  (s ? s.exercises : []).forEach((e) => { total += +e.sets || 0; done += Math.min(+e.done || 0, +e.sets || 0); });
-  return { tot: total, done };
-}
-
-const isActive = (key) => { const s = S.gym.sessions[key]; return !!s && (s.finished || setsOf(s).done > 0); };
-const wasActive = isActive;
-
-/** Consecutive training days ending today (or yesterday if today has none yet). */
-function streak() {
-  let n = 0;
-  let d = new Date();
-  if (!isActive(iso(d))) d = addDays(d, -1);
-  while (isActive(iso(d))) { n++; d = addDays(d, -1); }
-  return n;
-}
-
-function sessionMinutes(s) {
-  if (!s) return 0;
-  let m = s.minutes || 0;
-  if (S.gym.timerStart && s === S.gym.sessions[today()]) m += (Date.now() - S.gym.timerStart) / 60000;
-  return Math.round(m);
-}
-
-function stopTimer(s) {
-  if (!S.gym.timerStart) return;
-  s.minutes = (s.minutes || 0) + (Date.now() - S.gym.timerStart) / 60000;
-  S.gym.timerStart = null;
-}
-
-function finishSession(s) { stopTimer(s); s.finished = true; }
-
-/** Start the timer the first time a set is ticked. Returns true when it started. */
-function autoStartTimer() {
-  const s = session(today());
-  if (s && !S.gym.timerStart && !s.minutes && !s.finished) { S.gym.timerStart = Date.now(); return true; }
-  return false;
-}
-
-/* ---------- weekly plan ("name | sets | reps | weight" per line) ---------- */
-function parsePlan(text) {
-  return String(text || '').split('\n').map((l) => l.trim()).filter(Boolean).map((line) => {
-    const p = line.split('|').map((x) => x.trim());
-    const timed = /دقیقه|ثانیه/.test(p[3] || '') && !/kg/.test(p[3] || '');
-    const unit = timed ? (p[3].includes('دقیقه') ? 'دقیقه' : 'ثانیه') : 'تکرار';
-    return { name: p[0], sets: Math.max(1, Math.min(10, num(p[1]) || 3)), reps: en(p[2] || '12'), unit, weight: unit === 'تکرار' ? (p[3] || '') : '', done: 0 };
-  });
-}
-
-function loadPlanInto(s, plan) {
-  s.name = plan.name || s.name;
-  s.exercises = parsePlan(plan.items).map((x) => ({ ...x, id: uid(), done: 0 }));
-  s.finished = false;
-}
-
-/* ---------- meals ---------- */
-const mealsOn = (k = today()) => S.gym.meals[k] || [];
-function addMeal(m, k = today()) { (S.gym.meals[k] = S.gym.meals[k] || []).push({ id: uid(), ...m }); }
-const sumMeals = (list) => ({
-  kcal: sum(list, (m) => +m.kcal || 0), p: sum(list, (m) => +m.p || 0), c: sum(list, (m) => +m.c || 0), f: sum(list, (m) => +m.f || 0),
-});
-
-/* ---------- weight ---------- */
-const byDate = () => S.gym.weights.slice().sort((a, b) => (a.date < b.date ? -1 : 1));
-const lastWeight = () => { const w = byDate(); return w[w.length - 1]; };
-function weightOn(date) {
-  const w = byDate().filter((x) => x.date <= date);
-  return w.length ? w[w.length - 1].kg : null;
-}
-function setWeight(date, kg) {
-  const ex = S.gym.weights.find((w) => w.date === date);
-  if (ex) ex.kg = kg; else S.gym.weights.push({ date, kg });
-}
-const round1 = (n) => Math.round(n * 10) / 10;
-
-/** Weight change over the last `days` days (null when unknown). */
-function weightChange(days) {
-  const lw = lastWeight();
-  const base = weightOn(iso(addDays(new Date(), -days)));
-  return lw && base != null ? round1(lw.kg - base) : null;
-}
-
-/** Last-7-days summary for the analysis tab. */
-function weekAnalysis() {
-  const days = [];
-  let totalSets = 0, sessions = 0, kcal = 0, mealDays = 0;
-  for (let i = 6; i >= 0; i--) {
-    const d = addDays(new Date(), -i);
-    const k = iso(d);
-    const s = S.gym.sessions[k];
-    const st = setsOf(s);
-    days.push({ d, v: st.done });
-    totalSets += st.done;
-    if (s && (s.finished || st.done)) sessions++;
-    const m = S.gym.meals[k];
-    if (m && m.length) { kcal += sumMeals(m).kcal; mealDays++; }
-  }
-  return { days, totalSets, sessions, avgKcal: mealDays ? Math.round(kcal / mealDays) : null };
-}
-
-__exports.TABS = TABS;
-__exports.session = session;
-__exports.setsOf = setsOf;
-__exports.wasActive = wasActive;
-__exports.streak = streak;
-__exports.sessionMinutes = sessionMinutes;
-__exports.stopTimer = stopTimer;
-__exports.finishSession = finishSession;
-__exports.autoStartTimer = autoStartTimer;
-__exports.parsePlan = parsePlan;
-__exports.loadPlanInto = loadPlanInto;
-__exports.mealsOn = mealsOn;
-__exports.addMeal = addMeal;
-__exports.sumMeals = sumMeals;
-__exports.lastWeight = lastWeight;
-__exports.weightOn = weightOn;
-__exports.setWeight = setWeight;
-__exports.round1 = round1;
-__exports.weightChange = weightChange;
-__exports.weekAnalysis = weekAnalysis;
-};
-__defs["src/features/settings.js"] = function (__exports) {
-/* Settings, data backup/restore and the profile summary. */
-const { S, commit, replaceState, resetToSample, clearAll } = __r("src/core/store.js");
-const { today } = __r("src/core/dates.js");
-const { fa, num, money } = __r("src/core/format.js");
-const { toast } = __r("src/ui/toast.js");
-const { form, menu, confirmBox, infoSheet } = __r("src/ui/sheet.js");
-const { applyTheme } = __r("src/ui/theme.js");
-const { saveFile, pickFile } = __r("src/services/files.js");
-const { askNotif, notifAllowed } = __r("src/services/notify.js");
-const { balance } = __r("src/domain/finance.js");
-const { streak, lastWeight } = __r("src/domain/gym.js");
-
-function exportData() {
-  saveFile(`daily-order-backup-${today()}.json`, JSON.stringify(S, null, 2), 'application/json', 'فایل پشتیبان آماده شد');
-}
-
-function importData() {
-  pickFile('application/json,.json', false, (file) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      try {
-        const o = JSON.parse(reader.result);
-        if (!o || !o.v || !o.tasks) throw new Error('bad file');
-        replaceState(o);
-        applyTheme();
-        toast('اطلاعات بازیابی شد');
-      } catch { toast('فایل معتبر نیست'); }
-    };
-    reader.readAsText(file);
-  });
-}
-
-function dataMenu() {
-  menu('مدیریت داده‌ها', [
-    { icon: 'download', label: 'گرفتن نسخه پشتیبان (JSON)', run: exportData },
-    { icon: 'upload', label: 'بازیابی از فایل پشتیبان', run: importData },
-    {
-      icon: 'restart_alt', label: 'بازگشت به داده‌های نمونه',
-      run: () => confirmBox('بازگشت به داده‌های نمونه؟', 'همه اطلاعات فعلی با داده‌های نمونه جایگزین می‌شود.', 'بله، جایگزین کن', () => { resetToSample(); applyTheme(); }),
-    },
-    {
-      icon: 'delete_forever', label: 'پاک کردن همه اطلاعات', danger: true,
-      run: () => confirmBox('همه اطلاعات پاک شود؟', 'کارها، عادت‌ها، تراکنش‌ها و سوابق ورزشی حذف می‌شوند و قابل بازگشت نیست.', 'پاک کن', () => { clearAll(); applyTheme(); }),
-    },
-  ]);
-}
-
-function openSettings() {
-  form({
-    title: 'تنظیمات', sub: 'اطلاعات فقط روی همین دستگاه و مرورگر ذخیره می‌شوند.',
-    fields: [
-      { name: 'name', label: 'نام شما', value: S.profile.name },
-      { name: 'currency', label: 'واحد پول', type: 'chips', value: S.profile.currency, options: [{ value: '€', label: 'یورو €' }, { value: '$', label: 'دلار $' }, { value: 'تومان', label: 'تومان' }] },
-      { name: 'budget', label: 'بودجه ماهانه', type: 'number', value: S.wallet.budget, row: 'a' },
-      { name: 'kcal', label: 'هدف کالری روزانه', type: 'number', value: S.gym.goals.kcal, row: 'a' },
-      { name: 'calendar', label: 'تقویم (نمایش تاریخ‌ها و سررسید اقساط/قبوض)', type: 'chips', value: S.profile.calendar || 'jalali', options: [{ value: 'jalali', label: 'شمسی' }, { value: 'gregorian', label: 'میلادی' }] },
-      { name: 'dark', label: 'حالت تاریک', type: 'switch', value: S.dark },
-      { name: 'notif', label: 'اعلان یادآورها در مرورگر', type: 'switch', value: notifAllowed() },
-    ],
-    extra: [{ label: 'داده‌ها…', run: dataMenu }],
-    onSubmit(v) {
-      S.profile.name = (v.name || '').trim();
-      S.profile.currency = v.currency;
-      S.profile.calendar = v.calendar || 'jalali';
-      S.wallet.budget = Math.max(0, num(v.budget)) || S.wallet.budget;
-      S.gym.goals.kcal = Math.max(500, num(v.kcal)) || S.gym.goals.kcal;
-      S.dark = !!v.dark;
-      commit();
-      applyTheme();
-      if (v.notif && !notifAllowed()) askNotif();
-      toast('تنظیمات ذخیره شد');
-    },
-  });
-}
-
-function openProfile() {
-  const todays = S.tasks.filter((x) => x.date === today() && !x.archived);
-  const done = todays.filter((x) => x.done).length;
-  const lw = lastWeight();
-  const tile = (label, value) => `<div><small>${label}</small><b>${value}</b></div>`;
-  infoSheet(S.profile.name ? `سلام ${S.profile.name}` : 'نمای کلی امروز',
-    `<div class="stat-grid">${tile('کارهای امروز', `${fa(done)}/${fa(todays.length)}`)}${tile('موجودی کیف پول', money(balance()))}${tile('روزهای پیاپی ورزش', `${fa(streak())} روز`)}${tile('آخرین وزن', lw ? `${fa(lw.kg)} kg` : '—')}</div>`,
-    [{ label: 'تنظیمات', cls: 'primary', run: openSettings }]);
-}
-
-__exports.exportData = exportData;
-__exports.importData = importData;
-__exports.dataMenu = dataMenu;
-__exports.openSettings = openSettings;
-__exports.openProfile = openProfile;
-};
 __defs["src/features/reminders.js"] = function (__exports) {
 /* In-app reminders for tasks, planner blocks and due payments (run while the app is open). */
 const { S, persist } = __r("src/core/store.js");
@@ -2278,111 +1959,52 @@ function checkReminders() {
   S.tasks.forEach((t) => {
     if (t.reminder && !t.done && !t.notified && t.date === d && t.time && late(t.time)) { t.notified = true; changed = true; notify(`یادآوری: ${t.title}`); }
   });
-  S.blocks.forEach((b) => {
-    if (b.notify && !b.done && !b.notified && b.date === d && late(b.start)) { b.notified = true; changed = true; notify(`شروع بلوک: ${b.title} (${b.start})`); }
-  });
   if (changed) persist();
 }
 
 __exports.checkReminders = checkReminders;
 };
 __defs["src/domain/tasks.js"] = function (__exports) {
-/* Tasks, habits and the weekly review. Pure data logic — no DOM. */
+/* Tasks and habits. Pure data logic — no DOM. */
 const { S } = __r("src/core/store.js");
-const { uid, clone, sum } = __r("src/core/util.js");
-const { iso, addDays, parseIso, today, weekStart } = __r("src/core/dates.js");
-const { addMonthsIso } = __r("src/core/calendar.js");
-const { daySpend } = __r("src/domain/finance.js");
-const { setsOf } = __r("src/domain/gym.js");
+const { uid } = __r("src/core/util.js");
+const { iso, addDays, today } = __r("src/core/dates.js");
 
-const PRIO = {
-  high: { label: 'بالا', color: '#DE8353', rank: 0, icon: 'keyboard_double_arrow_up' },
-  med: { label: 'متوسط', color: '#c08a3e', rank: 1, icon: 'drag_handle' },
-  low: { label: 'پایین', color: '#8EAA97', rank: 2, icon: 'keyboard_double_arrow_down' },
-};
-const prio = (t) => PRIO[t.priority] || PRIO.med;
-const CAT = {
-  work: { label: 'کار', color: '#DE8353' }, personal: { label: 'شخصی', color: '#8EAA97' },
-  health: { label: 'سلامت', color: '#1e293b' }, finance: { label: 'مالی', color: '#fdb885' },
-};
-const catOf = (t) => CAT[t.category] || CAT.work;
-const REPEAT = { none: 'بدون تکرار', daily: 'هر روز', weekly: 'هر هفته', monthly: 'هر ماه' };
-const HABIT_ICONS = ['local_drink', 'menu_book', 'self_improvement', 'directions_walk', 'bedtime', 'nutrition', 'fitness_center', 'edit_note', 'medication', 'language'];
+const HABIT_ICONS = ['local_drink', 'menu_book', 'self_improvement', 'directions_walk', 'bedtime', 'nutrition', 'fitness_center', 'edit_note'];
 
 /* ---------- tasks ---------- */
 const findTask = (id) => S.tasks.find((t) => t.id === id);
 const activeTasks = () => S.tasks.filter((t) => !t.archived);
 
 function newTask(f = {}) {
-  return {
-    id: uid(), title: '', date: today(), time: '', category: 'work', priority: 'med', repeat: 'none',
-    subtasks: [], starred: false, done: false, archived: false, reminder: false, note: '', createdAt: today(), ...f,
-  };
+  return { id: uid(), title: '', date: today(), time: '', priority: 'med', starred: false, done: false, archived: false, note: '', createdAt: today(), ...f };
 }
 
+/** Open first, then by date, then time. */
 function sortTasks(a, b) {
   if (a.done !== b.done) return a.done ? 1 : -1;
   if (a.date !== b.date) return a.date < b.date ? -1 : 1;
-  const pa = prio(a).rank;
-  const pb = prio(b).rank;
-  if (pa !== pb) return pa - pb;
   return (a.time || '99') < (b.time || '99') ? -1 : 1;
 }
 
-function nextRepeatDate(t) {
-  const d = t.date || today();
-  if (t.repeat === 'daily') return iso(addDays(parseIso(d), 1));
-  if (t.repeat === 'weekly') return iso(addDays(parseIso(d), 7));
-  if (t.repeat === 'monthly') return addMonthsIso(d, 1);
-  return null;
-}
-
-/** Toggle done. Completing a repeating task spawns its next occurrence (returned). */
 function toggleDone(t) {
   t.done = !t.done;
   t.doneAt = t.done ? today() : null;
-  if (!(t.done && t.repeat && t.repeat !== 'none' && !t.spawnedNext)) return null;
-  const next = clone(t);
-  Object.assign(next, { id: uid(), done: false, doneAt: null, notified: false, spawnedNext: false, date: nextRepeatDate(t) });
-  (next.subtasks || []).forEach((s) => { s.done = false; s.id = uid(); });
-  S.tasks.push(next);
-  t.spawnedNext = next.id;
-  return next;
-}
-
-function duplicateTask(t) {
-  const c = clone(t);
-  Object.assign(c, { id: uid(), done: false, spawnedNext: false });
-  (c.subtasks || []).forEach((s) => { s.id = uid(); s.done = false; });
-  S.tasks.push(c);
-  return c;
 }
 
 function removeTask(id) {
   const i = S.tasks.findIndex((t) => t.id === id);
-  if (i < 0) return null;
-  return { task: S.tasks.splice(i, 1)[0], index: i };
+  return i < 0 ? null : { task: S.tasks.splice(i, 1)[0], index: i };
 }
 
-function moveTaskTo(t, date) { t.date = date; t.notified = false; }
-function pushOverdueToToday() {
-  S.tasks.forEach((t) => { if (!t.done && !t.archived && t.date < today()) moveTaskTo(t, today()); });
-}
-function archiveDone() {
-  let n = 0;
-  S.tasks.forEach((t) => { if (t.done && !t.archived) { t.archived = true; n++; } });
-  return n;
-}
-
-function taskBuckets() {
+/** What the Today page shows: unfinished tasks due today or earlier, today's finished ones, and what is coming. */
+function todayBuckets() {
   const t0 = today();
   const all = activeTasks();
-  const todays = all.filter((t) => t.date === t0);
-  return {
-    all, todays,
-    overdue: all.filter((t) => !t.done && t.date < t0),
-    doneToday: todays.filter((t) => t.done).length,
-  };
+  const open = all.filter((t) => !t.done && t.date <= t0).sort(sortTasks);
+  const done = all.filter((t) => t.done && (t.doneAt || t.date) === t0);
+  const later = all.filter((t) => !t.done && t.date > t0).sort(sortTasks);
+  return { open, done, later, total: open.length + done.length };
 }
 
 /* ---------- habits ---------- */
@@ -2402,126 +2024,47 @@ function bumpHabit(h, delta, k = today()) {
   return h.log[k];
 }
 
-/* ---------- weekly review ---------- */
-const REVIEW_FIELDS = [
-  ['wins', 'دستاوردها و کارهای خوب این هفته', 'emoji_events', 'چه چیزهایی خوب پیش رفت؟'],
-  ['challenges', 'چالش‌ها و درس‌ها', 'psychology', 'چه چیزی سخت بود و چه یاد گرفتم؟'],
-  ['next', 'اولویت‌های هفته بعد', 'flag', 'هر خط یک اولویت — می‌توانید آن‌ها را به کار تبدیل کنید'],
-  ['notes', 'یادداشت آزاد', 'sticky_note_2', 'هر چیزی که می‌خواهید بنویسید…'],
-];
-const MOODS = ['😞', '🙁', '😐', '🙂', '😄'];
-const currentWeek = () => iso(weekStart(new Date()));
-const reviewOf = (ws) => S.weekly[ws] || {};
-const reviewHasText = (r) => !!(r && (r.wins || r.challenges || r.next || r.notes));
-const writtenReviews = () => Object.keys(S.weekly).filter((k) => reviewHasText(S.weekly[k]));
-function editReview(ws) { return (S.weekly[ws] = S.weekly[ws] || {}); }
-
-function weekStats(ws) {
-  const days = Array.from({ length: 7 }, (_, i) => iso(addDays(parseIso(ws), i)));
-  const inWeek = (d) => d >= days[0] && d <= days[6];
-  const due = S.tasks.filter((t) => inWeek(t.date));
-  const done = S.tasks.filter((t) => t.done && inWeek(t.doneAt || t.date));
-  let total = 0;
-  let ok = 0;
-  S.habits.forEach((h) => days.forEach((k) => { if (k <= today()) { total++; if (habitDone(h, k)) ok++; } }));
-  const gym = days.filter((k) => { const s = S.gym.sessions[k]; return s && (s.finished || setsOf(s).done > 0); }).length;
-  return { days, due: due.length, done: done.length, habit: total ? Math.round((ok / total) * 100) : 0, gym, spend: sum(days, daySpend) };
-}
-
-/** Turn the "next week" review lines into high-priority tasks. Returns { added, date }. */
-function reviewToTasks(ws) {
-  const lines = String(reviewOf(ws).next || '').split('\n').map((x) => x.replace(/^[-•*\d.)\s]+/, '').trim()).filter(Boolean);
-  if (!lines.length) return null;
-  let date = iso(addDays(parseIso(ws), 7));
-  if (date < today()) date = today();
-  const existing = new Set(S.tasks.map((t) => `${t.title}|${t.date}`));
-  let added = 0;
-  lines.forEach((title) => {
-    if (existing.has(`${title}|${date}`)) return;
-    S.tasks.push(newTask({ title, date, priority: 'high', starred: true, note: 'از مرور هفتگی' }));
-    added++;
-  });
-  return { added, date };
-}
-
-__exports.PRIO = PRIO;
-__exports.prio = prio;
-__exports.CAT = CAT;
-__exports.catOf = catOf;
-__exports.REPEAT = REPEAT;
 __exports.HABIT_ICONS = HABIT_ICONS;
 __exports.findTask = findTask;
 __exports.activeTasks = activeTasks;
 __exports.newTask = newTask;
 __exports.sortTasks = sortTasks;
-__exports.nextRepeatDate = nextRepeatDate;
 __exports.toggleDone = toggleDone;
-__exports.duplicateTask = duplicateTask;
 __exports.removeTask = removeTask;
-__exports.moveTaskTo = moveTaskTo;
-__exports.pushOverdueToToday = pushOverdueToToday;
-__exports.archiveDone = archiveDone;
-__exports.taskBuckets = taskBuckets;
+__exports.todayBuckets = todayBuckets;
 __exports.findHabit = findHabit;
 __exports.habitValue = habitValue;
 __exports.habitDone = habitDone;
 __exports.habitStreak = habitStreak;
 __exports.bumpHabit = bumpHabit;
-__exports.REVIEW_FIELDS = REVIEW_FIELDS;
-__exports.MOODS = MOODS;
-__exports.currentWeek = currentWeek;
-__exports.reviewOf = reviewOf;
-__exports.reviewHasText = reviewHasText;
-__exports.writtenReviews = writtenReviews;
-__exports.editReview = editReview;
-__exports.weekStats = weekStats;
-__exports.reviewToTasks = reviewToTasks;
 };
 __defs["src/features/task-sheets.js"] = function (__exports) {
-/* Task and habit dialogs and the small actions around them (all share undo toasts). */
+/* One small sheet for tasks, plus habit actions. */
 const { S, commit } = __r("src/core/store.js");
 const { uid } = __r("src/core/util.js");
-const { today, iso, addDays, parseIso, hmToMin, minToHM } = __r("src/core/dates.js");
+const { today } = __r("src/core/dates.js");
 const { fa, num } = __r("src/core/format.js");
-const { faDate, faDayMonth } = __r("src/core/calendar.js");
 const { toast } = __r("src/ui/toast.js");
 const { form, menu } = __r("src/ui/sheet.js");
-const { askNotif } = __r("src/services/notify.js");
 const T = __r("src/domain/tasks.js");
 
-function taskSheet(id, presetDate, presetTitle) {
+function taskSheet(id, presetTitle = '') {
   const t = id ? T.findTask(id) : null;
   form({
     title: t ? 'ویرایش کار' : 'کار جدید',
     fields: [
-      { name: 'title', label: 'عنوان', value: t ? t.title : presetTitle || '', placeholder: 'مثلاً تماس با حسابدار' },
-      { name: 'date', label: 'تاریخ', type: 'date', value: t ? t.date : presetDate || today(), row: 'a' },
-      { name: 'time', label: 'ساعت', type: 'time', value: t ? t.time : '', row: 'a' },
-      { name: 'priority', label: 'اولویت', type: 'chips', value: t ? t.priority || 'med' : 'med', options: Object.entries(T.PRIO).map(([k, p]) => ({ value: k, label: p.label, icon: p.icon })) },
-      { name: 'category', label: 'دسته / پروژه', type: 'chips', value: t ? t.category : 'work', options: Object.entries(T.CAT).map(([k, c]) => ({ value: k, label: c.label })) },
-      { name: 'repeat', label: 'تکرار', type: 'chips', value: t ? t.repeat || 'none' : 'none', options: Object.entries(T.REPEAT).map(([k, label]) => ({ value: k, label })) },
-      { name: 'subs', label: 'زیرکارها (هر خط یک مورد)', type: 'textarea', value: t && t.subtasks ? t.subtasks.map((s) => s.title).join('\n') : '', placeholder: 'اختیاری' },
-      { name: 'note', label: 'یادداشت', value: t ? t.note : '', placeholder: 'اختیاری' },
-      { name: 'starred', label: 'مهم ⭐', type: 'switch', value: t ? t.starred : false },
-      { name: 'reminder', label: 'یادآوری در زمان تعیین‌شده', type: 'switch', value: t ? t.reminder : false },
+      { name: 'title', label: 'عنوان', value: t ? t.title : presetTitle },
+      { name: 'date', label: 'تاریخ', type: 'date', value: t ? t.date : today(), row: 'a' },
+      { name: 'time', label: 'ساعت (اختیاری)', type: 'time', value: t ? t.time : '', row: 'a' },
     ],
     focus: !t,
     extra: t ? [{ label: 'حذف', cls: 'danger', run: () => deleteTask(t.id) }] : [],
     onSubmit(v) {
       const title = (v.title || '').trim();
       if (!title) { toast('عنوان را وارد کنید'); return false; }
-      if (v.reminder && !v.time) { toast('برای یادآوری، ساعت را مشخص کنید'); return false; }
-      const o = t || T.newTask();
-      const previous = new Map((o.subtasks || []).map((s) => [s.title, s]));
-      Object.assign(o, {
-        title, date: v.date || today(), time: v.time || '', category: v.category, priority: v.priority || 'med', repeat: v.repeat || 'none',
-        subtasks: String(v.subs || '').split('\n').map((x) => x.trim()).filter(Boolean).map((x) => previous.get(x) || { id: uid(), title: x, done: false }),
-        note: (v.note || '').trim(), starred: !!v.starred, reminder: !!v.reminder, notified: false,
-      });
-      if (!t) S.tasks.push(o);
+      if (t) Object.assign(t, { title, date: v.date || today(), time: v.time || '' });
+      else S.tasks.push(T.newTask({ title, date: v.date || today(), time: v.time || '' }));
       commit();
-      toast(t ? 'کار ویرایش شد' : 'کار اضافه شد');
-      if (o.reminder) askNotif();
     },
   });
 }
@@ -2536,64 +2079,17 @@ function deleteTask(id) {
 function toggleTask(id) {
   const t = T.findTask(id);
   if (!t) return;
-  const spawned = T.toggleDone(t);
+  T.toggleDone(t);
   commit();
-  if (t.done) toast(`آفرین! «${t.title}» انجام شد${spawned ? ` — تکرار بعدی: ${faDayMonth(parseIso(spawned.date))}` : ''}`);
 }
 
+/** Quick add from the input line; "!!" or "فوری" is accepted and ignored (kept for old muscle memory). */
 function quickAddTask(raw) {
-  let title = raw.trim();
-  if (!title) { taskSheet(); return; }
-  const urgent = /!!|فوری/.test(title);
-  title = title.replace(/!!/g, '').trim();
-  S.tasks.push(T.newTask({ title, priority: urgent ? 'high' : 'med' }));
+  const title = raw.replace(/!!/g, '').trim();
+  if (!title) return false;
+  S.tasks.push(T.newTask({ title }));
   commit();
-  toast(`«${title}» به امروز اضافه شد`);
-}
-
-function taskMenu(t) {
-  const when = `${faDate(parseIso(t.date), { weekday: 'long', day: 'numeric', month: 'long' })}${t.time ? ` • ${fa(t.time)}` : ''}`;
-  const items = t.archived
-    ? [
-      { icon: 'unarchive', label: 'بازگرداندن از آرشیو', run: () => { t.archived = false; commit(); toast('به فهرست برگشت'); } },
-      { icon: 'delete', label: 'حذف', danger: true, run: () => deleteTask(t.id) },
-    ]
-    : [
-      { icon: 'edit', label: 'ویرایش کامل', run: () => taskSheet(t.id) },
-      {
-        icon: 'flag', label: `تغییر اولویت (الان: ${T.prio(t).label})`,
-        run: () => { const ks = Object.keys(T.PRIO); t.priority = ks[(ks.indexOf(t.priority || 'med') + 1) % ks.length]; commit(); toast(`اولویت: ${T.PRIO[t.priority].label}`); },
-      },
-      {
-        icon: t.reminder ? 'notifications_off' : 'notifications_active', label: t.reminder ? 'خاموش کردن یادآور' : 'روشن کردن یادآور',
-        run: () => {
-          if (!t.time) { toast('اول برای این کار ساعت تعیین کنید'); taskSheet(t.id); return; }
-          t.reminder = !t.reminder; t.notified = false; commit();
-          if (t.reminder) askNotif();
-        },
-      },
-      { icon: 'content_copy', label: 'تکثیر', run: () => { T.duplicateTask(t); commit(); toast('کپی ساخته شد'); } },
-      {
-        icon: 'event_note', label: 'افزودن به برنامه‌ریز (بلوک زمانی)',
-        run: () => {
-          const start = t.time || '09:00';
-          const end = minToHM(Math.min(hmToMin(start) + 60, 23 * 60 + 59));
-          S.blocks.push({ id: uid(), date: t.date, title: t.title, start, end, color: 'terracotta', icon: 'bolt', done: false, notify: false });
-          commit();
-          toast('به برنامه‌ریز اضافه شد');
-        },
-      },
-      { icon: 'inventory_2', label: 'آرشیو', run: () => { t.archived = true; commit(); toast('به آرشیو رفت', { label: 'واگرد', run: () => { t.archived = false; commit(); } }); } },
-      { icon: 'delete', label: 'حذف', danger: true, run: () => deleteTask(t.id) },
-    ];
-  menu(t.title, items, when);
-}
-
-function tomorrowTask(t) {
-  const base = t.date > today() ? t.date : today();
-  T.moveTaskTo(t, iso(addDays(parseIso(base), 1)));
-  commit();
-  toast(`به ${faDayMonth(parseIso(t.date))} منتقل شد`);
+  return true;
 }
 
 /* ---------- habits ---------- */
@@ -2602,60 +2098,122 @@ function habitSheet(id) {
   form({
     title: h ? 'ویرایش عادت' : 'عادت جدید',
     fields: [
-      { name: 'title', label: 'نام عادت', value: h ? h.title : '', placeholder: 'مثلاً پیاده‌روی' },
-      { name: 'icon', label: 'آیکون', type: 'chips', value: h ? h.icon : T.HABIT_ICONS[3], options: T.HABIT_ICONS.map((i) => ({ value: i, label: '', icon: i })) },
-      { name: 'target', label: 'هدف روزانه', type: 'number', value: h ? h.target : 1, row: '3a' },
-      { name: 'step', label: 'هر لمس', type: 'number', value: h ? h.step : 1, row: '3a' },
-      { name: 'unit', label: 'واحد', value: h ? h.unit : 'بار', row: '3a' },
+      { name: 'title', label: 'نام عادت', value: h ? h.title : '', placeholder: 'مثلاً نوشیدن آب' },
+      { name: 'icon', label: 'آیکون', type: 'chips', value: h ? h.icon : T.HABIT_ICONS[0], options: T.HABIT_ICONS.map((i) => ({ value: i, label: '', icon: i })) },
+      { name: 'target', label: 'هدف روزانه', type: 'number', value: h ? h.target : 1, row: 'a' },
+      { name: 'step', label: 'هر لمس', type: 'number', value: h ? h.step : 1, row: 'a' },
     ],
+    extra: h ? [{
+      label: 'حذف', cls: 'danger',
+      run: () => { const i = S.habits.indexOf(h); S.habits.splice(i, 1); commit(); toast('عادت حذف شد', { label: 'واگرد', run: () => { S.habits.splice(i, 0, h); commit(); } }); },
+    }] : [],
     onSubmit(v) {
       const title = (v.title || '').trim();
       if (!title) { toast('نام عادت را وارد کنید'); return false; }
-      const o = h || { id: uid(), log: {} };
-      Object.assign(o, { title, icon: v.icon, target: Math.max(1, num(v.target)), step: Math.max(1, num(v.step)), unit: (v.unit || '').trim() });
+      const o = h || { id: uid(), log: {}, unit: '' };
+      Object.assign(o, { title, icon: v.icon, target: Math.max(1, num(v.target)), step: Math.max(1, num(v.step)) });
       if (!h) S.habits.push(o);
       commit();
-      toast(h ? 'عادت ویرایش شد' : 'عادت اضافه شد');
     },
   });
 }
 
+/** Tap = +1 step; tapping a finished habit starts it over. */
 function tapHabit(h) {
+  const before = T.habitValue(h);
+  const finished = T.habitDone(h);
   const step = h.step || 1;
-  const v = T.bumpHabit(h, step);
+  const v = finished ? T.bumpHabit(h, -before) : T.bumpHabit(h, step);
   commit();
-  toast(`${h.title}: ${fa(v)}/${fa(h.target)}${v >= h.target ? ' ✓' : ''}`, { label: 'واگرد', run: () => { T.bumpHabit(h, -step); commit(); } });
+  toast(finished ? `${h.title}: از اول` : `${h.title}: ${fa(v)}/${fa(h.target)}${v >= h.target ? ' ✓' : ''}`,
+    { label: 'واگرد', run: () => { T.bumpHabit(h, before - v); commit(); } });
 }
 
 function habitMenu(h) {
-  const step = h.step || 1;
-  const bump = (d) => () => { T.bumpHabit(h, d); commit(); };
-  menu(h.title, [
-    { icon: 'add', label: `افزودن ${fa(step)} ${h.unit || ''}`, run: bump(step) },
-    { icon: 'remove', label: `کم کردن ${fa(step)}`, run: bump(-step) },
-    { icon: 'restart_alt', label: 'صفر کردن امروز', run: () => { h.log[today()] = 0; commit(); } },
-    { icon: 'edit', label: 'ویرایش عادت', run: () => habitSheet(h.id) },
-    {
-      icon: 'delete', label: 'حذف عادت', danger: true,
-      run: () => {
-        const i = S.habits.indexOf(h);
-        S.habits.splice(i, 1);
-        commit();
-        toast('عادت حذف شد', { label: 'واگرد', run: () => { S.habits.splice(i, 0, h); commit(); } });
-      },
-    },
-  ], `امروز: ${fa(T.habitValue(h))} از ${fa(h.target)} ${h.unit || ''} • زنجیره ${fa(T.habitStreak(h))} روز`);
+  menu(h.title, [{ icon: 'edit', label: 'ویرایش یا حذف', run: () => habitSheet(h.id) }]);
 }
 
 __exports.taskSheet = taskSheet;
 __exports.deleteTask = deleteTask;
 __exports.toggleTask = toggleTask;
 __exports.quickAddTask = quickAddTask;
-__exports.taskMenu = taskMenu;
-__exports.tomorrowTask = tomorrowTask;
 __exports.habitSheet = habitSheet;
 __exports.tapHabit = tapHabit;
 __exports.habitMenu = habitMenu;
+};
+__defs["src/pages/today.js"] = function (__exports) {
+let __default;
+/* Today: what's left to do and today's habits. One list, no tabs. */
+const { S, refresh } = __r("src/core/store.js");
+const { parseIso, today } = __r("src/core/dates.js");
+const { fa, esc } = __r("src/core/format.js");
+const { faDate, relDay } = __r("src/core/calendar.js");
+const { icon, ring } = __r("src/ui/widgets.js");
+const T = __r("src/domain/tasks.js");
+const { taskSheet, toggleTask, quickAddTask, habitSheet, tapHabit, habitMenu } = __r("src/features/task-sheets.js");
+
+let showDone = false;
+let showLater = false;
+
+function taskRow(t) {
+  const overdue = !t.done && t.date < today();
+  const meta = [overdue ? `<b class="neg">${relDay(t.date)}</b>` : t.date > today() ? relDay(t.date) : '', t.time ? fa(t.time) : ''].filter(Boolean).join(' • ');
+  return `<div class="task${t.done ? ' is-done' : ''}">
+    <button class="check-circle${t.done ? ' on' : ''}" data-act="check" data-id="${t.id}" aria-label="انجام شد">${icon('check')}</button>
+    <button class="task-text" data-act="edit" data-id="${t.id}"><span class="truncate">${esc(t.title)}</span>${meta ? `<small class="muted">${meta}</small>` : ''}</button>
+  </div>`;
+}
+
+function habits() {
+  const chips = S.habits.map((h) => {
+    const ok = T.habitDone(h);
+    return `<button class="habit${ok ? ' ok' : ''}" data-act="habit" data-hold="habit" data-id="${h.id}">
+      ${icon(h.icon || 'repeat')}<b class="truncate">${esc(h.title)}</b><span class="habit-count">${fa(T.habitValue(h))}/${fa(h.target)}</span></button>`;
+  }).join('');
+  return `<section class="stack-sm"><div class="row-between section-head"><b>عادت‌ها</b><button class="link accent" data-act="habit-new">+ عادت جدید</button></div>
+    ${chips ? `<div class="habit-row">${chips}</div>` : '<div class="empty">هنوز عادتی تعریف نشده</div>'}</section>`;
+}
+
+__default = {
+  id: 'today',
+  title: 'امروز',
+  render() {
+    const b = T.todayBuckets();
+    const pct = b.total ? Math.round((b.done.length / b.total) * 100) : 0;
+    const toggle = (act, on, label, n) => (n ? `<button class="link muted center" data-act="${act}">${icon(on ? 'expand_less' : 'expand_more', 'tiny')} ${label} (${fa(n)})</button>` : '');
+    return `
+      <section class="card summary">
+        ${ring(pct, `${fa(pct)}%`, 64)}
+        <div class="grow col"><b>${S.profile.name ? `سلام ${esc(S.profile.name)}` : 'امروز'}</b>
+          <small class="muted">${faDate(parseIso(today()), { weekday: 'long', day: 'numeric', month: 'long' })}</small>
+          <small>${b.total ? `${fa(b.done.length)} از ${fa(b.total)} کار انجام شد` : 'کاری برای امروز نیست'}</small></div>
+      </section>
+      <form class="well quick-add" data-submit="add">
+        ${icon('add_task', 'muted')}
+        <input data-key="qa" name="qa" autocomplete="off" placeholder="کار جدید… و Enter">
+        <button type="submit" class="icon-btn sm primary" aria-label="افزودن">${icon('arrow_upward')}</button>
+      </form>
+      <section class="stack-sm">
+        ${b.open.map(taskRow).join('') || (b.total ? '<div class="empty">همه کارها انجام شد 🎉</div>' : '')}
+        ${toggle('toggle-done', showDone, 'انجام‌شده', b.done.length)}${showDone ? b.done.map(taskRow).join('') : ''}
+        ${toggle('toggle-later', showLater, 'بعداً', b.later.length)}${showLater ? b.later.map(taskRow).join('') : ''}
+      </section>
+      ${habits()}`;
+  },
+  act: {
+    add(el) { const input = el.querySelector('input'); if (quickAddTask(input.value)) input.value = ''; },
+    check: (el) => toggleTask(el.dataset.id),
+    edit: (el) => taskSheet(el.dataset.id),
+    'toggle-done'() { showDone = !showDone; refresh(); },
+    'toggle-later'() { showLater = !showLater; refresh(); },
+    habit(el) { const h = T.findHabit(el.dataset.id); if (h) tapHabit(h); },
+    'habit-new': () => habitSheet(),
+  },
+  hold: { habit(el) { const h = T.findHabit(el.dataset.id); if (h) habitMenu(h); } },
+};
+
+
+__exports.default = __default;
 };
 __defs["src/features/finance-sheets.js"] = function (__exports) {
 /* Money dialogs: transactions, transfers, payments, installments, bills, accounts, reports. */
@@ -2665,9 +2223,7 @@ const { fa, num, esc, money } = __r("src/core/format.js");
 const { faDayMonth, fullDate, relDay, monthKey, monthLabel, monthName, monthYear, useJ, addMonthsIso, currentMonthKey, prevMonthKey, jalaliString } = __r("src/core/calendar.js");
 const { toast } = __r("src/ui/toast.js");
 const { form, menu, confirmBox, infoSheet, later } = __r("src/ui/sheet.js");
-const { go, currentRoute } = __r("src/router.js");
-const { saveFile, pickFile } = __r("src/services/files.js");
-const { askVision } = __r("src/services/ai.js");
+const { saveFile } = __r("src/services/files.js");
 const fin = __r("src/domain/finance.js");
 
 const M = (v) => money(v);
@@ -2680,20 +2236,21 @@ function txSheet(type, preset = {}, editId) {
   type = t ? t.type : type;
   if (type === 'transfer') return transferSheet(t);
 
-  const cats = (type === 'income' ? fin.INC_CATS : fin.EXP_CATS).map((k) => ({ value: k, label: fin.catOf(k).label, icon: fin.catOf(k).icon }));
+  const keys = t ? (type === 'income' ? fin.INC_CATS : fin.EXP_CATS) : (type === 'income' ? fin.SIMPLE_INC : fin.SIMPLE_EXP);
+  const cats = keys.map((k) => ({ value: k, label: fin.catOf(k).label, icon: fin.catOf(k).icon }));
   const linked = t && (t.loanId || t.billId);
   const fields = [
     { name: 'amount', label: `مبلغ (${S.profile.currency})`, type: 'number', value: t ? t.amount : preset.amount || '', placeholder: '0' },
     { name: 'category', label: 'دسته', type: 'chips', value: t ? t.category : preset.category || cats[0].value, options: cats },
-    { name: 'note', label: preset.noteLabel || 'توضیح', value: t ? t.note : preset.note || '', placeholder: 'اختیاری' },
-    { name: 'date', label: 'تاریخ', type: 'date', value: t ? t.date : preset.date || today() },
+    { name: 'note', label: 'توضیح (اختیاری)', value: t ? t.note : preset.note || '' },
   ];
+  if (t) fields.push({ name: 'date', label: 'تاریخ', type: 'date', value: t.date });
   if (S.accounts.length > 1) {
-    fields.push({ name: 'acc', label: type === 'income' ? 'واریز به حساب' : 'پرداخت از حساب', type: 'chips', value: t ? fin.txAccount(t) : preset.accountId || fin.defAcc(), options: accOptions() });
+    fields.push({ name: 'acc', label: 'حساب', type: 'chips', value: t ? fin.txAccount(t) : fin.defAcc(), options: accOptions() });
   }
   form({
-    title: t ? 'ویرایش تراکنش' : preset.title || (type === 'income' ? 'ثبت دریافتی' : 'ثبت هزینه'),
-    sub: linked ? `این تراکنش به ${t.loanId ? 'یک قسط' : 'یک قبض'} متصل است؛ حذف آن، پرداخت را هم لغو می‌کند.` : preset.sub,
+    title: t ? 'ویرایش' : type === 'income' ? 'درآمد جدید' : 'هزینه جدید',
+    sub: linked ? `این تراکنش به ${t.loanId ? 'یک قسط' : 'یک قبض'} متصل است؛ حذف آن، پرداخت را هم لغو می‌کند.` : undefined,
     fields,
     extra: t ? [{ label: 'حذف', cls: 'danger', run: () => removeTx(t.id) }] : [],
     onSubmit(v) {
@@ -2701,8 +2258,6 @@ function txSheet(type, preset = {}, editId) {
       if (!amount) return false;
       fin.saveTx(t, { type, amount, category: v.category, note: (v.note || '').trim(), date: v.date, accountId: v.acc || (t && t.accountId) || fin.defAcc() });
       commit();
-      toast(t ? 'تراکنش ویرایش شد' : type === 'income' ? 'دریافتی ثبت شد' : 'هزینه ثبت شد');
-      if (!t && type === 'expense') budgetCheck();
     },
   });
 }
@@ -2738,24 +2293,6 @@ function removeTx(id) {
   toast(undo.unlinked ? 'تراکنش حذف و پرداخت لغو شد' : 'تراکنش حذف شد', { label: 'واگرد', run: () => { fin.restoreTx(undo); commit(); } });
 }
 
-function budgetCheck() {
-  if (!S.wallet.alerts) return;
-  const used = fin.budgetUsed();
-  if (used >= 1) setTimeout(() => toast('هشدار: از بودجه این ماه عبور کردید'), 2500);
-  else if (used >= 0.8) setTimeout(() => toast(`هشدار: ${fa(Math.round(used * 100))}٪ بودجه ماه مصرف شده`), 2500);
-}
-
-function newTxMenu() {
-  menu('ثبت جدید', [
-    { icon: 'arrow_upward', label: 'هزینه', run: () => txSheet('expense') },
-    { icon: 'arrow_downward', label: 'دریافتی / درآمد', run: () => txSheet('income') },
-    { icon: 'swap_horiz', label: 'انتقال بین حساب‌ها', run: () => transferSheet() },
-    { icon: 'event_repeat', label: 'قسط / وام جدید', run: () => loanSheet() },
-    { icon: 'receipt_long', label: 'قبض یا پرداخت دوره‌ای جدید', run: () => billSheet() },
-    { icon: 'account_balance', label: 'حساب یا کارت جدید', run: () => accountSheet() },
-  ]);
-}
-
 /* ---------- ledger lists ---------- */
 function txRowsHtml(list) {
   if (!list.length) return '<div class="empty">تراکنشی ثبت نشده</div>';
@@ -2779,7 +2316,7 @@ function historySheet(filter, title = 'همه تراکنش‌ها') {
   groups.forEach((rows, k) => { html += `<div class="group-label">${monthLabel(k)}</div>${txRowsHtml(rows)}`; });
   if (!html) html = '<div class="empty">تراکنشی ثبت نشده</div>';
   infoSheet(title, `<p class="sheet-sub">برای ویرایش یا حذف، روی تراکنش بزنید.</p>${html}`,
-    [{ label: 'تراکنش جدید', cls: 'primary', run: newTxMenu }],
+    [{ label: 'تراکنش جدید', cls: 'primary', run: () => txSheet('expense') }],
     (el, close) => { close(); later(() => txSheet(null, {}, el.dataset.pick)); });
 }
 
@@ -2802,7 +2339,7 @@ function reportSheet() {
     ${tile('درآمد این ماه', M(inc), 'pos')}${tile('هزینه این ماه', M(exp), 'neg')}${tile('خالص این ماه', M(inc - exp))}
     ${tile('هزینه نسبت به ماه قبل', diff == null ? '—' : `${diff > 0 ? '+' : ''}${fa(diff)}٪`)}
     ${tile('بدهی باقی‌مانده اقساط', M(debt), 'neg')}${tile('دارایی خالص', M(fin.balance() - debt))}
-    ${tile('پرداختنی ۳۰ روز آینده', M(due30))}${tile('بودجه باقی‌مانده', M(Math.max(0, S.wallet.budget - exp)))}</div>`;
+    ${tile('پرداختنی ۳۰ روز آینده', M(due30))}</div>`;
 
   html += '<div class="group-label">جریان نقدی ۶ ماه اخیر</div><div class="list">';
   html += flow.map((r) => `<div class="item item-block">
@@ -2820,28 +2357,7 @@ function reportSheet() {
     }).join('')
     : '<div class="empty">هنوز هزینه‌ای در این ماه ثبت نشده</div>';
 
-  const onWallet = currentRoute() === 'wallet';
-  infoSheet('گزارش مالی', html, onWallet
-    ? [{ label: 'خروجی اکسل (CSV)', run: () => exportCsv(S.tx, 'all') }, { label: 'تنظیم بودجه', run: budgetSheet }]
-    : [{ label: 'کیف پول', cls: 'primary', run: () => go('wallet') }]);
-}
-
-function budgetSheet() {
-  form({
-    title: 'بودجه ماهانه', sub: `هزینه این ماه: ${M(fin.monthSum('expense'))}`,
-    fields: [
-      { name: 'b', label: `سقف هزینه ماهانه (${S.profile.currency})`, type: 'number', value: S.wallet.budget },
-      { name: 'alerts', label: 'هشدار نزدیک شدن به سقف بودجه', type: 'switch', value: S.wallet.alerts },
-    ],
-    onSubmit(v) {
-      const b = num(v.b);
-      if (b <= 0) { toast('مبلغ معتبر وارد کنید'); return false; }
-      S.wallet.budget = b;
-      S.wallet.alerts = !!v.alerts;
-      commit();
-      toast('بودجه به‌روزرسانی شد');
-    },
-  });
+  infoSheet('گزارش مالی', html, [{ label: 'خروجی اکسل (CSV)', run: () => exportCsv(S.tx, 'all') }]);
 }
 
 function exportCsv(list, tag) {
@@ -3091,31 +2607,48 @@ function reconcileSheet(a) {
   });
 }
 
-/* ---------- receipt scan (AI, optional) ---------- */
-function scanReceipt() {
-  pickFile('image/*', true, (file) => {
-    const close = infoSheet('اسکن رسید', '<p class="sheet-sub"><span class="material-symbols-outlined spin">progress_activity</span> در حال خواندن رسید…</p>');
-    askVision(file, 'This is a photo of a purchase receipt or invoice (possibly Persian/Farsi). Extract the total amount paid. Reply with only JSON: {"amount": number, "merchant": string, "category": one of ["shopping","food","cafe","bills","transport","sport","travel","health","other"], "date": "YYYY-MM-DD" or null}. Write merchant in the receipt language.')
-      .then((r) => {
-        close();
-        later(() => txSheet('expense', { title: 'تأیید رسید اسکن‌شده', sub: 'مقادیر را بررسی و در صورت نیاز اصلاح کنید.', amount: (r && r.amount) || '', category: r && fin.EXP_CATS.includes(r.category) ? r.category : 'shopping', note: (r && r.merchant) || '' }));
-      })
-      .catch((e) => {
-        close();
-        later(() => txSheet('expense', { title: 'ثبت رسید', sub: e && e.code === 'not_granted' ? 'اجازه استفاده از هوش مصنوعی داده نشد؛ مبلغ را دستی وارد کنید.' : 'خواندن خودکار رسید در دسترس نبود؛ مبلغ را دستی وارد کنید.', category: 'shopping' }));
-      });
-  });
+/* ---------- one-tap payment (used by the "due soon" list) ---------- */
+/** Pay a due item at its usual amount today and record the expense; the toast offers undo. */
+function payNow(it) {
+  fin.payObligation(it, { amount: it.amount, date: today(), accountId: it.ref.accountId, record: true });
+  const key = it.kind === 'loan' ? it.n : it.due;
+  commit();
+  toast(`«${it.title}» پرداخت شد`, { label: 'واگرد', run: () => { fin.cancelPayment(it.ref, key); commit(); } });
+}
+
+/* ---------- management lives behind one entry ---------- */
+function listSheet(title, rows, addLabel, onAdd, onPick) {
+  const html = rows.length
+    ? `<div class="list">${rows.map((r) => `<div class="item" data-pick="${r.id}" role="button"><span class="grow"><span class="item-title">${esc(r.title)}</span><span class="item-sub">${r.sub}</span></span><b class="amt">${r.amount}</b></div>`).join('')}</div>`
+    : '<div class="empty">هنوز چیزی ثبت نشده</div>';
+  infoSheet(title, html, [{ label: addLabel, cls: 'primary', run: onAdd }], (el, close) => { close(); later(() => onPick(el.dataset.pick)); });
+}
+
+function manageMenu() {
+  menu('قسط، قبض و حساب‌ها', [
+    {
+      icon: 'event_repeat', label: 'اقساط و وام‌ها',
+      run: () => listSheet('اقساط و وام‌ها', S.loans.map((l) => ({ id: l.id, title: l.title, sub: `${fa(fin.loanPaidCount(l))} از ${fa(l.count)} پرداخت شد`, amount: M(fin.loanRemaining(l)) })), 'قسط جدید', () => loanSheet(), (id) => loanMenu(S.loans.find((l) => l.id === id))),
+    },
+    {
+      icon: 'receipt_long', label: 'قبض‌ها و پرداخت‌های دوره‌ای',
+      run: () => listSheet('قبض‌ها', S.bills.map((b) => ({ id: b.id, title: b.title, sub: `${fin.billKind(b).label} • ${fin.EVERY[b.every || 1]}${b.paused ? ' • متوقف' : ''}`, amount: M(fin.billAvg(b)) })), 'قبض جدید', () => billSheet(), (id) => billMenu(S.bills.find((b) => b.id === id))),
+    },
+    {
+      icon: 'account_balance', label: 'حساب‌ها و کارت‌ها',
+      run: () => listSheet('حساب‌ها', S.accounts.map((a) => ({ id: a.id, title: a.name, sub: fin.accType(a).label, amount: M(fin.accBalance(a.id)) })), 'حساب جدید', () => accountSheet(), (id) => accountMenu(fin.findAccount(id))),
+    },
+    { icon: 'swap_horiz', label: 'انتقال بین حساب‌ها', run: () => transferSheet() },
+    { icon: 'monitoring', label: 'گزارش ماهانه', run: reportSheet },
+  ]);
 }
 
 __exports.txSheet = txSheet;
 __exports.transferSheet = transferSheet;
 __exports.removeTx = removeTx;
-__exports.budgetCheck = budgetCheck;
-__exports.newTxMenu = newTxMenu;
 __exports.txRowsHtml = txRowsHtml;
 __exports.historySheet = historySheet;
 __exports.reportSheet = reportSheet;
-__exports.budgetSheet = budgetSheet;
 __exports.exportCsv = exportCsv;
 __exports.payDialog = payDialog;
 __exports.undoPayment = undoPayment;
@@ -3130,1580 +2663,422 @@ __exports.billMenu = billMenu;
 __exports.billHistory = billHistory;
 __exports.accountSheet = accountSheet;
 __exports.accountMenu = accountMenu;
-__exports.scanReceipt = scanReceipt;
+__exports.payNow = payNow;
+__exports.manageMenu = manageMenu;
+};
+__defs["src/pages/money.js"] = function (__exports) {
+let __default;
+/* Money: balance, add expense/income in one step, what is due soon, recent activity. */
+const { S, commit } = __r("src/core/store.js");
+const { parseIso, today } = __r("src/core/dates.js");
+const { esc, money } = __r("src/core/format.js");
+const { faDayMonth, relDay } = __r("src/core/calendar.js");
+const { toast } = __r("src/ui/toast.js");
+const { icon } = __r("src/ui/widgets.js");
+const fin = __r("src/domain/finance.js");
+const { txSheet, historySheet, payNow, manageMenu } = __r("src/features/finance-sheets.js");
+
+function dueRow(d) {
+  const over = d.due < today();
+  const ref = d.kind === 'loan' ? `data-n="${d.n}"` : `data-due="${d.due}"`;
+  return `<div class="due-row well">
+    ${icon(d.icon, over ? 'neg' : 'muted')}
+    <span class="grow col"><b class="truncate">${esc(d.title)}</b><small class="${over ? 'neg bold' : 'muted'}">${relDay(d.due)}</small></span>
+    <b class="ltr">${money(d.amount)}</b>
+    <button class="mini-btn accent" data-act="pay" data-kind="${d.kind}" data-id="${d.ref.id}" ${ref}>پرداخت</button></div>`;
+}
+
+function txRow(t) {
+  const c = fin.catOf(t.category);
+  const cls = t.type === 'income' ? 'pos' : t.type === 'transfer' ? 'muted' : 'neg';
+  const sign = t.type === 'income' ? '+' : t.type === 'transfer' ? '⇄ ' : '−';
+  return `<button class="well tx-row" data-act="tx" data-id="${t.id}"><span class="item-icon">${icon(t.type === 'transfer' ? 'swap_horiz' : c.icon)}</span>
+    <span class="grow col"><b class="truncate">${esc(t.note || c.label)}</b><small class="muted">${esc(fin.txLabel(t))} • ${faDayMonth(parseIso(t.date))}</small></span><b class="ltr ${cls}">${sign}${money(t.amount)}</b></button>`;
+}
+
+__default = {
+  id: 'money',
+  title: 'پول',
+  render() {
+    const bal = fin.balance();
+    const hide = S.privacy;
+    const due = fin.dueItems(7);
+    const recent = fin.sortedTx().slice(0, 8);
+    const cur = S.profile.currency === 'تومان' ? 'ت' : S.profile.currency;
+    const amount = hide ? '••••••' : `${bal < 0 ? '-' : ''}${Math.abs(bal).toLocaleString('en-US', { maximumFractionDigits: 2 })}`;
+    return `
+      <section class="card stack">
+        <div class="row-between"><small class="muted">موجودی کل</small>
+          <button class="icon-btn xs" data-act="privacy" aria-label="نمایش یا پنهان کردن مبالغ">${icon(hide ? 'visibility_off' : 'visibility')}</button></div>
+        <div class="row"><b class="hero-amount ltr">${amount}</b><b class="muted t-head">${esc(cur)}</b></div>
+        <div class="grid2 gap-sm">
+          <div class="well metric"><small>درآمد این ماه</small><b class="pos">${money(fin.monthSum('income'), hide)}</b></div>
+          <div class="well metric"><small>هزینه این ماه</small><b class="neg">${money(fin.monthSum('expense'), hide)}</b></div>
+        </div>
+      </section>
+      <div class="grid2 gap-sm">
+        <button class="btn-add" data-act="expense">${icon('arrow_upward')}هزینه</button>
+        <button class="btn-add sage" data-act="income">${icon('arrow_downward')}درآمد</button>
+      </div>
+      ${due.length ? `<section class="stack-sm"><b class="section-head">سررسید نزدیک</b>${due.map(dueRow).join('')}</section>` : ''}
+      <section class="stack-sm">
+        <div class="row-between section-head"><b>اخیر</b><button class="link accent" data-act="all">همه</button></div>
+        ${recent.map(txRow).join('') || '<div class="empty">هنوز چیزی ثبت نشده</div>'}
+      </section>
+      <button class="link muted center" data-act="manage">${icon('tune', 'tiny')} قسط، قبض و حساب‌ها</button>`;
+  },
+  act: {
+    privacy() { S.privacy = !S.privacy; commit(); },
+    expense: () => txSheet('expense'),
+    income: () => txSheet('income'),
+    tx: (el) => txSheet(null, {}, el.dataset.id),
+    all: () => historySheet(),
+    manage: manageMenu,
+    pay(el) {
+      const { kind, id } = el.dataset;
+      const it = fin.dueItems(7).find((d) => d.kind === kind && d.ref.id === id && (kind === 'loan' ? d.n === +el.dataset.n : d.due === el.dataset.due));
+      if (it) payNow(it); else toast('این مورد دیگر سررسید نیست');
+    },
+  },
+};
+
+
+__exports.default = __default;
+};
+__defs["src/domain/gym.js"] = function (__exports) {
+/* Workout sessions, meals and body weight. Pure data logic — no DOM. */
+const { S } = __r("src/core/store.js");
+const { uid, sum } = __r("src/core/util.js");
+const { iso, addDays, parseIso, today } = __r("src/core/dates.js");
+const { en, num } = __r("src/core/format.js");
+
+const TABS = [
+  { key: 'workout', icon: 'fitness_center', label: 'برنامه تمرینی' },
+  { key: 'calorie', icon: 'restaurant', label: 'کالری و تغذیه' },
+  { key: 'weight', icon: 'monitor_weight', label: 'پایش وزن' },
+  { key: 'analysis', icon: 'insights', label: 'آنالیز' },
+];
+
+/* ---------- sessions ---------- */
+function session(date = today(), create = false) {
+  let s = S.gym.sessions[date];
+  if (!s && create) {
+    const plan = S.gym.weekly[parseIso(date).getDay()];
+    s = S.gym.sessions[date] = { name: plan ? plan.name : 'جلسه تمرین', minutes: 0, target: 45, finished: false, exercises: [] };
+  }
+  return s;
+}
+
+function setsOf(s) {
+  let total = 0;
+  let done = 0;
+  (s ? s.exercises : []).forEach((e) => { total += +e.sets || 0; done += Math.min(+e.done || 0, +e.sets || 0); });
+  return { tot: total, done };
+}
+
+const isActive = (key) => { const s = S.gym.sessions[key]; return !!s && (s.finished || setsOf(s).done > 0); };
+const wasActive = isActive;
+
+/** Consecutive training days ending today (or yesterday if today has none yet). */
+function streak() {
+  let n = 0;
+  let d = new Date();
+  if (!isActive(iso(d))) d = addDays(d, -1);
+  while (isActive(iso(d))) { n++; d = addDays(d, -1); }
+  return n;
+}
+
+function sessionMinutes(s) {
+  if (!s) return 0;
+  let m = s.minutes || 0;
+  if (S.gym.timerStart && s === S.gym.sessions[today()]) m += (Date.now() - S.gym.timerStart) / 60000;
+  return Math.round(m);
+}
+
+function stopTimer(s) {
+  if (!S.gym.timerStart) return;
+  s.minutes = (s.minutes || 0) + (Date.now() - S.gym.timerStart) / 60000;
+  S.gym.timerStart = null;
+}
+
+function finishSession(s) { stopTimer(s); s.finished = true; }
+
+/** Start the timer the first time a set is ticked. Returns true when it started. */
+function autoStartTimer() {
+  const s = session(today());
+  if (s && !S.gym.timerStart && !s.minutes && !s.finished) { S.gym.timerStart = Date.now(); return true; }
+  return false;
+}
+
+/* ---------- weekly plan ("name | sets | reps | weight" per line) ---------- */
+function parsePlan(text) {
+  return String(text || '').split('\n').map((l) => l.trim()).filter(Boolean).map((line) => {
+    const p = line.split('|').map((x) => x.trim());
+    const timed = /دقیقه|ثانیه/.test(p[3] || '') && !/kg/.test(p[3] || '');
+    const unit = timed ? (p[3].includes('دقیقه') ? 'دقیقه' : 'ثانیه') : 'تکرار';
+    return { name: p[0], sets: Math.max(1, Math.min(10, num(p[1]) || 3)), reps: en(p[2] || '12'), unit, weight: unit === 'تکرار' ? (p[3] || '') : '', done: 0 };
+  });
+}
+
+function loadPlanInto(s, plan) {
+  s.name = plan.name || s.name;
+  s.exercises = parsePlan(plan.items).map((x) => ({ ...x, id: uid(), done: 0 }));
+  s.finished = false;
+}
+
+/* ---------- meals ---------- */
+const mealsOn = (k = today()) => S.gym.meals[k] || [];
+function addMeal(m, k = today()) { (S.gym.meals[k] = S.gym.meals[k] || []).push({ id: uid(), ...m }); }
+const sumMeals = (list) => ({
+  kcal: sum(list, (m) => +m.kcal || 0), p: sum(list, (m) => +m.p || 0), c: sum(list, (m) => +m.c || 0), f: sum(list, (m) => +m.f || 0),
+});
+
+/* ---------- weight ---------- */
+const byDate = () => S.gym.weights.slice().sort((a, b) => (a.date < b.date ? -1 : 1));
+const lastWeight = () => { const w = byDate(); return w[w.length - 1]; };
+function weightOn(date) {
+  const w = byDate().filter((x) => x.date <= date);
+  return w.length ? w[w.length - 1].kg : null;
+}
+function setWeight(date, kg) {
+  const ex = S.gym.weights.find((w) => w.date === date);
+  if (ex) ex.kg = kg; else S.gym.weights.push({ date, kg });
+}
+const round1 = (n) => Math.round(n * 10) / 10;
+
+/** Weight change over the last `days` days (null when unknown). */
+function weightChange(days) {
+  const lw = lastWeight();
+  const base = weightOn(iso(addDays(new Date(), -days)));
+  return lw && base != null ? round1(lw.kg - base) : null;
+}
+
+/** Last-7-days summary for the analysis tab. */
+function weekAnalysis() {
+  const days = [];
+  let totalSets = 0, sessions = 0, kcal = 0, mealDays = 0;
+  for (let i = 6; i >= 0; i--) {
+    const d = addDays(new Date(), -i);
+    const k = iso(d);
+    const s = S.gym.sessions[k];
+    const st = setsOf(s);
+    days.push({ d, v: st.done });
+    totalSets += st.done;
+    if (s && (s.finished || st.done)) sessions++;
+    const m = S.gym.meals[k];
+    if (m && m.length) { kcal += sumMeals(m).kcal; mealDays++; }
+  }
+  return { days, totalSets, sessions, avgKcal: mealDays ? Math.round(kcal / mealDays) : null };
+}
+
+__exports.TABS = TABS;
+__exports.session = session;
+__exports.setsOf = setsOf;
+__exports.wasActive = wasActive;
+__exports.streak = streak;
+__exports.sessionMinutes = sessionMinutes;
+__exports.stopTimer = stopTimer;
+__exports.finishSession = finishSession;
+__exports.autoStartTimer = autoStartTimer;
+__exports.parsePlan = parsePlan;
+__exports.loadPlanInto = loadPlanInto;
+__exports.mealsOn = mealsOn;
+__exports.addMeal = addMeal;
+__exports.sumMeals = sumMeals;
+__exports.lastWeight = lastWeight;
+__exports.weightOn = weightOn;
+__exports.setWeight = setWeight;
+__exports.round1 = round1;
+__exports.weightChange = weightChange;
+__exports.weekAnalysis = weekAnalysis;
 };
 __defs["src/features/gym-sheets.js"] = function (__exports) {
-/* Workout, nutrition and weight dialogs. */
+/* Workout, calories and weight dialogs — kept deliberately short. */
 const { S, commit } = __r("src/core/store.js");
 const { uid } = __r("src/core/util.js");
-const { today, parseIso } = __r("src/core/dates.js");
+const { today } = __r("src/core/dates.js");
 const { fa, num } = __r("src/core/format.js");
-const { faDate, faDayMonth } = __r("src/core/calendar.js");
 const { toast } = __r("src/ui/toast.js");
-const { form, menu, confirmBox, infoSheet, later } = __r("src/ui/sheet.js");
-const { pickFile, shrinkImage } = __r("src/services/files.js");
-const { askVision } = __r("src/services/ai.js");
+const { form, confirmBox } = __r("src/ui/sheet.js");
 const G = __r("src/domain/gym.js");
-const { WD_LONG } = __r("src/core/dates.js");
 
-/* ---------- exercises ---------- */
 function exerciseSheet(id) {
   const s = G.session(today(), true);
   const e = id ? s.exercises.find((x) => x.id === id) : null;
   form({
-    title: e ? 'ویرایش حرکت' : 'افزودن حرکت',
+    title: e ? 'ویرایش حرکت' : 'حرکت جدید',
     fields: [
       { name: 'name', label: 'نام حرکت', value: e ? e.name : '', placeholder: 'مثلاً اسکوات' },
-      { name: 'sets', label: 'تعداد ست', type: 'number', value: e ? e.sets : 3, row: '3a' },
-      { name: 'reps', label: 'تکرار / زمان', type: 'number', value: e ? e.reps : 12, row: '3a' },
-      { name: 'weight', label: 'وزنه', value: e ? e.weight : '', placeholder: '30 kg', row: '3a' },
-      { name: 'unit', label: 'واحد', type: 'chips', value: e ? e.unit || 'تکرار' : 'تکرار', options: ['تکرار', 'ثانیه', 'دقیقه'].map((u) => ({ value: u, label: u })) },
+      { name: 'sets', label: 'تعداد ست', type: 'number', value: e ? e.sets : 3, row: 'a' },
+      { name: 'reps', label: 'تکرار', type: 'number', value: e ? e.reps : 12, row: 'a' },
     ],
     extra: e ? [{ label: 'حذف', cls: 'danger', run: () => { s.exercises.splice(s.exercises.indexOf(e), 1); commit(); toast('حرکت حذف شد'); } }] : [],
     onSubmit(v) {
       const name = (v.name || '').trim();
       if (!name) { toast('نام حرکت را وارد کنید'); return false; }
-      const o = e || { id: uid(), done: 0 };
-      Object.assign(o, { name, sets: Math.max(1, Math.min(10, Math.round(num(v.sets)) || 3)), reps: String(num(v.reps) || 12), weight: (v.weight || '').trim(), unit: v.unit });
+      const o = e || { id: uid(), done: 0, unit: 'تکرار', weight: '' };
+      Object.assign(o, { name, sets: Math.max(1, Math.min(10, Math.round(num(v.sets)) || 3)), reps: String(num(v.reps) || 12) });
       o.done = Math.min(o.done, o.sets);
       if (!e) s.exercises.push(o);
       s.finished = false;
       commit();
-      toast(e ? 'حرکت ویرایش شد' : `«${name}» اضافه شد`);
     },
   });
-}
-
-function exerciseMenu(e) {
-  const s = G.session(today());
-  const i = s.exercises.indexOf(e);
-  const move = (to) => () => { s.exercises.splice(i, 1); s.exercises.splice(to, 0, e); commit(); };
-  menu(e.name, [
-    { icon: 'edit', label: 'ویرایش', run: () => exerciseSheet(e.id) },
-    { icon: 'restart_alt', label: 'صفر کردن ست‌ها', run: () => { e.done = 0; commit(); } },
-    i > 0 && { icon: 'arrow_upward', label: 'انتقال به بالا', run: move(i - 1) },
-    i < s.exercises.length - 1 && { icon: 'arrow_downward', label: 'انتقال به پایین', run: move(i + 1) },
-    {
-      icon: 'delete', label: 'حذف حرکت', danger: true,
-      run: () => { s.exercises.splice(i, 1); commit(); toast('حرکت حذف شد', { label: 'واگرد', run: () => { s.exercises.splice(i, 0, e); commit(); } }); },
-    },
-  ]);
-}
-
-/* ---------- session ---------- */
-function renameSession() {
-  const s = G.session(today(), true);
-  form({
-    title: 'نام جلسه امروز',
-    fields: [{ name: 'n', label: 'نام', value: s.name }, { name: 't', label: 'زمان هدف (دقیقه)', type: 'number', value: s.target || 45 }],
-    onSubmit(v) { s.name = (v.n || '').trim() || s.name; s.target = Math.max(5, num(v.t)) || 45; commit(); },
-  });
-}
-
-function toggleTimer() {
-  const s = G.session(today(), true);
-  if (S.gym.timerStart) { G.stopTimer(s); toast(`زمان‌سنج متوقف شد: ${fa(Math.round(s.minutes))} دقیقه`); }
-  else { S.gym.timerStart = Date.now(); s.finished = false; toast('زمان‌سنج تمرین شروع شد'); }
-  commit();
 }
 
 /** Finish or reopen today's session (asks before finishing). */
-function finishOrReopen({ requireExercises = true } = {}) {
+function finishOrReopen() {
   const s = G.session(today());
-  if (!s || !s.exercises.length) { if (requireExercises) toast('اول حرکتی اضافه کنید'); return false; }
-  if (s.finished) { s.finished = false; commit(); toast('جلسه دوباره باز شد'); return true; }
+  if (!s || !s.exercises.length) return;
+  if (s.finished) { s.finished = false; commit(); return; }
   const st = G.setsOf(s);
-  confirmBox('پایان جلسه امروز؟', `ست‌های انجام‌شده: ${fa(st.done)} از ${fa(st.tot)} • زمان: ${fa(G.sessionMinutes(s))} دقیقه`, 'ثبت پایان', () => {
+  confirmBox('پایان تمرین امروز؟', `ست‌های انجام‌شده: ${fa(st.done)} از ${fa(st.tot)}`, 'ثبت پایان', () => {
     G.finishSession(s);
     commit();
-    toast('جلسه امروز ثبت شد. خسته نباشید! 💪');
-  });
-  return true;
-}
-
-function loadFromPlan() {
-  const dow = new Date().getDay();
-  const plan = S.gym.weekly[dow];
-  if (!plan || !plan.items || !G.parsePlan(plan.items).length) {
-    toast(`برای امروز (${WD_LONG[dow]}) برنامه هفتگی تعریف نشده`);
-    S.gym.view = 'weekly';
-    commit();
-    return;
-  }
-  const s = G.session(today(), true);
-  const apply = () => { G.loadPlanInto(s, plan); commit(); toast(`برنامه «${s.name}» بارگذاری شد`); };
-  if (s.exercises.length) confirmBox('جایگزینی حرکات امروز؟', `حرکات فعلی با برنامه هفتگی «${plan.name || ''}» جایگزین می‌شوند.`, 'جایگزین کن', apply);
-  else apply();
-}
-
-function planSheet(wd) {
-  const p = S.gym.weekly[wd] || { name: '', items: '' };
-  form({
-    title: `برنامه ${WD_LONG[wd]}`, sub: 'هر حرکت در یک خط: نام | تعداد ست | تکرار | وزن', focus: false,
-    fields: [
-      { name: 'name', label: 'نام جلسه', value: p.name, placeholder: 'مثلاً پایین‌تنه (خالی = استراحت)' },
-      { name: 'items', label: 'حرکات', type: 'textarea', value: p.items, placeholder: 'اسکوات | 4 | 10 | 60 kg' },
-    ],
-    extra: S.gym.weekly[wd] ? [{ label: 'روز استراحت', cls: 'danger', run: () => { delete S.gym.weekly[wd]; commit(); } }] : [],
-    onSubmit(v) {
-      if (!(v.name || '').trim() && !(v.items || '').trim()) delete S.gym.weekly[wd];
-      else S.gym.weekly[wd] = { name: (v.name || '').trim() || 'تمرین', items: v.items || '' };
-      commit();
-      toast('برنامه ذخیره شد');
-    },
+    toast('تمرین امروز ثبت شد. خسته نباشید! 💪');
   });
 }
 
-/* ---------- meals ---------- */
 function mealSheet(m) {
   const editing = m && m.id;
   form({
-    title: editing ? 'ویرایش وعده' : 'ثبت دستی کالری',
+    title: editing ? 'ویرایش وعده' : 'وعده جدید',
     fields: [
-      { name: 'name', label: 'غذا / وعده', value: m ? m.name : '', placeholder: 'مثلاً ناهار' },
       { name: 'kcal', label: 'کالری (kcal)', type: 'number', value: (m && m.kcal) || '' },
-      { name: 'p', label: 'پروتئین g', type: 'number', value: (m && m.p) || '', row: '3a' },
-      { name: 'c', label: 'کربوهیدرات g', type: 'number', value: (m && m.c) || '', row: '3a' },
-      { name: 'f', label: 'چربی g', type: 'number', value: (m && m.f) || '', row: '3a' },
+      { name: 'name', label: 'غذا (اختیاری)', value: m ? m.name : '' },
     ],
     extra: editing ? [{
       label: 'حذف', cls: 'danger',
       run: () => { const list = G.mealsOn(); const i = list.indexOf(m); list.splice(i, 1); commit(); toast('وعده حذف شد', { label: 'واگرد', run: () => { list.splice(i, 0, m); commit(); } }); },
     }] : [],
     onSubmit(v) {
-      const kcal = num(v.kcal);
+      const kcal = Math.round(num(v.kcal));
       if (!kcal) { toast('کالری را وارد کنید'); return false; }
-      const o = { name: (v.name || '').trim() || 'وعده', kcal: Math.round(kcal), p: num(v.p), c: num(v.c), f: num(v.f) };
-      if (editing) Object.assign(m, o); else G.addMeal(o);
+      const o = { name: (v.name || '').trim() || 'وعده', kcal };
+      if (editing) Object.assign(m, o); else G.addMeal({ ...o, p: 0, c: 0, f: 0 });
       commit();
-      toast(editing ? 'وعده ویرایش شد' : `${fa(o.kcal)} کالری ثبت شد`);
     },
   });
 }
 
-function goalsSheet() {
-  const g = S.gym.goals;
+function goalSheet() {
   form({
-    title: 'اهداف تغذیه روزانه',
-    fields: [
-      { name: 'kcal', label: 'کالری (kcal)', type: 'number', value: g.kcal },
-      { name: 'p', label: 'پروتئین g', type: 'number', value: g.p, row: '3a' },
-      { name: 'c', label: 'کربوهیدرات g', type: 'number', value: g.c, row: '3a' },
-      { name: 'f', label: 'چربی g', type: 'number', value: g.f, row: '3a' },
-    ],
-    onSubmit(v) {
-      g.kcal = Math.max(500, num(v.kcal)) || g.kcal;
-      g.p = num(v.p) || g.p; g.c = num(v.c) || g.c; g.f = num(v.f) || g.f;
-      commit();
-      toast('اهداف ذخیره شد');
-    },
+    title: 'هدف کالری روزانه',
+    fields: [{ name: 'kcal', label: 'کالری (kcal)', type: 'number', value: S.gym.goals.kcal }],
+    onSubmit(v) { S.gym.goals.kcal = Math.max(500, num(v.kcal)) || S.gym.goals.kcal; commit(); },
   });
 }
 
-/* ---------- food photo scan (AI, optional) ---------- */
-function scanFood() {
-  pickFile('image/*', true, (file) => {
-    shrinkImage(file, 160, (thumb) => {
-      S.gym.lastScan = { name: 'در حال تحلیل…', kcal: 0, p: 0, c: 0, f: 0, photo: thumb, added: true, pending: true };
-      commit();
-      askVision(file, 'You are a nutrition assistant. Look at this photo of a meal and estimate the total for the visible portion. Reply with only JSON: {"name": string (dish name in Persian/Farsi), "kcal": number, "protein": number (grams), "carbs": number (grams), "fat": number (grams)}. If the image is not food, reply {"name": "غذا تشخیص داده نشد", "kcal": 0, "protein": 0, "carbs": 0, "fat": 0}.')
-        .then((r) => {
-          S.gym.lastScan = { name: String(r.name || 'غذا'), kcal: Math.round(num(r.kcal)), p: Math.round(num(r.protein)), c: Math.round(num(r.carbs)), f: Math.round(num(r.fat)), photo: thumb, added: false };
-          commit();
-          toast('تخمین آماده شد — برای ثبت، دکمه پایین کارت را بزنید');
-        })
-        .catch((e) => {
-          S.gym.lastScan = { name: 'غذای عکس‌گرفته‌شده', kcal: 0, p: 0, c: 0, f: 0, photo: thumb, added: true };
-          commit();
-          toast(e && e.code === 'not_granted' ? 'اجازه تحلیل داده نشد؛ مقادیر را دستی وارد کنید' : 'تحلیل خودکار در دسترس نبود؛ مقادیر را دستی وارد کنید');
-          mealSheet({ name: '' });
-        });
-    });
-  });
-}
-
-function addScanToday() {
-  const r = S.gym.lastScan;
-  if (!r || r.added) { scanFood(); return; }
-  G.addMeal({ name: r.name, kcal: r.kcal, p: r.p, c: r.c, f: r.f });
-  r.added = true;
-  commit();
-  toast(`${fa(r.kcal)} کالری به امروز اضافه شد`);
-}
-
-function editScan() {
-  const r = S.gym.lastScan;
-  if (!r) return;
-  form({
-    title: 'اصلاح نتیجه اسکن',
-    fields: [
-      { name: 'name', label: 'غذا', value: r.name },
-      { name: 'kcal', label: 'کالری', type: 'number', value: r.kcal, row: '3a' },
-      { name: 'p', label: 'پروتئین g', type: 'number', value: r.p, row: '3b' },
-      { name: 'c', label: 'کربو g', type: 'number', value: r.c, row: '3b' },
-      { name: 'f', label: 'چربی g', type: 'number', value: r.f, row: '3b' },
-    ],
-    onSubmit(v) { Object.assign(r, { name: v.name || r.name, kcal: num(v.kcal), p: num(v.p), c: num(v.c), f: num(v.f) }); commit(); },
-  });
-}
-
-/* ---------- weight ---------- */
 function weightSheet() {
   const lw = G.lastWeight();
   form({
     title: 'ثبت وزن',
-    fields: [{ name: 'kg', label: 'وزن (kg)', type: 'number', value: lw ? lw.kg : '' }, { name: 'date', label: 'تاریخ', type: 'date', value: today() }],
+    fields: [{ name: 'kg', label: 'وزن (kg)', type: 'number', value: lw ? lw.kg : '' }],
     onSubmit(v) {
       const kg = num(v.kg);
       if (kg < 20 || kg > 400) { toast('وزن معتبر وارد کنید'); return false; }
-      G.setWeight(v.date || today(), kg);
+      G.setWeight(today(), kg);
       commit();
-      toast(`وزن ${fa(kg)} kg ثبت شد`);
     },
   });
 }
 
 function nudgeWeight(delta) {
   const lw = G.lastWeight();
-  const base = lw ? lw.kg : 75;
   let entry = S.gym.weights.find((w) => w.date === today());
-  if (!entry) { entry = { date: today(), kg: base }; S.gym.weights.push(entry); }
+  if (!entry) { entry = { date: today(), kg: lw ? lw.kg : 75 }; S.gym.weights.push(entry); }
   entry.kg = G.round1(entry.kg + delta);
   commit();
 }
 
-function weightHistory() {
-  const rows = S.gym.weights.slice().sort((a, b) => (a.date < b.date ? 1 : -1)).slice(0, 30);
-  const html = rows.length
-    ? `<p class="sheet-sub">برای حذف، روی ردیف بزنید.</p><div class="list">${rows.map((x) => `<div class="item" data-pick="${x.date}" role="button"><span class="grow"><span class="item-title">${faDate(parseIso(x.date), { weekday: 'long', day: 'numeric', month: 'long' })}</span></span><b class="amt">${fa(x.kg)} kg</b></div>`).join('')}</div>`
-    : '<div class="empty">هنوز وزنی ثبت نشده</div>';
-  infoSheet('سابقه وزن', html, [{ label: 'ثبت وزن', cls: 'primary', run: weightSheet }], (el, close) => {
-    const d = el.dataset.pick;
-    close();
-    later(() => confirmBox('حذف این ثبت وزن؟', faDayMonth(parseIso(d)), 'حذف', () => { S.gym.weights = S.gym.weights.filter((x) => x.date !== d); commit(); }));
-  });
-}
-
-
 __exports.exerciseSheet = exerciseSheet;
-__exports.exerciseMenu = exerciseMenu;
-__exports.renameSession = renameSession;
-__exports.toggleTimer = toggleTimer;
 __exports.finishOrReopen = finishOrReopen;
-__exports.loadFromPlan = loadFromPlan;
-__exports.planSheet = planSheet;
 __exports.mealSheet = mealSheet;
-__exports.goalsSheet = goalsSheet;
-__exports.scanFood = scanFood;
-__exports.addScanToday = addScanToday;
-__exports.editScan = editScan;
+__exports.goalSheet = goalSheet;
 __exports.weightSheet = weightSheet;
 __exports.nudgeWeight = nudgeWeight;
-__exports.weightHistory = weightHistory;
-};
-__defs["src/pages/dashboard.js"] = function (__exports) {
-let __default;
-/* Dashboard: clock, nearest tasks, spending of the week and today's workout at a glance. */
-const { S, refresh } = __r("src/core/store.js");
-const { iso, addDays, parseIso, today, nowHM, WD_SHORT } = __r("src/core/dates.js");
-const { fa, esc, money } = __r("src/core/format.js");
-const { faDayMonth } = __r("src/core/calendar.js");
-const { go } = __r("src/router.js");
-const { toast } = __r("src/ui/toast.js");
-const { icon, ring, barChart } = __r("src/ui/widgets.js");
-const T = __r("src/domain/tasks.js");
-const G = __r("src/domain/gym.js");
-const fin = __r("src/domain/finance.js");
-const { toggleTask, taskSheet } = __r("src/features/task-sheets.js");
-const { reportSheet, budgetSheet } = __r("src/features/finance-sheets.js");
-const { finishOrReopen } = __r("src/features/gym-sheets.js");
-
-const FILTERS = ['همه', 'امروز', 'مهم'];
-let filterMode = 0;
-let pickedBar = 6; // index into the 7-day chart (6 = today)
-
-function nearestTasks() {
-  const all = T.activeTasks();
-  const todays = all.filter((t) => t.date === today());
-  const pool = filterMode === 1 ? todays : filterMode === 2 ? all.filter((t) => t.starred) : all.filter((t) => t.date >= today() || !t.done);
-  return { pool, open: pool.filter((t) => !t.done).sort(T.sortTasks).slice(0, 3), todays };
-}
-
-function tasksCard() {
-  const { pool, open, todays } = nearestTasks();
-  const done = todays.filter((t) => t.done).length;
-  const rows = open.map((t) => `
-    <div class="mini-task">
-      <button class="check-dot" data-act="check" data-id="${t.id}" aria-label="انجام شد">${icon('check')}</button>
-      <button class="mini-task-text" data-act="task" data-id="${t.id}">
-        <span class="truncate">${esc(t.title)}</span>
-        <small>${t.date === today() ? 'امروز' : faDayMonth(parseIso(t.date))}${t.time ? ` • ${fa(t.time)}` : ''}</small>
-      </button>
-    </div>`).join('');
-  const zen = open.length ? '' : `
-    <button class="zen" data-act="zen">
-      <span class="zen-well">${icon('spa')}</span>
-      <b>${pool.length ? 'همه‌چیز مرتب است!' : 'کاری ثبت نشده'}</b>
-      <small>${pool.length ? 'کارهای این بخش تکمیل شده‌اند.' : 'برای افزودن کار، اینجا را بزنید.'}</small>
-    </button>`;
-  return `
-    <section class="card dash-card">
-      <div class="card-head">
-        <span class="card-title"><span class="chip-icon accent">${icon('task_alt')}</span>وظایف نزدیک</span>
-        <button class="link accent" data-act="filter">${FILTERS[filterMode]}</button>
-      </div>
-      <div class="stack-sm">${rows}</div>
-      ${zen}
-      <button class="well metric" data-act="progress"><span>پیشرفت روز</span><b>${fa(done)} / ${fa(todays.length)} <i class="dot sage"></i></b></button>
-    </section>`;
-}
-
-function financeCard() {
-  const now = new Date();
-  const cols = [];
-  for (let i = 6; i >= 0; i--) {
-    const d = addDays(now, -i);
-    cols.push({ v: fin.daySpend(iso(d)), label: WD_SHORT[d.getDay()], active: 6 - i === pickedBar, title: `${faDayMonth(d)}: ${money(fin.daySpend(iso(d)))}` });
-  }
-  const picked = addDays(now, pickedBar - 6);
-  const left = S.wallet.budget - fin.monthSum('expense');
-  return `
-    <section class="card dash-card">
-      <div class="card-head">
-        <span class="card-title"><span class="chip-icon sage">${icon('query_stats')}</span>وضعیت مالی</span>
-        <button class="link sage" data-act="report">گزارش</button>
-      </div>
-      <div class="well chart-well">${barChart(cols, { height: 118, act: 'bar' })}</div>
-      <div class="grid2 gap-sm">
-        <div class="well metric col"><small>${pickedBar === 6 ? 'هزینه امروز' : `هزینه ${faDayMonth(picked)}`}</small><b>${money(fin.daySpend(iso(picked)))}</b></div>
-        <button class="well metric col" data-act="budget"><small>بودجه باقی</small><b class="${left < 0 ? 'neg' : 'pos'}">${money(Math.max(0, left))}</b></button>
-      </div>
-    </section>`;
-}
-
-function gymCard() {
-  const s = G.session(today());
-  const st = G.setsOf(s);
-  const pct = st.tot ? Math.round((st.done / st.tot) * 100) : 0;
-  const hasWork = s && s.exercises.length;
-  const label = !hasWork ? 'امروز جلسه‌ای ثبت نشده' : s.finished ? `جلسه انجام شد: ${s.name}` : `جلسه فعال: ${s.name}`;
-  const action = !hasWork ? 'شروع' : s.finished ? 'بازگشایی' : 'ثبت پایان';
-  return `
-    <section class="card dash-card dash-wide">
-      <div class="card-head">
-        <span class="card-title"><span class="chip-icon accent">${icon('fitness_center')}</span>وضعیت باشگاه</span>
-        <button class="link muted" data-act="gym">${fa(G.streak())} روز پیاپی</button>
-      </div>
-      <div class="gym-row">
-        <button class="ring-well" data-act="gym" aria-label="ورزش">${ring(pct, `${fa(pct)}%`, 76)}</button>
-        <div class="grow stack-sm">
-          <div class="well metric"><small>ست‌های روز</small><b>${fa(st.done)}/${fa(st.tot)}</b></div>
-          <div class="well metric"><small>زمان تمرین</small><b>${fa(G.sessionMinutes(s))} <small>دقیقه</small></b></div>
-        </div>
-      </div>
-      <button class="well session-btn" data-act="session"><span class="row"><i class="dot ${hasWork && s.finished ? 'sage' : 'accent pulse'}"></i>${esc(label)}</span><b class="accent">${action}</b></button>
-    </section>`;
-}
-
-__default = {
-  id: 'dashboard',
-  title: 'پیشخوان',
-  render() {
-    return `
-      <section class="card clock-card">
-        <span class="row"><button class="icon-btn sm" data-act="calendar" aria-label="تقویم">${icon('calendar_month')}</button><small class="muted">امروز، ${faDayMonth(new Date())}</small></span>
-        <span class="clock" data-clock>${nowHM()}</span>
-        <button class="icon-btn sm" data-act="calendar" aria-label="برنامه‌ریزی">${icon('schedule')}</button>
-      </section>
-      <div class="grid2 gap-sm dash-grid">${tasksCard()}${financeCard()}</div>
-      ${gymCard()}`;
-  },
-  act: {
-    calendar: () => go('planner'),
-    zen: () => go('tasks'),
-    progress: () => go('tasks'),
-    gym: () => go('gym'),
-    filter: () => { filterMode = (filterMode + 1) % FILTERS.length; toast(`نمایش: ${FILTERS[filterMode]}`); refresh(); },
-    check: (el) => toggleTask(el.dataset.id),
-    task: (el) => taskSheet(el.dataset.id),
-    bar: (el) => { pickedBar = +el.dataset.i; refresh(); },
-    report: reportSheet,
-    budget: budgetSheet,
-    session: () => { if (!finishOrReopen({ requireExercises: false })) go('gym'); },
-  },
-};
-
-
-__exports.default = __default;
-};
-__defs["src/ui/hub.js"] = function (__exports) {
-/* Accordion "hub": a column of icon cards of which at most one is open (used by Tasks and Wallet).
-   Open section and nested group state persist in S.ui. */
-const { S, commit } = __r("src/core/store.js");
-const { chev, badge, icon } = __r("src/ui/widgets.js");
-const { scrollToCard } = __r("src/ui/dom.js");
-
-const openKey = (name, def = '') => (S.ui.open[name] === undefined ? def : S.ui.open[name]);
-const setOpen = (name, key) => { S.ui.open[name] = key; commit(); };
-
-/** sections: [{ key, title, icon, color, sum, badge?, body() }] — body() runs only for the open one. */
-function hubHtml(name, sections, def = '') {
-  const open = openKey(name, def);
-  return sections.map((s) => {
-    const on = open === s.key;
-    return `<div class="hub-card${on ? ' is-open' : ''}" data-sec="${s.key}">
-      <button class="hub-head" data-act="hub" data-hub="${name}" data-section="${s.key}">
-        <span class="hub-icon" style="color:${s.color}">${icon(s.icon)}</span>
-        <span class="hub-text"><span class="hub-title">${s.title}${s.badge || ''}</span><span class="hub-sum">${s.sum}</span></span>
-        ${chev(on)}
-      </button>
-      ${on ? `<div class="hub-body">${s.body()}</div>` : ''}
-    </div>`;
-  }).join('');
-}
-
-/** Collapsible sub-group inside a hub body. */
-function group({ id, title, count = 0, inner, def = false, red = false, extra = '' }) {
-  const on = S.ui.sub[id] === undefined ? def : S.ui.sub[id];
-  return `<div class="group">
-    <button class="group-head" data-act="sub" data-id="${id}" data-def="${def ? 1 : 0}">
-      <span class="group-title${red ? ' neg' : ''}">${title}${badge(count, red)}</span>
-      <span class="group-extra">${extra}${chev(on)}</span>
-    </button>
-    ${on ? `<div class="group-body">${inner}</div>` : ''}
-  </div>`;
-}
-
-/** Click handlers for data-act="hub" / "sub". Spread into a page's `act` map. */
-const hubActions = {
-  hub(el) {
-    const { hub, section: key } = el.dataset;
-    const next = openKey(hub) === key ? '' : key;
-    setOpen(hub, next);
-    if (next) scrollToCard(document.querySelector(`[data-sec="${key}"]`));
-  },
-  sub(el) {
-    const { id, def } = el.dataset;
-    const cur = S.ui.sub[id] === undefined ? def === '1' : S.ui.sub[id];
-    S.ui.sub[id] = !cur;
-    commit();
-  },
-};
-
-__exports.openKey = openKey;
-__exports.setOpen = setOpen;
-__exports.hubHtml = hubHtml;
-__exports.group = group;
-__exports.hubActions = hubActions;
-};
-__defs["src/pages/tasks.js"] = function (__exports) {
-let __default;
-/* Tasks & habits: summary, quick add, and an accordion hub (today / upcoming / projects / habits / review / done). */
-const { S, commit, persist, refresh } = __r("src/core/store.js");
-const { debounce } = __r("src/core/util.js");
-const { iso, addDays, parseIso, today, daysBetween, weekStart, WD_SHORT } = __r("src/core/dates.js");
-const { fa, esc, money } = __r("src/core/format.js");
-const { faDate, faDayMonth, relDay } = __r("src/core/calendar.js");
-const { toast } = __r("src/ui/toast.js");
-const { menu } = __r("src/ui/sheet.js");
-const { icon, stat, badge, emptyNote, addButton, progress, ring } = __r("src/ui/widgets.js");
-const { hubHtml, group, hubActions, setOpen } = __r("src/ui/hub.js");
-const { scrollToCard } = __r("src/ui/dom.js");
-const T = __r("src/domain/tasks.js");
-const { infoSheet } = __r("src/ui/sheet.js");
-const { taskSheet, taskMenu, toggleTask, quickAddTask, tomorrowTask, habitSheet, habitMenu, tapHabit } = __r("src/features/task-sheets.js");
-
-const expanded = new Set();
-let reviewWeek = null;
-const weekOfReview = () => reviewWeek || T.currentWeek();
-
-/* ---------- task rows ---------- */
-function taskRow(t, { showDate = false } = {}) {
-  const p = T.prio(t);
-  const c = T.catOf(t);
-  const subs = t.subtasks || [];
-  const subsDone = subs.filter((x) => x.done).length;
-  const open = expanded.has(t.id);
-  const overdue = !t.done && t.date < today();
-
-  const meta = [];
-  if (showDate || t.date !== today()) meta.push(overdue ? `<b class="neg">${relDay(t.date)}</b>` : relDay(t.date));
-  if (t.time) meta.push(fa(t.time));
-  meta.push(`<i class="dot" style="background:${c.color}"></i> ${c.label}`);
-  if (subs.length) meta.push(`${icon('checklist', 'tiny')}${fa(subsDone)}/${fa(subs.length)}`);
-  if (t.repeat && t.repeat !== 'none') meta.push(icon('repeat', 'tiny'));
-  if (t.reminder) meta.push(icon('notifications_active', 'tiny'));
-
-  const detail = open ? `
-    <div class="trow-detail">
-      ${subs.length ? `<div class="stack-xs">${subs.map((s) => `
-        <button class="subtask${s.done ? ' done' : ''}" data-act="subtask" data-t="${t.id}" data-s="${s.id}">${icon(s.done ? 'check_box' : 'check_box_outline_blank')}${esc(s.title)}</button>`).join('')}</div>` : ''}
-      ${t.note ? `<p class="muted small">${esc(t.note)}</p>` : ''}
-      <p class="muted tiny">اولویت ${p.label} • ${T.REPEAT[t.repeat || 'none']} • ${faDate(parseIso(t.date), { weekday: 'long', day: 'numeric', month: 'long' })}</p>
-      <div class="grid4 gap-xs">${[['edit', 'edit', 'ویرایش'], ['star', 'star', t.starred ? 'برداشتن ستاره' : 'مهم'], ['tomorrow', 'event_repeat', 'فردا'], ['more', 'more_horiz', 'بیشتر']]
-        .map(([a, i, label]) => `<button class="mini-btn" data-act="tact" data-a="${a}" data-id="${t.id}">${icon(i)}${label}</button>`).join('')}</div>
-    </div>` : '';
-
-  return `
-    <div class="trow${t.done ? ' is-done' : ''}">
-      <div class="trow-main">
-        <button class="check-circle${t.done ? ' on' : ''}" style="--prio:${p.color}" data-act="check" data-id="${t.id}" aria-label="انجام شد">${icon('check')}</button>
-        <button class="trow-text" data-act="expand" data-id="${t.id}">
-          <span class="trow-title truncate">${t.starred ? '⭐ ' : ''}${esc(t.title)}</span>
-          <small class="muted truncate">${meta.join(' • ')}</small>
-        </button>
-        <span class="prio-bar" style="background:${p.color}" title="اولویت ${p.label}"></span>
-      </div>
-      ${detail}
-    </div>`;
-}
-
-const rows = (list, opts) => list.map((t) => taskRow(t, opts)).join('');
-
-/* ---------- section bodies ---------- */
-function todayBody({ todays, overdue }) {
-  const open = todays.filter((t) => !t.done).sort(T.sortTasks);
-  const done = todays.filter((t) => t.done);
-  let html = '';
-  if (overdue.length) {
-    html += group({ id: 't-over', title: 'معوق', count: overdue.length, red: true, def: true, inner: `${rows(overdue.sort(T.sortTasks), { showDate: true })}<button class="link accent" data-act="over-today">انتقال همه به امروز</button>` });
-  }
-  ['high', 'med', 'low'].forEach((pk) => {
-    const list = open.filter((t) => (t.priority || 'med') === pk);
-    if (list.length) html += group({ id: `t-${pk}`, title: `<i class="dot" style="background:${T.PRIO[pk].color}"></i>اولویت ${T.PRIO[pk].label}`, count: list.length, inner: rows(list), def: true });
-  });
-  if (!open.length && !overdue.length) html += emptyNote(todays.length ? 'همه کارهای امروز انجام شده 🎉' : 'برای امروز کاری ندارید. از نوار بالا اضافه کنید.');
-  if (done.length) html += group({ id: 't-done', title: 'انجام‌شده امروز', count: done.length, inner: rows(done) });
-  return html;
-}
-
-function upcomingBody(all) {
-  const t0 = today();
-  let html = '';
-  for (let i = 1; i <= 7; i++) {
-    const d = iso(addDays(new Date(), i));
-    const list = all.filter((t) => t.date === d).sort(T.sortTasks);
-    const title = `${i === 1 ? 'فردا' : faDate(parseIso(d), { weekday: 'long' })} <small class="muted">${faDayMonth(parseIso(d))}</small>`;
-    html += group({
-      id: `u-${i}`, title, count: list.filter((t) => !t.done).length, def: i <= 2 && list.length > 0,
-      inner: `${rows(list) || emptyNote('کاری ثبت نشده')}<button class="link accent" data-act="addon" data-date="${d}">+ افزودن کار برای این روز</button>`,
-    });
-  }
-  const later = all.filter((t) => !t.done && daysBetween(t0, t.date) > 7).sort(T.sortTasks);
-  if (later.length) html += group({ id: 'u-later', title: 'بعدتر', count: later.length, inner: rows(later, { showDate: true }) });
-  return html;
-}
-
-function projectsBody(all) {
-  let html = Object.entries(T.CAT).map(([k, c]) => {
-    const list = all.filter((t) => (t.category || 'work') === k);
-    const open = list.filter((t) => !t.done).sort(T.sortTasks);
-    const done = list.length - open.length;
-    return group({
-      id: `p-${k}`, title: `<i class="dot" style="background:${c.color}"></i>${c.label}`, count: open.length,
-      inner: rows(open, { showDate: true }) || emptyNote('کار بازی در این دسته نیست'),
-      extra: `${progress(list.length ? (done / list.length) * 100 : 0, 'var(--sage)')} ${fa(done)}/${fa(list.length)}`,
-    });
-  }).join('');
-  const starred = all.filter((t) => t.starred && !t.done).sort(T.sortTasks);
-  if (starred.length) html = group({ id: 'p-star', title: '⭐ مهم‌ها', count: starred.length, def: true, inner: rows(starred, { showDate: true }) }) + html;
-  return html;
-}
-
-function habitsBody() {
-  const t0 = today();
-  const ws = weekStart(new Date());
-  const cards = S.habits.map((h) => {
-    const v = T.habitValue(h);
-    const ok = T.habitDone(h);
-    return `<button class="habit${ok ? ' ok' : ''}" data-act="habit" data-hold="habit" data-id="${h.id}">
-      ${icon(h.icon || 'repeat')}<b class="truncate">${esc(h.title)}</b>
-      <span class="habit-count">${fa(v)}/${fa(h.target)}${icon(ok ? 'done_all' : 'add', 'tiny')}</span></button>`;
-  }).join('');
-  const header = `<div class="row-between small"><b>این هفته</b><span class="week-cells muted">${[0, 1, 2, 3, 4, 5, 6].map((i) => `<span>${WD_SHORT[addDays(ws, i).getDay()]}</span>`).join('')}</span></div>`;
-  const lines = S.habits.map((h) => {
-    const streak = T.habitStreak(h);
-    const cells = [0, 1, 2, 3, 4, 5, 6].map((i) => {
-      const k = iso(addDays(ws, i));
-      const cls = T.habitDone(h, k) ? 'full' : T.habitValue(h, k) ? 'part' : k > t0 ? 'future' : 'miss';
-      return `<i class="hcell ${cls}${k === t0 ? ' today' : ''}"></i>`;
-    }).join('');
-    return `<div class="row-between"><span class="small truncate">${esc(h.title)}${streak > 1 ? ` <b class="accent tiny">🔥${fa(streak)}</b>` : ''}</span><span class="week-cells">${cells}</span></div>`;
-  }).join('');
-  return `${S.habits.length ? `<div class="grid3 gap-sm">${cards}</div>` : emptyNote('هنوز عادتی تعریف نشده')}
-    <div class="well pad stack-sm">${header}${lines}</div>
-    ${addButton('عادت جدید', 'habit-new')}
-    <p class="muted tiny center">لمس کارت: افزودن • نگه‌داشتن: گزینه‌ها</p>`;
-}
-
-function reviewBody() {
-  const ws = weekOfReview();
-  const we = iso(addDays(parseIso(ws), 6));
-  const r = T.reviewOf(ws);
-  const st = T.weekStats(ws);
-  const current = ws === T.currentWeek();
-  let html = `<div class="row-between">
-    <button class="icon-btn sm" data-act="wk" data-d="-1" aria-label="هفته قبل">${icon('chevron_right')}</button>
-    <div class="center"><b>${current ? 'این هفته' : 'هفته'}</b><small class="muted block">${faDayMonth(parseIso(ws))} تا ${faDayMonth(parseIso(we))}</small></div>
-    <button class="icon-btn sm${current ? ' disabled' : ''}" data-act="wk" data-d="1" aria-label="هفته بعد">${icon('chevron_left')}</button></div>
-    <div class="grid2 gap-sm">${stat('کارهای انجام‌شده', `${fa(st.done)} از ${fa(st.due)}`)}${stat('تکمیل عادت‌ها', `${fa(st.habit)}٪`, st.habit >= 70 ? 'pos' : '')}${stat('جلسات ورزش', `${fa(st.gym)} روز`)}${stat('هزینه هفته', money(st.spend), 'neg')}</div>
-    <div class="well pad row-between"><b class="small">حال کلی هفته</b><span class="row">${T.MOODS.map((m, i) => `<button class="mood${r.mood === i + 1 ? ' on' : ''}" data-act="mood" data-v="${i + 1}">${m}</button>`).join('')}</span></div>`;
-  T.REVIEW_FIELDS.forEach(([key, label, ic, hint]) => {
-    const val = r[key] || '';
-    const id = `rv-${key}`;
-    const on = S.ui.sub[id] === undefined ? !val || key === 'wins' : S.ui.sub[id];
-    html += `<div class="group"><button class="group-head" data-act="sub" data-id="${id}" data-def="${on ? 1 : 0}">
-      <span class="group-title">${icon(ic, 'muted')}${label}</span>
-      <span class="group-extra">${val ? `${fa(val.split('\n').filter(Boolean).length)} خط` : 'خالی'}<span class="chev material-symbols-outlined${on ? ' open' : ''}">chevron_left</span></span></button>
-      ${on ? `<div class="group-body"><textarea class="input" rows="4" data-key="${id}" data-input="rv" data-field="${key}" placeholder="${esc(hint)}">${esc(val)}</textarea>
-        ${key === 'next' ? `<button class="mini-btn row" data-act="next-to-tasks">${icon('add_task')}تبدیل به کار برای شروع هفته بعد</button>` : ''}</div>` : ''}</div>`;
-  });
-  html += `<div class="row-between tiny muted"><span data-saved>${r.updatedAt ? `آخرین ذخیره: ${faDayMonth(parseIso(r.updatedAt))}` : 'ذخیره خودکار هنگام نوشتن'}</span>
-    <button class="link accent" data-act="all-reviews">همه مرورها (${fa(T.writtenReviews().length)})</button></div>`;
-  return html;
-}
-
-function doneBody() {
-  const wsk = T.currentWeek();
-  const doneList = S.tasks.filter((t) => t.done && !t.archived).sort((a, b) => ((a.doneAt || a.date) < (b.doneAt || b.date) ? 1 : -1));
-  const when = (t) => t.doneAt || t.date;
-  const thisWeek = doneList.filter((t) => when(t) >= wsk);
-  const older = doneList.filter((t) => when(t) < wsk);
-  const archived = S.tasks.filter((t) => t.archived);
-  let html = group({ id: 'd-week', title: 'انجام‌شده این هفته', count: thisWeek.length, def: true, inner: rows(thisWeek, { showDate: true }) || emptyNote('هنوز موردی نیست') });
-  if (older.length) html += group({ id: 'd-old', title: 'انجام‌شده قبلی', count: older.length, inner: rows(older.slice(0, 30), { showDate: true }) });
-  html += group({ id: 'd-arch', title: 'آرشیو', count: archived.length, inner: rows(archived, { showDate: true }) || emptyNote('آرشیو خالی است') });
-  if (doneList.length) html += `<button class="mini-btn row wide" data-act="archive-done">${icon('inventory_2')}انتقال همه انجام‌شده‌ها به آرشیو</button>`;
-  return html;
-}
-
-/* ---------- page ---------- */
-function summary(b) {
-  const pct = b.todays.length ? Math.round((b.doneToday / b.todays.length) * 100) : 0;
-  const mood = !b.todays.length ? 'آزاد' : pct === 100 ? 'عالی' : pct >= 50 ? 'خوب' : 'شروع کن';
-  return `<section class="card summary">
-    ${ring(pct, `${fa(pct)}%`, 64)}
-    <div class="grow stack-xs">
-      <div class="row-between"><b>${fa(b.doneToday)} از ${fa(b.todays.length)} انجام شده${b.overdue.length ? ` • ${fa(b.overdue.length)} معوق` : ''}</b><span class="pill sage">${mood}</span></div>
-      <span class="progress"><i style="width:${Math.max(pct, 8)}%"></i></span>
-      <small class="muted">ذخیره خودکار روی این دستگاه فعال است</small>
-    </div></section>`;
-}
-
-function sections(b) {
-  const t0 = today();
-  const up = b.all.filter((t) => !t.done && t.date > t0 && daysBetween(t0, t.date) <= 7);
-  const hDone = S.habits.filter((h) => T.habitDone(h)).length;
-  const best = S.habits.reduce((m, h) => Math.max(m, T.habitStreak(h)), 0);
-  const rv = T.reviewOf(T.currentWeek());
-  const projectsSum = Object.entries(T.CAT).map(([k, c]) => { const n = b.all.filter((t) => !t.done && t.category === k).length; return n ? `${c.label} ${fa(n)}` : ''; }).filter(Boolean).join(' • ');
-  return [
-    { key: 'today', title: 'امروز', icon: 'today', color: '#DE8353', sum: `${b.overdue.length ? `${fa(b.overdue.length)} معوق • ` : ''}${fa(b.doneToday)} از ${fa(b.todays.length)} کار امروز انجام شده`, badge: badge(b.overdue.length || b.todays.length - b.doneToday, !!b.overdue.length), body: () => todayBody(b) },
-    { key: 'upcoming', title: 'هفت روز آینده', icon: 'date_range', color: '#5d7a8c', sum: up.length ? `${fa(up.length)} کار در ۷ روز آینده` : 'برنامه‌ای برای روزهای آینده ثبت نشده', body: () => upcomingBody(b.all) },
-    { key: 'projects', title: 'دسته‌ها و پروژه‌ها', icon: 'folder_open', color: '#865228', sum: projectsSum || 'کار بازی ندارید', body: () => projectsBody(b.all) },
-    { key: 'habits', title: 'عادت‌ها', icon: 'all_inclusive', color: '#4d7c62', sum: `${fa(hDone)} از ${fa(S.habits.length)} امروز${best ? ` • بهترین زنجیره ${fa(best)} روز` : ''}`, badge: badge(S.habits.length - hDone), body: habitsBody },
-    { key: 'review', title: 'یادداشت و مرور هفتگی', icon: 'edit_note', color: '#6b6f9c', sum: T.reviewHasText(rv) ? `هفته جاری نوشته شده • ${fa(Object.keys(S.weekly).length)} مرور ثبت‌شده` : 'مرور این هفته هنوز نوشته نشده', badge: !(rv && (rv.wins || rv.next)) && new Date().getDay() === 5 ? badge('!', true) : '', body: reviewBody },
-    { key: 'done', title: 'انجام‌شده و آرشیو', icon: 'inventory_2', color: '#8a8478', sum: `${fa(T.weekStats(T.currentWeek()).done)} کار این هفته انجام شد • ${fa(S.tasks.filter((t) => t.archived).length)} در آرشیو`, body: doneBody },
-  ];
-}
-
-const saveReviewText = debounce((el) => {
-  const r = T.editReview(weekOfReview());
-  r[el.dataset.field] = el.value;
-  r.updatedAt = today();
-  persist();
-  const label = document.querySelector('[data-saved]');
-  if (label) label.textContent = 'ذخیره شد ✓';
-}, 500);
-
-function openReview() { setOpen('tasks', 'review'); scrollToCard(document.querySelector('[data-sec="review"]')); }
-
-function allReviews() {
-  const keys = T.writtenReviews().sort().reverse();
-  const html = keys.length ? `<div class="list">${keys.map((k) => {
-    const x = S.weekly[k];
-    return `<div class="item item-block" data-pick="${k}" role="button"><div class="row-between"><b>${faDayMonth(parseIso(k))} تا ${faDayMonth(addDays(parseIso(k), 6))}</b><span>${x.mood ? T.MOODS[x.mood - 1] : ''}</span></div><span class="item-sub clamp">${esc(x.wins || x.notes || x.next || '')}</span></div>`;
-  }).join('')}</div>` : emptyNote('هنوز مروری نوشته نشده');
-  infoSheet('همه مرورهای هفتگی', html, [], (el, close) => { reviewWeek = el.dataset.pick; close(); openReview(); });
-}
-
-__default = {
-  id: 'tasks',
-  title: 'کارها و عادت‌ها',
-  mount() {
-    reviewWeek = null;
-    if (new Date().getDay() === 5 && S.ui.reviewNudge !== today()) {
-      S.ui.reviewNudge = today();
-      persist();
-      setTimeout(() => toast('آخر هفته است — وقت مرور هفتگی', { label: 'باز کن', run: openReview }), 1500);
-    }
-  },
-  render() {
-    const b = T.taskBuckets();
-    return `${summary(b)}
-      <form class="well quick-add" data-submit="qa">
-        ${icon('add_task', 'muted')}
-        <input data-key="qa" name="qa" autocomplete="off" placeholder="افزودن سریع کار برای امروز…">
-        <button type="button" class="icon-btn sm" data-act="qa-more" aria-label="جزئیات">${icon('tune')}</button>
-        <button type="submit" class="icon-btn sm primary" aria-label="افزودن">${icon('arrow_upward')}</button>
-      </form>
-      <div class="stack">${hubHtml('tasks', sections(b), 'today')}</div>
-      <button class="fab" data-act="fab" aria-label="افزودن">${icon('add')}</button>`;
-  },
-  act: {
-    ...hubActions,
-    qa(el) { const input = el.querySelector('input'); quickAddTask(input.value); input.value = ''; },
-    'qa-more'(el) { const input = el.closest('form').querySelector('input'); const v = input.value.trim(); input.value = ''; taskSheet(null, null, v); },
-    fab: () => menu('افزودن', [
-      { icon: 'task_alt', label: 'کار جدید', run: () => taskSheet() },
-      { icon: 'all_inclusive', label: 'عادت جدید', run: () => habitSheet() },
-      { icon: 'edit_note', label: 'مرور هفتگی', run: openReview },
-    ]),
-    check: (el) => toggleTask(el.dataset.id),
-    expand(el) { const id = el.dataset.id; if (!expanded.delete(id)) expanded.add(id); refresh(); },
-    subtask(el) {
-      const t = T.findTask(el.dataset.t);
-      const s = t && t.subtasks.find((x) => x.id === el.dataset.s);
-      if (!s) return;
-      s.done = !s.done;
-      commit();
-      if (t.subtasks.every((x) => x.done) && !t.done) toast('همه زیرکارها انجام شد — کار اصلی را هم تیک بزنید', { label: 'تیک بزن', run: () => toggleTask(t.id) });
-    },
-    tact(el) {
-      const t = T.findTask(el.dataset.id);
-      if (!t) return;
-      const a = el.dataset.a;
-      if (a === 'edit') taskSheet(t.id);
-      else if (a === 'star') { t.starred = !t.starred; commit(); }
-      else if (a === 'tomorrow') tomorrowTask(t);
-      else taskMenu(t);
-    },
-    addon: (el) => taskSheet(null, el.dataset.date),
-    'habit-new': () => habitSheet(),
-    habit(el) { const h = T.findHabit(el.dataset.id); if (h) tapHabit(h); },
-    'over-today'() { T.pushOverdueToToday(); commit(); toast('کارهای معوق به امروز منتقل شدند'); },
-    'archive-done'() { const n = T.archiveDone(); commit(); toast(`${fa(n)} کار به آرشیو رفت`); },
-    mood(el) { const r = T.editReview(weekOfReview()); const m = +el.dataset.v; r.mood = r.mood === m ? 0 : m; r.updatedAt = today(); commit(); },
-    wk(el) { reviewWeek = iso(addDays(parseIso(weekOfReview()), 7 * +el.dataset.d)); refresh(); },
-    'all-reviews': allReviews,
-    'next-to-tasks'() {
-      const res = T.reviewToTasks(weekOfReview());
-      if (!res) { toast('اول اولویت‌ها را بنویسید (هر خط یکی)'); return; }
-      commit();
-      toast(res.added ? `${fa(res.added)} کار با اولویت بالا برای ${faDayMonth(parseIso(res.date))} ساخته شد` : 'این اولویت‌ها قبلاً به کار تبدیل شده‌اند');
-    },
-  },
-  hold: { habit(el) { const h = T.findHabit(el.dataset.id); if (h) habitMenu(h); } },
-  input: { rv: (el) => saveReviewText(el) },
-};
-
-
-__exports.default = __default;
-};
-__defs["src/domain/planner.js"] = function (__exports) {
-/* Time blocks for the day planner. Pure data logic — no DOM. */
-const { S } = __r("src/core/store.js");
-const { uid, clone } = __r("src/core/util.js");
-const { iso, addDays, parseIso, hmToMin, minToHM } = __r("src/core/dates.js");
-
-const BLOCK_COLORS = {
-  terracotta: { color: '#DE8353', label: 'تمرکز', icon: 'bolt' },
-  slate: { color: '#1e293b', label: 'جلسه', icon: 'groups' },
-  sage: { color: '#8EAA97', label: 'سلامت', icon: 'spa' },
-  sand: { color: '#fdb885', label: 'شخصی', icon: 'person' },
-};
-const blockColor = (b) => BLOCK_COLORS[b.color] || BLOCK_COLORS.terracotta;
-
-/* The timeline spans 06:00–24:00. */
-const DAY_START = 6 * 60;
-const DAY_SPAN = 18 * 60;
-
-const findBlock = (id) => S.blocks.find((b) => b.id === id);
-const blocksOn = (date) => S.blocks.filter((b) => b.date === date).sort((a, b) => hmToMin(a.start) - hmToMin(b.start));
-
-function saveBlock(existing, f) {
-  const b = existing || { id: uid(), done: false };
-  Object.assign(b, { title: f.title, date: f.date, start: f.start, end: f.end, color: f.color, icon: blockColor(f).icon, notify: !!f.notify, notified: false });
-  if (!existing) S.blocks.push(b);
-  return b;
-}
-
-/** First other block on that day that overlaps [start, end). */
-function clashWith(f, ignore) {
-  return S.blocks.find((x) => x !== ignore && x.date === f.date && hmToMin(f.start) < hmToMin(x.end) && hmToMin(f.end) > hmToMin(x.start));
-}
-
-function duplicateToNextDay(b) {
-  const c = clone(b);
-  Object.assign(c, { id: uid(), done: false, notified: false, date: iso(addDays(parseIso(b.date), 1)) });
-  S.blocks.push(c);
-  return c;
-}
-
-/** Default start for a new block: the next half hour; end defaults to +1h. */
-function defaultSlot(nowMin) {
-  const start = Math.min(Math.ceil((nowMin + 1) / 30) * 30, 22 * 60);
-  return { start: minToHM(start), end: minToHM(Math.min(start + 60, 23 * 60 + 59)) };
-}
-
-__exports.BLOCK_COLORS = BLOCK_COLORS;
-__exports.blockColor = blockColor;
-__exports.DAY_START = DAY_START;
-__exports.DAY_SPAN = DAY_SPAN;
-__exports.findBlock = findBlock;
-__exports.blocksOn = blocksOn;
-__exports.saveBlock = saveBlock;
-__exports.clashWith = clashWith;
-__exports.duplicateToNextDay = duplicateToNextDay;
-__exports.defaultSlot = defaultSlot;
-};
-__defs["src/features/planner-sheets.js"] = function (__exports) {
-const { S, commit } = __r("src/core/store.js");
-const { today, parseIso, hmToMin, minToHM, nowHM } = __r("src/core/dates.js");
-const { fa } = __r("src/core/format.js");
-const { faDayMonth } = __r("src/core/calendar.js");
-const { toast } = __r("src/ui/toast.js");
-const { form, menu } = __r("src/ui/sheet.js");
-const { askNotif } = __r("src/services/notify.js");
-const { uid } = __r("src/core/util.js");
-const P = __r("src/domain/planner.js");
-
-function blockSheet(id, date, start) {
-  const b = id ? P.findBlock(id) : null;
-  const slot = P.defaultSlot(hmToMin(nowHM()));
-  const from = b ? b.start : start || slot.start;
-  const to = b ? b.end : start ? minToHM(Math.min(hmToMin(start) + 60, 23 * 60 + 59)) : slot.end;
-  form({
-    title: b ? 'ویرایش بلوک زمانی' : 'بلوک زمانی جدید',
-    fields: [
-      { name: 'title', label: 'عنوان', value: b ? b.title : '', placeholder: 'مثلاً کار روی پروژه' },
-      { name: 'date', label: 'تاریخ', type: 'date', value: b ? b.date : date || today() },
-      { name: 'start', label: 'شروع', type: 'time', value: from, row: 'a' },
-      { name: 'end', label: 'پایان', type: 'time', value: to, row: 'a' },
-      { name: 'color', label: 'نوع', type: 'chips', value: b ? b.color : 'terracotta', options: Object.entries(P.BLOCK_COLORS).map(([k, c]) => ({ value: k, label: c.label, icon: c.icon })) },
-      { name: 'notify', label: 'یادآوری هنگام شروع', type: 'switch', value: b ? b.notify : false },
-    ],
-    extra: b ? [{ label: 'حذف', cls: 'danger', run: () => { S.blocks.splice(S.blocks.indexOf(b), 1); commit(); toast('بلوک حذف شد'); } }] : [],
-    onSubmit(v) {
-      const title = (v.title || '').trim();
-      if (!title) { toast('عنوان را وارد کنید'); return false; }
-      if (!v.start || !v.end || hmToMin(v.end) <= hmToMin(v.start)) { toast('زمان پایان باید بعد از شروع باشد'); return false; }
-      const f = { title, date: v.date || today(), start: v.start, end: v.end, color: v.color, notify: v.notify };
-      const clash = P.clashWith(f, b);
-      const saved = P.saveBlock(b, f);
-      commit();
-      toast(clash ? `ذخیره شد — با «${clash.title}» هم‌پوشانی دارد` : b ? 'بلوک ویرایش شد' : 'بلوک اضافه شد');
-      if (saved.notify) askNotif();
-    },
-  });
-}
-
-function blockMenu(b) {
-  menu(b.title, [
-    { icon: 'edit', label: 'ویرایش', run: () => blockSheet(b.id) },
-    { icon: b.notify ? 'notifications_off' : 'notifications_active', label: b.notify ? 'خاموش کردن یادآور' : 'یادآوری هنگام شروع', run: () => toggleBlockNotify(b) },
-    { icon: 'content_copy', label: 'کپی برای روز بعد', run: () => { const c = P.duplicateToNextDay(b); commit(); toast(`برای ${faDayMonth(parseIso(c.date))} کپی شد`); } },
-    {
-      icon: 'add_task', label: 'افزودن به فهرست کارها',
-      run: () => {
-        S.tasks.push({ id: uid(), title: b.title, date: b.date, time: b.start, category: 'work', priority: 'med', starred: false, done: b.done, archived: false, reminder: false, note: 'از برنامه‌ریز', subtasks: [], repeat: 'none' });
-        commit();
-        toast('به کارها اضافه شد');
-      },
-    },
-    {
-      icon: 'delete', label: 'حذف', danger: true,
-      run: () => {
-        const i = S.blocks.indexOf(b);
-        S.blocks.splice(i, 1);
-        commit();
-        toast('بلوک حذف شد', { label: 'واگرد', run: () => { S.blocks.splice(i, 0, b); commit(); } });
-      },
-    },
-  ], `${faDayMonth(parseIso(b.date))} • ${fa(b.start)} تا ${fa(b.end)}`);
-}
-
-function toggleBlockNotify(b) {
-  b.notify = !b.notify;
-  b.notified = false;
-  commit();
-  toast(b.notify ? 'یادآور شروع بلوک فعال شد' : 'یادآور خاموش شد');
-  if (b.notify) askNotif();
-}
-
-__exports.blockSheet = blockSheet;
-__exports.blockMenu = blockMenu;
-__exports.toggleBlockNotify = toggleBlockNotify;
-};
-__defs["src/pages/planner.js"] = function (__exports) {
-let __default;
-/* Planner: week strip, 06–24 timeline and the day's time blocks. */
-const { S, commit, refresh } = __r("src/core/store.js");
-const { iso, addDays, parseIso, today, nowHM, hmToMin, minToHM, weekStart, WD_SHORT } = __r("src/core/dates.js");
-const { fa, esc } = __r("src/core/format.js");
-const { faDayMonth, faDayNum } = __r("src/core/calendar.js");
-const { toast } = __r("src/ui/toast.js");
-const { form } = __r("src/ui/sheet.js");
-const { icon } = __r("src/ui/widgets.js");
-const P = __r("src/domain/planner.js");
-const { blockSheet, blockMenu, toggleBlockNotify } = __r("src/features/planner-sheets.js");
-
-let sel = today();
-let weekOffset = 0;
-
-const gotoDate = (d) => {
-  sel = d;
-  weekOffset = Math.round((weekStart(parseIso(d)) - weekStart(new Date())) / (7 * 864e5));
-  refresh();
-};
-
-function weekStrip(ws) {
-  return Array.from({ length: 7 }, (_, i) => {
-    const d = addDays(ws, i);
-    const k = iso(d);
-    const on = k === sel;
-    const has = S.blocks.some((b) => b.date === k);
-    return `<button class="day-btn${on ? ' on' : ''}${k === today() ? ' is-today' : ''}" data-act="day" data-date="${k}">
-      <small>${WD_SHORT[d.getDay()]}</small><b>${faDayNum(d)}</b><i class="dot ${has ? (on ? 'accent' : 'sage') : 'none'}"></i></button>`;
-  }).join('');
-}
-
-function timeline(blocks) {
-  const nowMin = hmToMin(nowHM()) - P.DAY_START;
-  const showNow = sel === today() && nowMin >= 0 && nowMin <= P.DAY_SPAN;
-  const segs = blocks.map((b) => {
-    const s = Math.max(0, hmToMin(b.start) - P.DAY_START);
-    const e = Math.min(P.DAY_SPAN, Math.max(s + 10, hmToMin(b.end) - P.DAY_START));
-    const c = P.blockColor(b);
-    return `<button class="seg${b.done ? ' done' : ''}" data-act="seg" data-id="${b.id}" title="${esc(b.title)} ${b.start}–${b.end}"
-      style="left:${(s / P.DAY_SPAN) * 100}%;width:${((e - s) / P.DAY_SPAN) * 100}%;background:${c.color}">${icon(b.icon || c.icon)}</button>`;
-  }).join('');
-  return `<div class="card-sm timeline">
-    <div class="stamps">${['06:00', '12:00', '18:00', '24:00'].map((x) => `<span>${fa(x)}</span>`).join('')}</div>
-    <div class="track well" data-act="track">${segs}${showNow ? `<i class="knob" style="left:calc(${(nowMin / P.DAY_SPAN) * 100}% - 6px)"></i>` : ''}</div>
-  </div>`;
-}
-
-function blockCard(b) {
-  const c = P.blockColor(b);
-  return `<div class="card-sm block${b.done ? ' is-done' : ''}">
-    <button class="check-square${b.done ? ' on' : ''}" data-act="check" data-id="${b.id}" aria-label="انجام شد">${icon('check')}</button>
-    <button class="grow block-text" data-act="edit" data-id="${b.id}">
-      <span class="row"><b class="block-title">${esc(b.title)}</b><i class="dot" style="background:${c.color}"></i></span>
-      <small class="muted">${fa(b.start)} تا ${fa(b.end)}</small>
-    </button>
-    <button class="badge-icon${b.notify ? ' accent' : ''}" data-act="notify" data-id="${b.id}" aria-label="یادآور">${icon(b.notify ? 'notifications_active' : (b.icon || c.icon))}</button>
-    <button class="icon-btn sm" data-act="menu" data-id="${b.id}" aria-label="گزینه‌ها">${icon('edit')}</button>
-  </div>`;
-}
-
-__default = {
-  id: 'planner',
-  title: 'برنامه‌ریزی',
-  tick: 60000,
-  render() {
-    const ws = addDays(weekStart(new Date()), weekOffset * 7);
-    const blocks = P.blocksOn(sel);
-    const visible = blocks.filter((b) => !(S.plannerHideDone && b.done));
-    const label = weekOffset === 0 ? 'این هفته' : `${faDayMonth(ws)} تا ${faDayMonth(addDays(ws, 6))}`;
-    const empty = `<div class="empty well">${blocks.length ? 'همه بلوک‌های این روز انجام شده‌اند' : `برای ${sel === today() ? 'امروز' : faDayMonth(parseIso(sel))} بلوکی ثبت نشده`}</div>`;
-    return `
-      <section class="card clock-card">
-        <span class="row"><button class="icon-btn sm" data-act="goto" aria-label="رفتن به تاریخ">${icon('calendar_today')}</button>
-          <button class="toggle${S.plannerHideDone ? ' on' : ''}" data-act="hide-done" aria-label="پنهان کردن انجام‌شده‌ها" title="پنهان کردن انجام‌شده‌ها"><i></i></button></span>
-        <span class="clock" data-clock>${nowHM()}</span>
-        <span class="icon-btn sm static accent">${icon('schedule')}</span>
-      </section>
-      <section class="card-sm week">
-        <div class="row-between week-nav">
-          <button class="icon-btn xs" data-act="week" data-d="-1" aria-label="هفته قبل">${icon('chevron_right')}</button>
-          <button class="week-label" data-act="today">${label}</button>
-          <button class="icon-btn xs" data-act="week" data-d="1" aria-label="هفته بعد">${icon('chevron_left')}</button>
-        </div>
-        <div class="grid7">${weekStrip(ws)}</div>
-      </section>
-      ${timeline(blocks)}
-      <div class="stack-sm">${visible.map(blockCard).join('') || empty}</div>
-      <button class="btn-add" data-act="add">${icon('add_circle')}بلوک زمانی جدید</button>`;
-  },
-  act: {
-    day(el) { sel = el.dataset.date; refresh(); },
-    week(el) { weekOffset += +el.dataset.d; sel = iso(addDays(weekStart(new Date()), weekOffset * 7)); refresh(); },
-    today() { weekOffset = 0; sel = today(); refresh(); toast('برگشت به امروز'); },
-    goto: () => form({ title: 'رفتن به تاریخ', fields: [{ name: 'd', label: 'تاریخ', type: 'date', value: sel }], submit: 'برو', onSubmit(v) { if (!v.d) return false; gotoDate(v.d); } }),
-    'hide-done'() { S.plannerHideDone = !S.plannerHideDone; commit(); toast(S.plannerHideDone ? 'بلوک‌های انجام‌شده پنهان شدند' : 'همه بلوک‌ها نمایش داده می‌شوند'); },
-    add: () => blockSheet(null, sel),
-    track(el, ev) {
-      const r = el.getBoundingClientRect();
-      const ratio = (ev.clientX - r.left) / r.width;
-      const min = Math.round((P.DAY_START + ratio * P.DAY_SPAN) / 15) * 15;
-      blockSheet(null, sel, minToHM(Math.max(P.DAY_START, Math.min(23 * 60, min))));
-    },
-    seg: (el) => { const b = P.findBlock(el.dataset.id); if (b) blockMenu(b); },
-    check(el) { const b = P.findBlock(el.dataset.id); b.done = !b.done; commit(); if (b.done) toast(`«${b.title}» انجام شد`); },
-    notify: (el) => toggleBlockNotify(P.findBlock(el.dataset.id)),
-    edit: (el) => blockSheet(el.dataset.id),
-    menu: (el) => blockMenu(P.findBlock(el.dataset.id)),
-  },
-};
-
-
-__exports.default = __default;
 };
 __defs["src/pages/gym.js"] = function (__exports) {
 let __default;
-/* Gym: workout session, calories & meals, weight tracking and a weekly analysis. */
+/* Gym: today's workout, today's calories, current weight. */
 const { S, commit } = __r("src/core/store.js");
-const { iso, addDays, today, weekStart, WD_SHORT, WD_LONG } = __r("src/core/dates.js");
+const { today } = __r("src/core/dates.js");
 const { fa, faInt, esc } = __r("src/core/format.js");
 const { toast } = __r("src/ui/toast.js");
 const { icon, progress } = __r("src/ui/widgets.js");
 const G = __r("src/domain/gym.js");
-const { exerciseSheet, exerciseMenu, renameSession, toggleTimer, finishOrReopen, loadFromPlan, planSheet, mealSheet, goalsSheet, scanFood, addScanToday, editScan, weightSheet, nudgeWeight, weightHistory } = __r("src/features/gym-sheets.js");
+const { exerciseSheet, finishOrReopen, mealSheet, goalSheet, weightSheet, nudgeWeight } = __r("src/features/gym-sheets.js");
 
-const kcal = (n) => `${faInt(n)} kcal`;
-
-/* ---------- workout ---------- */
-function exerciseRow(e, i, s) {
+function exerciseRow(e) {
   const full = e.done >= e.sets;
-  const started = e.done > 0 && !full;
-  const next = s.exercises.findIndex((x) => x.done < x.sets);
-  const status = full ? '<span class="tag sage">تکمیل</span>' : started ? '<span class="tag accent">درحال انجام</span>' : `<span class="tag">${i === next ? 'بعدی' : 'در صف'}</span>`;
-  const sets = Array.from({ length: e.sets }, (_, k) => {
-    const on = k < e.done;
-    return `<button class="set-chip${on ? ' on' : ''}" data-act="set" data-id="${e.id}" data-k="${k}">ست ${fa(k + 1)}${on ? ' ✓' : ''}</button>`;
-  }).join('');
-  return `<div class="card-sm exercise${started ? ' active' : ''}">
-    <div class="row-between">
-      <span class="row grow">
-        <button class="check-square sm${full ? ' on' : started ? ' part' : ''}" data-act="all-sets" data-id="${e.id}" aria-label="انجام همه ست‌ها">${icon(full ? 'done' : started ? 'fitness_center' : 'hourglass_empty')}</button>
-        <button class="grow ex-text" data-act="ex-edit" data-id="${e.id}"><b class="truncate${full ? ' muted strike' : ''}">${esc(e.name)}</b><small class="muted">${fa(e.sets)} ست × ${fa(e.reps)} ${e.unit || 'تکرار'}${e.weight ? ` • ${esc(e.weight)}` : ''}</small></button>
-      </span>
-      <span class="row">${status}<button class="icon-btn xs flat" data-act="ex-menu" data-id="${e.id}" aria-label="گزینه‌ها">${icon('more_vert')}</button></span>
-    </div>
-    <div class="row wrap"><small class="muted">ست‌ها:</small>${sets}</div></div>`;
+  const sets = Array.from({ length: e.sets }, (_, k) => `<button class="set-chip${k < e.done ? ' on' : ''}" data-act="set" data-id="${e.id}" data-k="${k}">${fa(k + 1)}</button>`).join('');
+  return `<div class="card-sm exercise">
+    <button class="ex-text" data-act="ex-edit" data-id="${e.id}"><b class="truncate${full ? ' muted strike' : ''}">${esc(e.name)}</b><small class="muted">${fa(e.sets)} ست × ${fa(e.reps)}</small></button>
+    <div class="row wrap">${sets}</div></div>`;
 }
 
-function sessionCard() {
+function workout() {
   const s = G.session(today());
   const st = G.setsOf(s);
-  const plan = S.gym.weekly[new Date().getDay()];
-  const running = !!S.gym.timerStart;
   const has = s && s.exercises.length;
   return `<section class="card stack">
-    <div class="row-between">
-      <button class="card-title" data-act="rename"><b>${esc(s ? s.name : plan ? plan.name : 'جلسه امروز')}</b></button>
-      <button class="pill${running ? ' accent' : ''}" data-act="timer" title="${running ? 'توقف زمان‌سنج' : 'شروع زمان‌سنج'}">${icon(running ? 'pause_circle' : 'timer')}${fa(G.sessionMinutes(s))}${s && s.target ? `/${fa(s.target)}` : ''} دقیقه</button>
-    </div>
-    <div class="stack-xs"><div class="row-between small"><span class="muted">پیشرفت جلسه</span><b>${fa(st.done)}/${fa(st.tot)} ست</b></div>${progress(st.tot ? (st.done / st.tot) * 100 : 0, 'var(--accent)')}</div>
-    <div class="stack-sm">${has ? s.exercises.map((e, i) => exerciseRow(e, i, s)).join('') : `<div class="empty well">هنوز حرکتی برای امروز ثبت نشده${plan ? `<br><small>می‌توانید برنامه «${esc(plan.name)}» را بارگذاری کنید.</small>` : ''}</div>`}</div>
-    <button class="btn-add" data-act="ex-add">${icon('add_circle')}افزودن حرکت جدید</button>
-    ${has ? `<button class="btn-add sage" data-act="finish">${icon('flag')}${s.finished ? 'جلسه ثبت شد ✓ (بازگشایی)' : 'ثبت پایان جلسه'}</button>` : ''}
-    ${plan ? `<button class="btn-add muted" data-act="load-plan">${icon('event_repeat')}بارگذاری از برنامه هفتگی</button>` : ''}
+    <div class="row-between"><b class="t-head">تمرین امروز</b><span class="pill">${icon('local_fire_department', 'accent')}${fa(G.streak())} روز پیاپی</span></div>
+    ${has ? `<div class="stack-xs"><div class="row-between small"><span class="muted">${esc(s.name)}</span><b>${fa(st.done)}/${fa(st.tot)} ست</b></div>${progress(st.tot ? (st.done / st.tot) * 100 : 0, 'var(--accent)')}</div>` : ''}
+    <div class="stack-sm">${has ? s.exercises.map(exerciseRow).join('') : '<div class="empty">هنوز حرکتی ثبت نشده</div>'}</div>
+    <div class="grid2 gap-sm"><button class="btn-add" data-act="ex-add">${icon('add_circle')}حرکت</button>
+      ${has ? `<button class="btn-add sage" data-act="finish">${icon('flag')}${s.finished ? 'بازکردن' : 'پایان'}</button>` : '<span></span>'}</div>
   </section>`;
 }
 
-function weeklyCard() {
-  const ws = weekStart(new Date());
-  const rows = Array.from({ length: 7 }, (_, i) => {
-    const d = addDays(ws, i);
-    const wd = d.getDay();
-    const p = S.gym.weekly[wd];
-    const n = p ? G.parsePlan(p.items).length : 0;
-    const isToday = iso(d) === today();
-    return `<button class="card-sm plan-row${isToday ? ' today' : ''}" data-act="plan" data-wd="${wd}">
-      <span class="plan-day">${WD_SHORT[wd]}</span>
-      <span class="grow col"><b class="truncate">${esc(p && p.name ? p.name : 'استراحت')}</b><small class="muted">${WD_LONG[wd]}${n ? ` • ${fa(n)} حرکت` : ''}${isToday ? ' • امروز' : ''}</small></span>
-      ${icon('chevron_left', 'muted')}</button>`;
-  }).join('');
-  return `<section class="card stack"><div class="row-between"><b class="t-head">برنامه هفتگی</b><small class="muted">برای ویرایش روی هر روز بزنید</small></div><div class="stack-sm">${rows}</div></section>`;
-}
-
-/* ---------- calories ---------- */
-function calorieCards() {
-  const goals = S.gym.goals;
+function calories() {
+  const goal = S.gym.goals.kcal;
   const meals = G.mealsOn();
-  const tot = G.sumMeals(meals);
-  const left = goals.kcal - tot.kcal;
-  const macros = [['p', 'پروتئین'], ['c', 'کربوهیدرات'], ['f', 'چربی']].map(([k, label]) =>
-    `<button class="well macro" data-act="goals"><small class="muted">${label}</small><b>${fa(Math.round(tot[k]))}g</b><small class="muted">هدف ${fa(goals[k])}g</small></button>`).join('');
-  const mealRows = meals.map((m) => `<button class="well meal" data-act="meal" data-id="${m.id}"><span class="col"><b class="truncate">${esc(m.name)}</b><small class="muted">P ${fa(m.p || 0)}g • C ${fa(m.c || 0)}g • F ${fa(m.f || 0)}g</small></span><b class="accent">${kcal(m.kcal)}</b></button>`).join('');
-  const r = S.gym.lastScan;
-  const scanned = r ? `<div class="well scan-result">
-      ${r.photo ? `<img src="${r.photo}" alt="">` : `<span class="scan-thumb">${icon('restaurant')}</span>`}
-      <button class="grow col ex-text" data-act="scan-edit"><small class="tag sage">${r.pending ? `${icon('progress_activity', 'spin tiny')} در حال تحلیل با هوش مصنوعی…` : `${icon('auto_awesome', 'tiny')} ${r.added ? 'ثبت شده • برای اسکن جدید بزنید' : 'تشخیص هوشمند • برای اصلاح بزنید'}`}</small>
-        <b class="truncate">${esc(r.name)}</b><small class="muted">P <b>${fa(r.p)}g</b> • C <b>${fa(r.c)}g</b> • F <b>${fa(r.f)}g</b></small></button>
-      <b class="big">${fa(r.kcal)}</b></div>
-    <button class="btn-add" data-act="scan-add">${icon(r.added ? 'photo_camera' : 'add_task')}${r.added ? 'اسکن عکس جدید' : 'ثبت در کالری مصرفی امروز'}</button>` : '';
-  return `
-    <section class="card stack">
-      <div class="row-between"><span class="card-title">${icon('local_fire_department', 'accent')}<b>کالری مصرفی روزانه</b></span><button class="link accent" data-act="meal-new">ثبت دستی</button></div>
-      <div class="row-between"><span><b class="big">${faInt(tot.kcal)}</b> <small class="muted">/ ${kcal(goals.kcal)}</small></span><small class="${left < 0 ? 'neg' : 'muted'}">${left >= 0 ? `${kcal(left)} مانده` : `${kcal(-left)} بیشتر از هدف`}</small></div>
-      ${progress((tot.kcal / goals.kcal) * 100, tot.kcal > goals.kcal ? 'var(--danger)' : 'var(--accent)')}
-      <button class="link muted" data-act="goals">هدف روزانه: ${kcal(goals.kcal)} (تغییر)</button>
-      <div class="grid3 gap-sm">${macros}</div>
-      <div class="row-between"><b>وعده‌های امروز</b><small class="muted">${fa(meals.length)} وعده</small></div>
-      <div class="stack-xs">${mealRows || '<div class="empty">هنوز وعده‌ای ثبت نشده</div>'}</div>
-    </section>
-    <section class="card stack">
-      <div class="row"><span class="chip-icon accent">${icon('photo_camera')}</span><b>اسکن هوشمند غذا</b></div>
-      <button class="well drop" data-act="scan">${icon('add_a_photo')}<b>انتخاب یا گرفتن عکس</b><small class="muted">کالری و درشت‌مغذی‌ها تخمین زده می‌شوند</small></button>
-      ${scanned}
-    </section>`;
+  const total = G.sumMeals(meals).kcal;
+  const left = goal - total;
+  return `<section class="card stack">
+    <div class="row-between"><b class="t-head">کالری امروز</b><button class="link muted" data-act="goal">هدف ${faInt(goal)}</button></div>
+    <div class="row-between"><span><b class="big">${faInt(total)}</b> <small class="muted">kcal</small></span><small class="${left < 0 ? 'neg' : 'muted'}">${left >= 0 ? `${faInt(left)} مانده` : `${faInt(-left)} بیشتر از هدف`}</small></div>
+    ${progress((total / goal) * 100, total > goal ? 'var(--danger)' : 'var(--accent)')}
+    ${meals.map((m) => `<button class="well meal" data-act="meal" data-id="${m.id}"><b class="truncate">${esc(m.name)}</b><b class="accent">${faInt(m.kcal)}</b></button>`).join('')}
+    <button class="btn-add" data-act="meal-new">${icon('add_circle')}وعده</button>
+  </section>`;
 }
 
-/* ---------- weight ---------- */
-function weightCard() {
+function weight() {
   const lw = G.lastWeight();
-  const delta = (d) => G.weightChange(d);
-  const trend = (label, d) => `<div class="well metric col"><small class="muted">${label}</small><b class="row">${icon(d == null ? 'remove' : d <= 0 ? 'trending_down' : 'trending_up', d != null && d <= 0 ? 'sage-text' : 'accent')}${d == null ? '—' : `${d > 0 ? '+' : ''}${fa(d.toFixed(1))} kg`}</b></div>`;
-  const vals = [];
-  for (let i = 6; i >= 0; i--) vals.push(G.weightOn(iso(addDays(new Date(), -i))));
-  const known = vals.filter((v) => v != null);
-  const mn = Math.min(...known, 999);
-  const mx = Math.max(...known, 0);
-  const change = known.length > 1 ? known[known.length - 1] - known[0] : 0;
-  const status = known.length > 1 ? (Math.abs(change) < 0.3 ? 'پایدار و منظم' : change < 0 ? 'روند کاهشی' : 'روند افزایشی') : 'داده کافی نیست';
-  const bars = vals.map((v, i) => {
-    const d = addDays(new Date(), i - 6);
-    const h = v == null ? 4 : mx === mn ? 70 : 45 + ((v - mn) / (mx - mn)) * 45;
-    return `<span class="spark-col${i === 6 ? ' active' : ''}" title="${v == null ? '' : `${fa(v)} kg`}"><i style="height:${h}%"></i><small>${WD_SHORT[d.getDay()]}</small></span>`;
-  }).join('');
+  const d = G.weightChange(30);
   return `<section class="card stack">
-    <div class="row-between"><span class="card-title">${icon('monitor_weight', 'accent')}<b>ثبت وزن</b></span><button class="link accent" data-act="weight-new">ثبت جدید</button></div>
+    <div class="row-between"><b class="t-head">وزن</b>${d == null ? '' : `<small class="${d <= 0 ? 'pos' : 'neg'}">${d > 0 ? '+' : ''}${fa(d.toFixed(1))} kg در ۳۰ روز</small>`}</div>
     <div class="row-between weight-now">
       <button class="icon-btn" data-act="nudge" data-d="-0.1" aria-label="کم کردن">${icon('remove')}</button>
-      <button class="col center" data-act="weight-history"><b class="hero">${lw ? fa(lw.kg.toFixed(1)) : '—'}</b><small class="muted">کیلوگرم (برای سابقه بزنید)</small></button>
+      <button class="col center" data-act="weight"><b class="hero">${lw ? fa(lw.kg.toFixed(1)) : '—'}</b><small class="muted">کیلوگرم</small></button>
       <button class="icon-btn" data-act="nudge" data-d="0.1" aria-label="زیاد کردن">${icon('add')}</button>
     </div>
-    <div class="grid2 gap-sm">${trend('تغییر این هفته', delta(7))}${trend('تغییر ۳۰ روز گذشته', delta(30))}</div>
-    <button class="well stack-sm" data-act="weight-history"><div class="row-between small"><b>روند ۷ روز گذشته</b><span class="tag sage">${status}</span></div><div class="spark">${bars}</div></button>
-  </section>`;
-}
-
-/* ---------- analysis ---------- */
-function analysisCard() {
-  const a = G.weekAnalysis();
-  const top = Math.max(1, ...a.days.map((d) => d.v));
-  const wd = G.weightChange(30);
-  const tile = (label, value, cls = '') => `<div class="well metric col"><small class="muted">${label}</small><b class="${cls}">${value}</b></div>`;
-  const bars = a.days.map((x, i) => `<span class="spark-col${i === 6 ? ' active' : ''}"><small>${x.v ? fa(x.v) : ''}</small><i style="height:${Math.max(4, Math.round((x.v / top) * 70))}%"></i><small>${WD_SHORT[x.d.getDay()]}</small></span>`).join('');
-  return `<section class="card stack">
-    <div class="row"><span class="chip-icon accent">${icon('insights')}</span><b class="t-head">آنالیز ۷ روز اخیر</b></div>
-    <div class="grid2 gap-sm">
-      ${tile('جلسات تمرین', `${fa(a.sessions)} از ۷ روز`)}${tile('ست‌های انجام‌شده', `${fa(a.totalSets)} ست`)}
-      ${tile('میانگین کالری روزانه', `${a.avgKcal == null ? '—' : fa(a.avgKcal.toLocaleString('en-US'))} <small class="muted">/ ${fa(S.gym.goals.kcal)}</small>`)}
-      ${tile('تغییر وزن ۳۰ روز', wd == null ? '—' : `${wd > 0 ? '+' : ''}${fa(wd.toFixed(1))} kg`, wd != null && wd <= 0 ? 'pos' : 'neg')}
-    </div>
-    <div class="well stack-sm"><small class="muted">ست‌های انجام‌شده در هر روز</small><div class="spark tall">${bars}</div></div>
   </section>`;
 }
 
 __default = {
   id: 'gym',
   title: 'ورزش',
-  tick: 30000,
-  render() {
-    const tab = S.gym.tab || 'workout';
-    const dow = new Date().getDay();
-    const plan = S.gym.weekly[dow];
-    const tabs = G.TABS.map((t) => `<button class="tab${t.key === tab ? ' on' : ''}" data-act="tab" data-tab="${t.key}" aria-label="${t.label}" title="${t.label}">${icon(t.icon)}</button>`).join('');
-    const segment = tab === 'workout' ? `<div class="seg-control"><button class="${S.gym.view === 'daily' ? 'on' : ''}" data-act="view" data-view="daily">امروز</button><button class="${S.gym.view === 'weekly' ? 'on' : ''}" data-act="view" data-view="weekly">برنامه هفتگی</button></div>` : '';
-    const body = tab === 'workout' ? (S.gym.view === 'weekly' ? weeklyCard() : sessionCard()) : tab === 'calorie' ? calorieCards() : tab === 'weight' ? weightCard() : analysisCard();
-    return `
-      <section class="gym-head row-between"><span class="col"><b class="t-head">برنامه و باشگاه</b><small class="muted">${WD_LONG[dow]} • ${plan ? esc(plan.name) : 'روز استراحت'}</small></span>
-        <span class="pill">${icon('local_fire_department', 'accent')}${fa(G.streak())} روز پیاپی</span></section>
-      <nav class="tabs card-sm">${tabs}</nav>
-      ${segment}${body}`;
-  },
+  render: () => `${workout()}${calories()}${weight()}`,
   act: {
-    tab(el) { S.gym.tab = el.dataset.tab; commit(); window.scrollTo({ top: 0, behavior: 'smooth' }); },
-    view(el) { S.gym.view = el.dataset.view; commit(); },
-    rename: renameSession,
-    timer: toggleTimer,
     'ex-add': () => exerciseSheet(),
     'ex-edit': (el) => exerciseSheet(el.dataset.id),
-    'ex-menu'(el) { const e = G.session(today()).exercises.find((x) => x.id === el.dataset.id); if (e) exerciseMenu(e); },
     set(el) {
       const e = G.session(today()).exercises.find((x) => x.id === el.dataset.id);
       const k = +el.dataset.k;
       e.done = k < e.done ? k : k + 1;
-      if (G.autoStartTimer()) toast('زمان‌سنج تمرین خودکار شروع شد');
+      G.autoStartTimer();
       commit();
       if (e.done >= e.sets) toast(`«${e.name}» کامل شد`);
     },
-    'all-sets'(el) {
-      const e = G.session(today()).exercises.find((x) => x.id === el.dataset.id);
-      e.done = e.done >= e.sets ? 0 : e.sets;
-      G.autoStartTimer();
-      commit();
-    },
-    finish: () => finishOrReopen(),
-    'load-plan': loadFromPlan,
-    plan: (el) => planSheet(+el.dataset.wd),
-    goals: goalsSheet,
-    'meal-new': () => mealSheet(),
+    finish: finishOrReopen,
     meal(el) { const m = G.mealsOn().find((x) => x.id === el.dataset.id); if (m) mealSheet(m); },
-    scan: scanFood,
-    'scan-add': addScanToday,
-    'scan-edit': editScan,
-    'weight-new': weightSheet,
-    'weight-history': weightHistory,
+    'meal-new': () => mealSheet(),
+    goal: goalSheet,
+    weight: weightSheet,
     nudge: (el) => nudgeWeight(+el.dataset.d),
   },
-};
-
-
-__exports.default = __default;
-};
-__defs["src/pages/wallet-hub.js"] = function (__exports) {
-/* The "accounting" accordion on the wallet page: dues, installments, bills, accounts, ledger, chart, budget, quick add. */
-const { S, commit, refresh } = __r("src/core/store.js");
-const { iso, addDays, parseIso, today, WD_SHORT } = __r("src/core/dates.js");
-const { fa, esc, money } = __r("src/core/format.js");
-const { faDayMonth, monthKey, monthLabel, monthYear, shiftMonthKey, currentMonthKey, relDay } = __r("src/core/calendar.js");
-const { sum } = __r("src/core/util.js");
-const { toast } = __r("src/ui/toast.js");
-const { icon, stat, badge, emptyNote, addButton, ring, barChart, progress } = __r("src/ui/widgets.js");
-const { group } = __r("src/ui/hub.js");
-const fin = __r("src/domain/finance.js");
-const { payDialog, payLoan, payBill, loanSheet, loanMenu, loanSchedule, billSheet, billMenu, billHistory, accountSheet, accountMenu, transferSheet, txSheet, newTxMenu, exportCsv } = __r("src/features/finance-sheets.js");
-
-const M = (v) => money(v);
-const ledger = { month: currentMonthKey(), type: 'all', acc: 'all', q: '', limit: 8, showFilter: false };
-const chart = { range: '7d', picked: null };
-
-const SECTION_DEFS = [
-  { key: 'dues', title: 'سررسیدها', icon: 'notifications_active', color: '#DE8353' },
-  { key: 'loans', title: 'اقساط و وام‌ها', icon: 'event_repeat', color: '#865228' },
-  { key: 'bills', title: 'قبوض و پرداخت‌های دوره‌ای', icon: 'receipt_long', color: '#5d7a8c' },
-  { key: 'accounts', title: 'حساب‌ها و کارت‌ها', icon: 'account_balance', color: '#4d7c62' },
-  { key: 'ledger', title: 'دفتر تراکنش‌ها', icon: 'menu_book', color: '#6b6f9c' },
-  { key: 'chart', title: 'نمودار هزینه‌ها', icon: 'bar_chart', color: '#8EAA97' },
-  { key: 'budget', title: 'بودجه ماهانه', icon: 'speed', color: '#c08a3e' },
-  { key: 'quick', title: 'ثبت سریع هزینه', icon: 'bolt', color: '#DE8353' },
-];
-
-const money2 = (v) => Math.round(v * 100) / 100;
-const subOn = (id, def = false) => (S.ui.sub[id] === undefined ? def : S.ui.sub[id]);
-const sumAmount = (l) => sum(l, (d) => d.amount);
-
-/* ---------- dues ---------- */
-function dueLine(d) {
-  const over = d.due < today();
-  const ref = d.kind === 'loan' ? `data-n="${d.n}"` : `data-due="${d.due}"`;
-  return `<div class="due-row card-sm">
-    ${icon(d.icon, over ? 'accent' : 'muted')}
-    <span class="grow col"><b class="truncate">${esc(d.title)}</b><small class="${over ? 'neg bold' : 'muted'} truncate">${relDay(d.due)} • ${esc(d.sub)}</small></span>
-    <b class="ltr">${M(d.amount)}</b>
-    <button class="mini-btn accent" data-act="pay" data-kind="${d.kind}" data-id="${d.ref.id}" ${ref}>پرداخت</button></div>`;
-}
-
-function duesBody(b) {
-  const empty = emptyNote('موردی نیست');
-  let html = `<div class="grid2 gap-sm">${stat('پرداختنی ۳۰ روز', M(sumAmount(b.week) + sumAmount(b.month)))}${stat('مانده بدهی اقساط', M(fin.loansRemaining()), 'neg')}</div>`;
-  if (b.over.length) html += group({ id: 'g-over', title: 'معوق', count: b.over.length, red: true, def: true, inner: b.over.map(dueLine).join(''), extra: M(sumAmount(b.over)) });
-  html += group({ id: 'g-week', title: 'تا ۷ روز آینده', count: b.week.length, def: true, inner: b.week.map(dueLine).join('') || empty, extra: M(sumAmount(b.week)) });
-  html += group({ id: 'g-month', title: 'تا ۳۰ روز آینده', count: b.month.length, inner: b.month.map(dueLine).join('') || empty, extra: M(sumAmount(b.month)) });
-  if (b.later.length) html += group({ id: 'g-later', title: 'بعدتر (تا ۶۰ روز)', count: b.later.length, inner: b.later.map(dueLine).join(''), extra: M(sumAmount(b.later)) });
-  return html;
-}
-
-/* ---------- loans ---------- */
-function loansBody() {
-  const t0 = today();
-  const thisMonth = sum(S.loans, (l) => { const n = fin.loanNextN(l); return n && monthKey(fin.loanDue(l, n)) <= currentMonthKey() ? l.amount : 0; });
-  const cards = S.loans.map((l) => {
-    const id = `l-${l.id}`;
-    const on = subOn(id);
-    const paid = fin.loanPaidCount(l);
-    const nx = fin.loanNextN(l);
-    const pct = Math.round((paid / l.count) * 100);
-    const nd = nx && fin.loanDue(l, nx);
-    const over = nd && nd < t0;
-    const head = `<button class="group-head" data-act="sub" data-id="${id}" data-def="0">
-      ${ring(pct, `${fa(pct)}٪`, 38)}
-      <span class="grow col"><b class="truncate">${esc(l.title)}</b><small class="${over ? 'neg bold' : 'muted'} truncate">${nx ? `قسط ${fa(nx)} • ${relDay(nd)}` : 'تسویه شد ✓'}</small></span>
-      <b class="ltr">${M(fin.loanRemaining(l))}</b><span class="chev material-symbols-outlined${on ? ' open' : ''}">chevron_left</span></button>`;
-    const detail = on ? `<div class="group-body">
-      <div class="grid2 gap-sm">${stat('هر قسط', M(l.amount))}${stat('پرداخت‌شده', `${fa(paid)} از ${fa(l.count)}`)}${stat('قسط بعدی', nx ? faDayMonth(parseIso(nd)) : '—', over ? 'neg' : '')}${stat('وام‌دهنده', esc(l.lender || '—'))}</div>
-      <div class="grid3 gap-sm">${nx ? `<button class="mini-btn accent" data-act="pay-loan" data-id="${l.id}">پرداخت قسط</button>` : '<span></span>'}<button class="mini-btn" data-act="loan-schedule" data-id="${l.id}">جدول اقساط</button><button class="mini-btn muted" data-act="loan-menu" data-id="${l.id}">بیشتر…</button></div></div>` : '';
-    return `<div class="group">${head}${detail}</div>`;
-  }).join('') || emptyNote('هنوز قسطی ثبت نشده');
-  return `<div class="grid2 gap-sm">${stat('مانده کل بدهی', M(fin.loansRemaining()), 'neg')}${stat('قسط‌های این ماه', M(thisMonth))}</div>${cards}${addButton('ثبت قسط / وام جدید', 'loan-new')}`;
-}
-
-/* ---------- bills ---------- */
-function billsBody() {
-  const t0 = today();
-  const active = S.bills.filter((b) => !b.paused);
-  const monthly = sum(active, (b) => fin.billAvg(b) / (b.every || 1));
-  const paidThisMonth = sum(fin.paidObligationsThisMonth().filter((t) => t.billId), (t) => t.amount);
-  const cards = S.bills.map((b) => {
-    const id = `b-${b.id}`;
-    const on = subOn(id);
-    const k = fin.billKind(b);
-    const nx = fin.billNext(b);
-    const over = nx && nx.due < t0 && !b.paused;
-    const recent = Object.keys(b.paid).sort().reverse().slice(0, 4);
-    const head = `<button class="group-head${b.paused ? ' faded' : ''}" data-act="sub" data-id="${id}" data-def="0">
-      ${icon(k.icon, over ? 'accent' : 'muted')}
-      <span class="grow col"><b class="truncate">${esc(b.title)}</b><small class="${over ? 'neg bold' : 'muted'} truncate">${b.paused ? 'متوقف' : `${over ? 'معوق • ' : ''}${relDay(nx.due)}`} • ${fin.EVERY[b.every || 1]}</small></span>
-      <b class="ltr">${M(fin.billAvg(b))}</b><span class="chev material-symbols-outlined${on ? ' open' : ''}">chevron_left</span></button>`;
-    const detail = on ? `<div class="group-body">
-      ${recent.length ? `<small class="muted bold">آخرین پرداخت‌ها</small>${recent.map((d) => `<div class="row-between small"><span>${monthYear(d)}</span><b class="ltr">${M(b.paid[d].amount)}</b></div>`).join('')}` : '<small class="muted">هنوز پرداختی ثبت نشده</small>'}
-      <div class="grid3 gap-sm">${b.paused ? '<span></span>' : `<button class="mini-btn accent" data-act="pay-bill" data-id="${b.id}">پرداخت</button>`}<button class="mini-btn" data-act="bill-history" data-id="${b.id}">سابقه</button><button class="mini-btn muted" data-act="bill-menu" data-id="${b.id}">بیشتر…</button></div></div>` : '';
-    return `<div class="group">${head}${detail}</div>`;
-  }).join('') || emptyNote('هنوز قبضی ثبت نشده');
-  return `<div class="grid2 gap-sm">${stat('میانگین ماهانه', M(monthly))}${stat('پرداخت‌شده این ماه', M(paidThisMonth), 'pos')}</div>${cards}${addButton('قبض یا پرداخت دوره‌ای جدید', 'bill-new')}`;
-}
-
-/* ---------- accounts ---------- */
-function accountsBody() {
-  const net = fin.balance() - fin.loansRemaining();
-  const rows = S.accounts.map((a) => {
-    const t = fin.accType(a);
-    const bal = fin.accBalance(a.id);
-    return `<button class="group account-row" data-act="account" data-id="${a.id}">${icon(t.icon, 'muted')}<span class="grow col"><b class="truncate">${esc(a.name)}</b><small class="muted">${t.label}</small></span><b class="ltr${bal < 0 ? ' neg' : ''}">${M(bal)}</b>${icon('more_vert', 'muted')}</button>`;
-  }).join('');
-  return `<div class="grid2 gap-sm">${stat('مجموع موجودی', M(fin.balance()))}${stat('دارایی خالص', M(net), net >= 0 ? 'pos' : 'neg')}</div>${rows}
-    <div class="grid2 gap-sm"><button class="btn-add" data-act="transfer">${icon('swap_horiz')}انتقال</button>${addButton('حساب جدید', 'account-new')}</div>`;
-}
-
-/* ---------- ledger ---------- */
-const ledgerList = () => fin.ledgerRows(ledger);
-
-function ledgerBody() {
-  const list = ledgerList();
-  const inc = sum(list.filter((t) => t.type === 'income'), (t) => t.amount);
-  const exp = sum(list.filter((t) => t.type === 'expense'), (t) => t.amount);
-  const filtered = ledger.type !== 'all' || ledger.acc !== 'all' || !!ledger.q;
-  const open = ledger.showFilter || filtered;
-  const typeChips = [['all', 'همه'], ['expense', 'هزینه'], ['income', 'درآمد'], ['transfer', 'انتقال']]
-    .map(([k, label]) => `<button class="chip${ledger.type === k ? ' on' : ''}" data-act="l-type" data-v="${k}">${label}</button>`).join('');
-  const accSelect = S.accounts.length > 1 ? `<select class="chip" data-change="l-acc"><option value="all">همه حساب‌ها</option>${S.accounts.map((a) => `<option value="${a.id}"${ledger.acc === a.id ? ' selected' : ''}>${esc(a.name)}</option>`).join('')}</select>` : '';
-  const rows = list.slice(0, ledger.limit).map((t) => {
-    const c = fin.catOf(t.category);
-    const sign = t.type === 'income' ? '+' : t.type === 'expense' ? '−' : '⇄ ';
-    const cls = t.type === 'income' ? 'pos' : t.type === 'expense' ? 'neg' : 'muted';
-    return `<button class="group tx-row" data-act="l-tx" data-id="${t.id}">${icon(t.type === 'transfer' ? 'swap_horiz' : c.icon, 'muted')}<span class="grow col"><b class="truncate">${esc(t.note || c.label)}</b><small class="muted truncate">${esc(fin.txLabel(t))} • ${faDayMonth(parseIso(t.date))}</small></span><b class="ltr ${cls}">${sign}${M(t.amount)}</b></button>`;
-  }).join('') || '<div class="empty">تراکنشی با این فیلتر نیست</div>';
-  return `
-    <div class="row-between"><button class="icon-btn xs" data-act="l-month" data-d="-1" aria-label="ماه قبل">${icon('chevron_right')}</button><b>${monthLabel(ledger.month)}</b><button class="icon-btn xs" data-act="l-month" data-d="1" aria-label="ماه بعد">${icon('chevron_left')}</button></div>
-    <div class="grid3 gap-sm">${stat('درآمد', M(inc), 'pos')}${stat('هزینه', M(exp), 'neg')}${stat('خالص', M(inc - exp))}</div>
-    <div class="group"><button class="group-head" data-act="l-filter"><span class="group-title">${icon('filter_list')}فیلتر و جستجو${filtered ? ' <span class="accent">(فعال)</span>' : ''}</span><span class="chev material-symbols-outlined${open ? ' open' : ''}">chevron_left</span></button>
-      ${open ? `<div class="group-body"><div class="chips">${typeChips}${accSelect}</div><input class="input" data-key="lq" data-input="l-q" placeholder="جستجو در توضیحات…" value="${esc(ledger.q)}"></div>` : ''}</div>
-    ${rows}
-    ${list.length > ledger.limit ? `<button class="link accent center" data-act="l-more">نمایش ${fa(Math.min(10, list.length - ledger.limit))} مورد دیگر (از ${fa(list.length - ledger.limit)})</button>` : ''}
-    <div class="grid2 gap-sm">${addButton('ثبت جدید', 'new-tx')}<button class="btn-add" data-act="csv">${icon('download')}خروجی اکسل</button></div>`;
-}
-
-/* ---------- chart / budget / quick ---------- */
-function chartBody() {
-  const now = new Date();
-  const cols = [];
-  if (chart.range === '7d') {
-    for (let i = 6; i >= 0; i--) { const d = addDays(now, -i); cols.push({ v: fin.daySpend(iso(d)), label: WD_SHORT[d.getDay()], text: faDayMonth(d) }); }
-  } else {
-    for (let g = 5; g >= 0; g--) {
-      let v = 0;
-      for (let k = 0; k < 5; k++) v += fin.daySpend(iso(addDays(now, -(g * 5 + k))));
-      cols.push({ v, label: fa(5 - g), text: `${faDayMonth(addDays(now, -(g * 5 + 4)))} تا ${faDayMonth(addDays(now, -g * 5))}` });
-    }
-  }
-  const picked = chart.picked != null && cols[chart.picked] ? chart.picked : cols.length - 1;
-  cols.forEach((c, i) => { c.active = i === picked; });
-  return `<div class="row-between"><span class="small muted">${chart.range === '7d' ? 'هزینه ۷ روز اخیر' : 'هزینه ۳۰ روز اخیر (هر ستون ۵ روز)'}</span>
-      <span class="seg-control sm"><button class="${chart.range === '7d' ? 'on' : ''}" data-act="c-range" data-v="7d" aria-label="۷ روز">${icon('bar_chart')}</button><button class="${chart.range === '30d' ? 'on' : ''}" data-act="c-range" data-v="30d" aria-label="۳۰ روز">${icon('show_chart')}</button></span></div>
-    <div class="well chart-well">${barChart(cols, { height: 130, act: 'c-bar' })}</div>
-    <p class="center bold small">${cols[picked].text}: <span class="accent">${M(cols[picked].v)}</span></p>`;
-}
-
-function budgetBody() {
-  const exp = fin.monthSum('expense');
-  const used = S.wallet.budget ? (exp / S.wallet.budget) * 100 : 0;
-  return `<button class="well stack-sm budget" data-act="budget">
-    <div class="row-between"><b>بودجه ماه: ${M(exp)} از ${M(S.wallet.budget)}</b><b class="${used >= 100 ? 'neg' : 'accent'}">${fa(Math.round(used))}%</b></div>
-    ${progress(used, used >= 100 ? 'var(--danger)' : used >= 80 ? '#c08a3e' : 'var(--sage)')}
-    <small class="muted">برای تغییر سقف بودجه و هشدارها بزنید</small></button>`;
-}
-
-function quickBody() {
-  const set = fin.QUICK_SETS[S.wallet.quickSet] || fin.QUICK_SETS[0];
-  const exp = fin.monthSum('expense');
-  const by = fin.expenseByCategory();
-  const cards = set.map((key) => {
-    const c = fin.catOf(key);
-    const spent = by[key] || 0;
-    return `<button class="well quick-card" data-act="quick" data-cat="${key}">${icon(c.icon)}<span class="progress"><i style="width:${exp ? Math.round((spent / exp) * 100) : 0}%"></i></span><small class="muted">${c.label} • ${M(spent)}</small></button>`;
-  }).join('');
-  return `<div class="grid3 gap-sm">${cards}</div><button class="link muted center" data-act="quick-shuffle">${icon('shuffle', 'tiny')} تغییر دسته‌ها</button>`;
-}
-
-/* ---------- assembly ---------- */
-function hubSections() {
-  const t0 = today();
-  const b = fin.dueBuckets();
-  const activeBills = S.bills.filter((x) => !x.paused);
-  const openLoans = S.loans.filter((l) => fin.loanNextN(l));
-  const exp = fin.monthSum('expense');
-  const inc = fin.monthSum('income');
-  const usedPct = S.wallet.budget ? Math.round((exp / S.wallet.budget) * 100) : 0;
-  const quick = (fin.QUICK_SETS[S.wallet.quickSet] || fin.QUICK_SETS[0]).map((k) => fin.catOf(k).label).join('، ');
-  const sums = {
-    dues: b.over.length ? `${fa(b.over.length)} معوق • ${fa(b.week.length)} مورد تا ۷ روز آینده` : b.week.length ? `${fa(b.week.length)} پرداخت تا ۷ روز آینده • ${M(sumAmount(b.week))}` : 'هفته آینده سررسیدی ندارید ✓',
-    loans: openLoans.length ? `${fa(openLoans.length)} وام فعال • مانده ${M(fin.loansRemaining())}` : 'وام یا قسط فعالی ندارید',
-    bills: activeBills.length ? `${fa(activeBills.length)} قبض فعال • حدود ${M(sum(activeBills, (x) => fin.billAvg(x) / (x.every || 1)))} در ماه` : 'قبضی ثبت نشده',
-    accounts: `${fa(S.accounts.length)} حساب • موجودی ${M(fin.balance())}`,
-    ledger: `${monthLabel(currentMonthKey())}: +${M(inc)} / −${M(exp)}`,
-    chart: `هزینه امروز ${M(fin.daySpend(t0))} • این ماه ${M(exp)}`,
-    budget: `${fa(usedPct)}٪ مصرف شده • باقی ${M(Math.max(0, S.wallet.budget - exp))}`,
-    quick,
-  };
-  const badges = { dues: badge(b.over.length || b.week.length, !!b.over.length), budget: usedPct >= 80 ? badge(`${usedPct}٪`, true) : '' };
-  const bodies = { dues: () => duesBody(b), loans: loansBody, bills: billsBody, accounts: accountsBody, ledger: ledgerBody, chart: chartBody, budget: budgetBody, quick: quickBody };
-  return SECTION_DEFS.map((s) => ({ ...s, sum: sums[s.key], badge: badges[s.key] || '', body: bodies[s.key] }));
-}
-
-const findLoan = (id) => S.loans.find((x) => x.id === id);
-const findBill = (id) => S.bills.find((x) => x.id === id);
-
-const hubAct = {
-  pay(el) {
-    const { kind, id } = el.dataset;
-    if (kind === 'loan') payLoan(findLoan(id), +el.dataset.n);
-    else { const b = findBill(id); payDialog({ kind: 'bill', ref: b, due: el.dataset.due, amount: money2(fin.billAvg(b)) }); }
-  },
-  'pay-loan': (el) => { const l = findLoan(el.dataset.id); payLoan(l, fin.loanNextN(l)); },
-  'loan-schedule': (el) => loanSchedule(findLoan(el.dataset.id)),
-  'loan-menu': (el) => loanMenu(findLoan(el.dataset.id)),
-  'loan-new': () => loanSheet(),
-  'pay-bill': (el) => payBill(findBill(el.dataset.id)),
-  'bill-history': (el) => billHistory(findBill(el.dataset.id)),
-  'bill-menu': (el) => billMenu(findBill(el.dataset.id)),
-  'bill-new': () => billSheet(),
-  account: (el) => accountMenu(fin.findAccount(el.dataset.id)),
-  'account-new': () => accountSheet(),
-  transfer: () => transferSheet(),
-  'l-tx': (el) => txSheet(null, {}, el.dataset.id),
-  'l-month'(el) { ledger.month = shiftMonthKey(ledger.month, +el.dataset.d); ledger.limit = 8; refresh(); },
-  'l-type'(el) { ledger.type = el.dataset.v; refresh(); },
-  'l-filter'() { ledger.showFilter = !ledger.showFilter; refresh(); },
-  'l-more'() { ledger.limit += 10; refresh(); },
-  'new-tx': newTxMenu,
-  csv: () => exportCsv(ledgerList(), ledger.month),
-  'c-range'(el) { chart.range = el.dataset.v; chart.picked = null; refresh(); },
-  'c-bar'(el) { chart.picked = +el.dataset.i; refresh(); },
-  quick: (el) => txSheet('expense', { category: el.dataset.cat, title: `هزینه ${fin.catOf(el.dataset.cat).label}` }),
-  'quick-shuffle'() { S.wallet.quickSet = (S.wallet.quickSet + 1) % fin.QUICK_SETS.length; commit(); toast('دسته‌های سریع عوض شد'); },
-};
-
-const hubChange = {
-  'l-acc'(el) { ledger.acc = el.value; refresh(); },
-};
-
-let searchTimer;
-const hubInput = {
-  'l-q'(el) { clearTimeout(searchTimer); searchTimer = setTimeout(() => { ledger.q = el.value.trim(); refresh(); }, 400); },
-};
-
-
-__exports.SECTION_DEFS = SECTION_DEFS;
-__exports.hubSections = hubSections;
-__exports.hubAct = hubAct;
-__exports.hubChange = hubChange;
-__exports.hubInput = hubInput;
-};
-__defs["src/pages/wallet.js"] = function (__exports) {
-let __default;
-/* Wallet: balance hero, quick actions, recent transactions, and the accounting hub. */
-const { S, commit } = __r("src/core/store.js");
-const { today, parseIso, nowHM } = __r("src/core/dates.js");
-const { fa, esc, money } = __r("src/core/format.js");
-const { faDayMonth, monthKey, currentMonthKey, prevMonthKey } = __r("src/core/calendar.js");
-const { go } = __r("src/router.js");
-const { toast } = __r("src/ui/toast.js");
-const { icon } = __r("src/ui/widgets.js");
-const { hubHtml, hubActions } = __r("src/ui/hub.js");
-const fin = __r("src/domain/finance.js");
-const { txSheet, newTxMenu, historySheet, reportSheet, scanReceipt } = __r("src/features/finance-sheets.js");
-const { hubSections, hubAct, hubChange, hubInput } = __r("src/pages/wallet-hub.js");
-
-function hero() {
-  const bal = fin.balance();
-  const hide = S.privacy;
-  const exp = fin.monthSum('expense');
-  const prev = fin.monthSum('expense', prevMonthKey());
-  const diff = prev ? Math.round(((exp - prev) / prev) * 100) : null;
-  const cur = S.profile.currency === 'تومان' ? 'ت' : S.profile.currency;
-  const amount = hide ? '••••••' : `${bal < 0 ? '-' : ''}${Math.abs(bal).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-  return `<section class="card hero stack">
-    <div class="row-between">
-      <span class="row"><button class="icon-btn sm sage" data-act="all-tx" aria-label="همه تراکنش‌ها">${icon('account_balance_wallet', 'fill')}</button><span class="dots"><i class="dot sage"></i><i class="dot lav"></i><i class="dot accent"></i></span></span>
-      <button class="icon-btn sm" data-act="privacy" aria-label="نمایش یا پنهان کردن مبالغ">${icon(hide ? 'visibility_off' : 'visibility')}</button>
-    </div>
-    <div class="row-between">
-      <span class="row"><b class="hero-amount ltr">${amount}</b><b class="muted t-head">${esc(cur)}</b></span>
-      <button class="pill well" data-act="report" title="هزینه نسبت به ماه قبل">${icon(diff != null && diff > 0 ? 'trending_up' : 'trending_down', diff != null && diff > 0 ? 'accent' : 'sage-text')}<b>${diff == null ? 'گزارش' : `${fa(Math.abs(diff))}٪`}</b></button>
-    </div>
-    <div class="grid2 gap-sm">
-      <button class="well pod" data-act="pod" data-type="income">${icon('arrow_downward', 'sage-text')}<span class="col"><small class="muted">درآمد این ماه</small><b class="pos">${money(fin.monthSum('income'), hide)}</b></span></button>
-      <button class="well pod" data-act="pod" data-type="expense">${icon('arrow_upward', 'accent')}<span class="col"><small class="muted">هزینه این ماه</small><b class="neg">${money(exp, hide)}</b></span></button>
-    </div>
-  </section>`;
-}
-
-function actions() {
-  const tile = (act, ic, label, cls) => `<button class="card-sm action-tile" data-act="${act}" aria-label="${label}"><span class="action-icon ${cls}">${icon(ic)}</span><small class="muted">${label}</small></button>`;
-  return `<section class="grid4 gap-sm">${tile('send', 'send', 'پرداخت', 'sage-text')}${tile('receive', 'call_received', 'دریافت', 'accent')}${tile('scan', 'qr_code_scanner', 'اسکن', 'lav')}${tile('add', 'add', 'ثبت', 'solid')}</section>`;
-}
-
-function recent() {
-  const rows = fin.sortedTx().slice(0, 5).map((t) => {
-    const c = fin.catOf(t.category);
-    const cls = t.type === 'income' ? 'pos' : t.type === 'transfer' ? 'muted' : 'neg';
-    const sign = t.type === 'income' ? '+' : t.type === 'transfer' ? '⇄ ' : '−';
-    return `<button class="well tx-row" data-act="tx" data-id="${t.id}"><span class="item-icon">${icon(t.type === 'transfer' ? 'swap_horiz' : c.icon)}</span>
-      <span class="grow col"><b class="truncate">${esc(t.note || c.label)}</b><small class="muted">${esc(fin.txLabel(t))} • ${faDayMonth(parseIso(t.date))}</small></span><b class="ltr ${cls}">${sign}${money(t.amount)}</b></button>`;
-  }).join('') || '<div class="empty">تراکنشی ثبت نشده — از دکمه + شروع کنید</div>';
-  return `<section class="card stack-sm"><div class="row-between"><b class="t-head">تراکنش‌های اخیر</b><button class="link accent" data-act="all-tx">همه</button></div>${rows}</section>`;
-}
-
-__default = {
-  id: 'wallet',
-  title: 'کیف پول',
-  render() {
-    return `
-      <section class="card clock-card">
-        <button class="icon-btn sm" data-act="today-tx" aria-label="تراکنش‌های امروز">${icon('calendar_today', 'sage-text')}</button>
-        <span class="row"><span class="clock sm" data-clock>${nowHM()}</span><button class="icon-btn xs accent" data-act="planner" aria-label="برنامه‌ریزی">${icon('schedule')}</button></span>
-        <button class="toggle${S.wallet.alerts ? ' on' : ''}" data-act="alerts" title="هشدار بودجه" aria-label="هشدار بودجه"><i></i></button>
-      </section>
-      ${hero()}${actions()}${recent()}
-      <div class="row-between section-head"><span class="row">${icon('account_balance', 'accent')}<b class="t-head">حسابداری</b></span><button class="mini-btn muted row" data-act="report">${icon('monitoring')}گزارش کامل</button></div>
-      <div class="stack">${hubHtml('wallet', hubSections())}</div>`;
-  },
-  act: {
-    ...hubActions,
-    ...hubAct,
-    privacy() { S.privacy = !S.privacy; commit(); toast(S.privacy ? 'مبالغ پنهان شد' : 'مبالغ نمایش داده شد'); },
-    alerts() { S.wallet.alerts = !S.wallet.alerts; commit(); toast(S.wallet.alerts ? 'هشدار بودجه روشن شد' : 'هشدار بودجه خاموش شد'); },
-    'all-tx': () => historySheet(null, 'همه تراکنش‌ها'),
-    'today-tx': () => historySheet((t) => t.date === today(), 'تراکنش‌های امروز'),
-    planner: () => go('planner'),
-    report: reportSheet,
-    pod(el) {
-      const type = el.dataset.type;
-      historySheet((t) => t.type === type && monthKey(t.date) === currentMonthKey(), type === 'income' ? 'درآمدهای این ماه' : 'هزینه‌های این ماه');
-    },
-    send: () => txSheet('expense', { title: 'ارسال / پرداخت', category: 'other', noteLabel: 'به چه کسی / بابت چه', sub: 'مبلغ از موجودی کم می‌شود.' }),
-    receive: () => txSheet('income', { title: 'دریافت پول', category: 'transfer', noteLabel: 'از چه کسی / بابت چه' }),
-    scan: scanReceipt,
-    add: newTxMenu,
-    tx: (el) => txSheet(null, {}, el.dataset.id),
-  },
-  change: hubChange,
-  input: hubInput,
 };
 
 
@@ -4714,24 +3089,19 @@ __defs["src/main.js"] = function (__exports) {
 const { init, S, subscribe, reloadFromStorage } = __r("src/core/store.js");
 const { nowHM } = __r("src/core/dates.js");
 const { $ } = __r("src/core/util.js");
-const { ROUTES, currentRoute, go } = __r("src/router.js");
+const { currentRoute } = __r("src/router.js");
 const { bindActions, patchHTML } = __r("src/ui/dom.js");
-const { applyTheme, toggleDark } = __r("src/ui/theme.js");
+const { applyTheme } = __r("src/ui/theme.js");
 const { icon } = __r("src/ui/widgets.js");
-const { openSettings, openProfile } = __r("src/features/settings.js");
+const { openSettings } = __r("src/features/settings.js");
 const { checkReminders } = __r("src/features/reminders.js");
 
-const dashboard = __r("src/pages/dashboard.js").default;
-const tasks = __r("src/pages/tasks.js").default;
-const planner = __r("src/pages/planner.js").default;
+const today = __r("src/pages/today.js").default;
+const money = __r("src/pages/money.js").default;
 const gym = __r("src/pages/gym.js").default;
-const wallet = __r("src/pages/wallet.js").default;
 
-const PAGES = { dashboard, tasks, planner, gym, wallet };
-const NAV = [
-  ['dashboard', 'dashboard', 'پیشخوان'], ['tasks', 'check_circle', 'کارها و عادت‌ها'], ['planner', 'calendar_today', 'برنامه‌ریزی'],
-  ['gym', 'fitness_center', 'ورزش'], ['wallet', 'account_balance_wallet', 'کیف پول'],
-];
+const PAGES = { today, money, gym };
+const NAV = [['today', 'check_circle', 'امروز'], ['money', 'account_balance_wallet', 'پول'], ['gym', 'fitness_center', 'ورزش']];
 
 let page = null;
 let view = null;
@@ -4754,7 +3124,6 @@ function render() {
 
 function show() {
   const id = currentRoute();
-  if (!ROUTES.includes(id)) { go('dashboard'); return; }
   clearInterval(tickTimer);
   page = PAGES[id];
   view = document.createElement('div');
@@ -4774,14 +3143,14 @@ function show() {
 
 function buildNav() {
   $('#nav').innerHTML = `<div class="dock">${NAV.map(([id, ic, label]) =>
-    `<a href="#/${id}" data-route="${id}" aria-label="${label}" title="${label}">${icon(ic)}</a>`).join('')}</div>`;
+    `<a href="#/${id}" data-route="${id}" aria-label="${label}">${icon(ic)}<small>${label}</small></a>`).join('')}</div>`;
 }
 
 function boot() {
   init();
   applyTheme();
   buildNav();
-  bindActions($('#header'), { act: { settings: openSettings, theme: toggleDark, profile: openProfile } });
+  bindActions($('#header'), { act: { settings: openSettings } });
   subscribe(render);
   window.addEventListener('hashchange', show);
   window.addEventListener('pageshow', (e) => { if (e.persisted) { reloadFromStorage(); applyTheme(); render(); } });

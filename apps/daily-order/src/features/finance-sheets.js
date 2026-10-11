@@ -5,9 +5,7 @@ import { fa, num, esc, money } from '../core/format.js';
 import { faDayMonth, fullDate, relDay, monthKey, monthLabel, monthName, monthYear, useJ, addMonthsIso, currentMonthKey, prevMonthKey, jalaliString } from '../core/calendar.js';
 import { toast } from '../ui/toast.js';
 import { form, menu, confirmBox, infoSheet, later } from '../ui/sheet.js';
-import { go, currentRoute } from '../router.js';
-import { saveFile, pickFile } from '../services/files.js';
-import { askVision } from '../services/ai.js';
+import { saveFile } from '../services/files.js';
 import * as fin from '../domain/finance.js';
 
 const M = (v) => money(v);
@@ -20,20 +18,21 @@ export function txSheet(type, preset = {}, editId) {
   type = t ? t.type : type;
   if (type === 'transfer') return transferSheet(t);
 
-  const cats = (type === 'income' ? fin.INC_CATS : fin.EXP_CATS).map((k) => ({ value: k, label: fin.catOf(k).label, icon: fin.catOf(k).icon }));
+  const keys = t ? (type === 'income' ? fin.INC_CATS : fin.EXP_CATS) : (type === 'income' ? fin.SIMPLE_INC : fin.SIMPLE_EXP);
+  const cats = keys.map((k) => ({ value: k, label: fin.catOf(k).label, icon: fin.catOf(k).icon }));
   const linked = t && (t.loanId || t.billId);
   const fields = [
     { name: 'amount', label: `مبلغ (${S.profile.currency})`, type: 'number', value: t ? t.amount : preset.amount || '', placeholder: '0' },
     { name: 'category', label: 'دسته', type: 'chips', value: t ? t.category : preset.category || cats[0].value, options: cats },
-    { name: 'note', label: preset.noteLabel || 'توضیح', value: t ? t.note : preset.note || '', placeholder: 'اختیاری' },
-    { name: 'date', label: 'تاریخ', type: 'date', value: t ? t.date : preset.date || today() },
+    { name: 'note', label: 'توضیح (اختیاری)', value: t ? t.note : preset.note || '' },
   ];
+  if (t) fields.push({ name: 'date', label: 'تاریخ', type: 'date', value: t.date });
   if (S.accounts.length > 1) {
-    fields.push({ name: 'acc', label: type === 'income' ? 'واریز به حساب' : 'پرداخت از حساب', type: 'chips', value: t ? fin.txAccount(t) : preset.accountId || fin.defAcc(), options: accOptions() });
+    fields.push({ name: 'acc', label: 'حساب', type: 'chips', value: t ? fin.txAccount(t) : fin.defAcc(), options: accOptions() });
   }
   form({
-    title: t ? 'ویرایش تراکنش' : preset.title || (type === 'income' ? 'ثبت دریافتی' : 'ثبت هزینه'),
-    sub: linked ? `این تراکنش به ${t.loanId ? 'یک قسط' : 'یک قبض'} متصل است؛ حذف آن، پرداخت را هم لغو می‌کند.` : preset.sub,
+    title: t ? 'ویرایش' : type === 'income' ? 'درآمد جدید' : 'هزینه جدید',
+    sub: linked ? `این تراکنش به ${t.loanId ? 'یک قسط' : 'یک قبض'} متصل است؛ حذف آن، پرداخت را هم لغو می‌کند.` : undefined,
     fields,
     extra: t ? [{ label: 'حذف', cls: 'danger', run: () => removeTx(t.id) }] : [],
     onSubmit(v) {
@@ -41,8 +40,6 @@ export function txSheet(type, preset = {}, editId) {
       if (!amount) return false;
       fin.saveTx(t, { type, amount, category: v.category, note: (v.note || '').trim(), date: v.date, accountId: v.acc || (t && t.accountId) || fin.defAcc() });
       commit();
-      toast(t ? 'تراکنش ویرایش شد' : type === 'income' ? 'دریافتی ثبت شد' : 'هزینه ثبت شد');
-      if (!t && type === 'expense') budgetCheck();
     },
   });
 }
@@ -78,24 +75,6 @@ export function removeTx(id) {
   toast(undo.unlinked ? 'تراکنش حذف و پرداخت لغو شد' : 'تراکنش حذف شد', { label: 'واگرد', run: () => { fin.restoreTx(undo); commit(); } });
 }
 
-export function budgetCheck() {
-  if (!S.wallet.alerts) return;
-  const used = fin.budgetUsed();
-  if (used >= 1) setTimeout(() => toast('هشدار: از بودجه این ماه عبور کردید'), 2500);
-  else if (used >= 0.8) setTimeout(() => toast(`هشدار: ${fa(Math.round(used * 100))}٪ بودجه ماه مصرف شده`), 2500);
-}
-
-export function newTxMenu() {
-  menu('ثبت جدید', [
-    { icon: 'arrow_upward', label: 'هزینه', run: () => txSheet('expense') },
-    { icon: 'arrow_downward', label: 'دریافتی / درآمد', run: () => txSheet('income') },
-    { icon: 'swap_horiz', label: 'انتقال بین حساب‌ها', run: () => transferSheet() },
-    { icon: 'event_repeat', label: 'قسط / وام جدید', run: () => loanSheet() },
-    { icon: 'receipt_long', label: 'قبض یا پرداخت دوره‌ای جدید', run: () => billSheet() },
-    { icon: 'account_balance', label: 'حساب یا کارت جدید', run: () => accountSheet() },
-  ]);
-}
-
 /* ---------- ledger lists ---------- */
 export function txRowsHtml(list) {
   if (!list.length) return '<div class="empty">تراکنشی ثبت نشده</div>';
@@ -119,7 +98,7 @@ export function historySheet(filter, title = 'همه تراکنش‌ها') {
   groups.forEach((rows, k) => { html += `<div class="group-label">${monthLabel(k)}</div>${txRowsHtml(rows)}`; });
   if (!html) html = '<div class="empty">تراکنشی ثبت نشده</div>';
   infoSheet(title, `<p class="sheet-sub">برای ویرایش یا حذف، روی تراکنش بزنید.</p>${html}`,
-    [{ label: 'تراکنش جدید', cls: 'primary', run: newTxMenu }],
+    [{ label: 'تراکنش جدید', cls: 'primary', run: () => txSheet('expense') }],
     (el, close) => { close(); later(() => txSheet(null, {}, el.dataset.pick)); });
 }
 
@@ -142,7 +121,7 @@ export function reportSheet() {
     ${tile('درآمد این ماه', M(inc), 'pos')}${tile('هزینه این ماه', M(exp), 'neg')}${tile('خالص این ماه', M(inc - exp))}
     ${tile('هزینه نسبت به ماه قبل', diff == null ? '—' : `${diff > 0 ? '+' : ''}${fa(diff)}٪`)}
     ${tile('بدهی باقی‌مانده اقساط', M(debt), 'neg')}${tile('دارایی خالص', M(fin.balance() - debt))}
-    ${tile('پرداختنی ۳۰ روز آینده', M(due30))}${tile('بودجه باقی‌مانده', M(Math.max(0, S.wallet.budget - exp)))}</div>`;
+    ${tile('پرداختنی ۳۰ روز آینده', M(due30))}</div>`;
 
   html += '<div class="group-label">جریان نقدی ۶ ماه اخیر</div><div class="list">';
   html += flow.map((r) => `<div class="item item-block">
@@ -160,28 +139,7 @@ export function reportSheet() {
     }).join('')
     : '<div class="empty">هنوز هزینه‌ای در این ماه ثبت نشده</div>';
 
-  const onWallet = currentRoute() === 'wallet';
-  infoSheet('گزارش مالی', html, onWallet
-    ? [{ label: 'خروجی اکسل (CSV)', run: () => exportCsv(S.tx, 'all') }, { label: 'تنظیم بودجه', run: budgetSheet }]
-    : [{ label: 'کیف پول', cls: 'primary', run: () => go('wallet') }]);
-}
-
-export function budgetSheet() {
-  form({
-    title: 'بودجه ماهانه', sub: `هزینه این ماه: ${M(fin.monthSum('expense'))}`,
-    fields: [
-      { name: 'b', label: `سقف هزینه ماهانه (${S.profile.currency})`, type: 'number', value: S.wallet.budget },
-      { name: 'alerts', label: 'هشدار نزدیک شدن به سقف بودجه', type: 'switch', value: S.wallet.alerts },
-    ],
-    onSubmit(v) {
-      const b = num(v.b);
-      if (b <= 0) { toast('مبلغ معتبر وارد کنید'); return false; }
-      S.wallet.budget = b;
-      S.wallet.alerts = !!v.alerts;
-      commit();
-      toast('بودجه به‌روزرسانی شد');
-    },
-  });
+  infoSheet('گزارش مالی', html, [{ label: 'خروجی اکسل (CSV)', run: () => exportCsv(S.tx, 'all') }]);
 }
 
 export function exportCsv(list, tag) {
@@ -431,18 +389,38 @@ function reconcileSheet(a) {
   });
 }
 
-/* ---------- receipt scan (AI, optional) ---------- */
-export function scanReceipt() {
-  pickFile('image/*', true, (file) => {
-    const close = infoSheet('اسکن رسید', '<p class="sheet-sub"><span class="material-symbols-outlined spin">progress_activity</span> در حال خواندن رسید…</p>');
-    askVision(file, 'This is a photo of a purchase receipt or invoice (possibly Persian/Farsi). Extract the total amount paid. Reply with only JSON: {"amount": number, "merchant": string, "category": one of ["shopping","food","cafe","bills","transport","sport","travel","health","other"], "date": "YYYY-MM-DD" or null}. Write merchant in the receipt language.')
-      .then((r) => {
-        close();
-        later(() => txSheet('expense', { title: 'تأیید رسید اسکن‌شده', sub: 'مقادیر را بررسی و در صورت نیاز اصلاح کنید.', amount: (r && r.amount) || '', category: r && fin.EXP_CATS.includes(r.category) ? r.category : 'shopping', note: (r && r.merchant) || '' }));
-      })
-      .catch((e) => {
-        close();
-        later(() => txSheet('expense', { title: 'ثبت رسید', sub: e && e.code === 'not_granted' ? 'اجازه استفاده از هوش مصنوعی داده نشد؛ مبلغ را دستی وارد کنید.' : 'خواندن خودکار رسید در دسترس نبود؛ مبلغ را دستی وارد کنید.', category: 'shopping' }));
-      });
-  });
+/* ---------- one-tap payment (used by the "due soon" list) ---------- */
+/** Pay a due item at its usual amount today and record the expense; the toast offers undo. */
+export function payNow(it) {
+  fin.payObligation(it, { amount: it.amount, date: today(), accountId: it.ref.accountId, record: true });
+  const key = it.kind === 'loan' ? it.n : it.due;
+  commit();
+  toast(`«${it.title}» پرداخت شد`, { label: 'واگرد', run: () => { fin.cancelPayment(it.ref, key); commit(); } });
+}
+
+/* ---------- management lives behind one entry ---------- */
+function listSheet(title, rows, addLabel, onAdd, onPick) {
+  const html = rows.length
+    ? `<div class="list">${rows.map((r) => `<div class="item" data-pick="${r.id}" role="button"><span class="grow"><span class="item-title">${esc(r.title)}</span><span class="item-sub">${r.sub}</span></span><b class="amt">${r.amount}</b></div>`).join('')}</div>`
+    : '<div class="empty">هنوز چیزی ثبت نشده</div>';
+  infoSheet(title, html, [{ label: addLabel, cls: 'primary', run: onAdd }], (el, close) => { close(); later(() => onPick(el.dataset.pick)); });
+}
+
+export function manageMenu() {
+  menu('قسط، قبض و حساب‌ها', [
+    {
+      icon: 'event_repeat', label: 'اقساط و وام‌ها',
+      run: () => listSheet('اقساط و وام‌ها', S.loans.map((l) => ({ id: l.id, title: l.title, sub: `${fa(fin.loanPaidCount(l))} از ${fa(l.count)} پرداخت شد`, amount: M(fin.loanRemaining(l)) })), 'قسط جدید', () => loanSheet(), (id) => loanMenu(S.loans.find((l) => l.id === id))),
+    },
+    {
+      icon: 'receipt_long', label: 'قبض‌ها و پرداخت‌های دوره‌ای',
+      run: () => listSheet('قبض‌ها', S.bills.map((b) => ({ id: b.id, title: b.title, sub: `${fin.billKind(b).label} • ${fin.EVERY[b.every || 1]}${b.paused ? ' • متوقف' : ''}`, amount: M(fin.billAvg(b)) })), 'قبض جدید', () => billSheet(), (id) => billMenu(S.bills.find((b) => b.id === id))),
+    },
+    {
+      icon: 'account_balance', label: 'حساب‌ها و کارت‌ها',
+      run: () => listSheet('حساب‌ها', S.accounts.map((a) => ({ id: a.id, title: a.name, sub: fin.accType(a).label, amount: M(fin.accBalance(a.id)) })), 'حساب جدید', () => accountSheet(), (id) => accountMenu(fin.findAccount(id))),
+    },
+    { icon: 'swap_horiz', label: 'انتقال بین حساب‌ها', run: () => transferSheet() },
+    { icon: 'monitoring', label: 'گزارش ماهانه', run: reportSheet },
+  ]);
 }

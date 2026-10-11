@@ -16,7 +16,9 @@ export const TXCAT = {
 };
 export const EXP_CATS = ['shopping', 'food', 'cafe', 'bills', 'installment', 'transport', 'sport', 'travel', 'health', 'other'];
 export const INC_CATS = ['salary', 'gift', 'transfer', 'other'];
-export const QUICK_SETS = [['shopping', 'bills', 'cafe'], ['food', 'transport', 'sport'], ['travel', 'health', 'other']];
+/* The short lists offered when adding something new. */
+export const SIMPLE_EXP = ['food', 'shopping', 'transport', 'bills', 'health', 'other'];
+export const SIMPLE_INC = ['salary', 'gift', 'other'];
 export const catOf = (key) => TXCAT[key] || TXCAT.other;
 
 export const ACC_TYPES = {

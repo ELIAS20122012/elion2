@@ -7,7 +7,6 @@ import { monthKey } from '../src/core/calendar.js';
 import * as fin from '../src/domain/finance.js';
 import * as T from '../src/domain/tasks.js';
 import * as G from '../src/domain/gym.js';
-import * as P from '../src/domain/planner.js';
 
 beforeEach(() => replaceState(seed()));
 
@@ -118,34 +117,41 @@ test('deleting an account is blocked while it has transactions', () => {
 });
 
 /* ---------- tasks ---------- */
-test('completing a repeating task spawns the next occurrence once', () => {
-  const t = T.newTask({ title: 'daily', repeat: 'daily', subtasks: [{ id: 's', title: 'a', done: true }] });
-  S.tasks.push(t);
-  const next = T.toggleDone(t);
-  assert.ok(next);
-  assert.equal(next.date, iso(addDays(new Date(), 1)));
-  assert.equal(next.subtasks[0].done, false);
-  assert.equal(t.spawnedNext, next.id);
-  T.toggleDone(t); // reopen
-  assert.equal(T.toggleDone(t), null); // already spawned: no duplicate
+test('today buckets: overdue and today open, done today, future later', () => {
+  S.tasks = [
+    T.newTask({ title: 'late', date: iso(addDays(new Date(), -2)) }),
+    T.newTask({ title: 'now' }),
+    T.newTask({ title: 'finished', done: true, doneAt: today() }),
+    T.newTask({ title: 'old finished', done: true, doneAt: iso(addDays(new Date(), -3)) }),
+    T.newTask({ title: 'next week', date: iso(addDays(new Date(), 7)) }),
+    T.newTask({ title: 'archived', archived: true }),
+  ];
+  const b = T.todayBuckets();
+  assert.deepEqual(b.open.map((t) => t.title), ['late', 'now']);
+  assert.deepEqual(b.done.map((t) => t.title), ['finished']);
+  assert.deepEqual(b.later.map((t) => t.title), ['next week']);
+  assert.equal(b.total, 3);
 });
 
-test('tasks sort: open before done, by date, priority then time', () => {
-  const a = T.newTask({ title: 'a', priority: 'low', time: '09:00' });
-  const b = T.newTask({ title: 'b', priority: 'high', time: '10:00' });
+test('tasks sort: open before done, then date, then time', () => {
+  const a = T.newTask({ title: 'a', time: '09:00' });
+  const b = T.newTask({ title: 'b', time: '10:00' });
   const c = T.newTask({ title: 'c', done: true });
-  assert.deepEqual([c, a, b].sort(T.sortTasks).map((t) => t.title), ['b', 'a', 'c']);
+  const d = T.newTask({ title: 'd', date: iso(addDays(new Date(), -1)) });
+  assert.deepEqual([c, b, a, d].sort(T.sortTasks).map((t) => t.title), ['d', 'a', 'b', 'c']);
 });
 
-test('overdue tasks can be pushed to today and done tasks archived', () => {
-  const od = T.newTask({ title: 'old', date: iso(addDays(new Date(), -3)) });
-  S.tasks.push(od);
-  assert.equal(T.taskBuckets().overdue.includes(od), true);
-  T.pushOverdueToToday();
-  assert.equal(od.date, today());
-  S.tasks.forEach((t) => { t.done = true; });
-  assert.ok(T.archiveDone() > 0);
-  assert.equal(T.activeTasks().length, 0);
+test('toggling a task records when it was finished; removal can be undone by index', () => {
+  const t = T.newTask({ title: 'x' });
+  S.tasks.push(t);
+  T.toggleDone(t);
+  assert.equal(t.done, true);
+  assert.equal(t.doneAt, today());
+  T.toggleDone(t);
+  assert.equal(t.doneAt, null);
+  const removed = T.removeTask(t.id);
+  assert.equal(removed.task, t);
+  assert.equal(T.findTask(t.id), undefined);
 });
 
 test('habit counters and streaks', () => {
@@ -159,16 +165,6 @@ test('habit counters and streaks', () => {
   h.log[iso(addDays(new Date(), -1))] = h.target;
   h.log[iso(addDays(new Date(), -2))] = h.target;
   assert.equal(T.habitStreak(h), 2);
-});
-
-test('weekly review lines become unique high-priority tasks', () => {
-  const ws = T.currentWeek();
-  T.editReview(ws).next = '- پروژه اول\n2) پروژه دوم\n';
-  const first = T.reviewToTasks(ws);
-  assert.equal(first.added, 2);
-  assert.equal(T.reviewToTasks(ws).added, 0);
-  T.editReview(ws).next = '';
-  assert.equal(T.reviewToTasks(ws), null);
 });
 
 /* ---------- gym ---------- */
@@ -209,16 +205,4 @@ test('meal totals and weight change', () => {
   assert.equal(G.weightChange(30), -2.5);
   G.setWeight(today(), 78);
   assert.equal(S.gym.weights.length, 2); // same-day entry is replaced
-});
-
-/* ---------- planner ---------- */
-test('block overlap detection and slot defaults', () => {
-  const f = { date: today(), start: '09:30', end: '10:00' };
-  const clash = P.clashWith(f);
-  assert.ok(clash, 'seed has a 09:00–10:30 block today');
-  assert.equal(P.clashWith({ date: today(), start: '10:30', end: '11:00' }), undefined);
-  assert.deepEqual(P.defaultSlot(9 * 60 + 5), { start: '09:30', end: '10:30' });
-  const copy = P.duplicateToNextDay(S.blocks[0]);
-  assert.equal(copy.date, iso(addDays(new Date(), 1)));
-  assert.equal(copy.done, false);
 });

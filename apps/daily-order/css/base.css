@@ -36,13 +36,6 @@ body { max-width: 430px; margin: 0 auto; box-shadow: 0 0 0 1px rgba(0, 0, 0, .04
 }
 .header-bar { height: 64px; padding: 0 var(--gutter); display: flex; align-items: center; justify-content: space-between; }
 .header-bar h1 { font-size: 18px; font-weight: 700; }
-.avatar {
-  position: relative; width: 34px; height: 34px; border-radius: 50%;
-  display: grid; place-items: center; background: #091426; color: #fff;
-}
-html.dark .avatar { background: #bcc7de; color: #111c2d; }
-.avatar .material-symbols-outlined { font-size: 19px; }
-.avatar i { position: absolute; top: -2px; right: -2px; width: 11px; height: 11px; border-radius: 50%; background: var(--sage); border: 2px solid var(--bg); }
 
 #app { padding: calc(72px + env(safe-area-inset-top, 0px)) var(--gutter) 116px; }
 .view { display: flex; flex-direction: column; gap: 16px; animation: view-in .22s ease; }
@@ -55,19 +48,20 @@ html.dark .avatar { background: #bcc7de; color: #111c2d; }
 }
 #nav .dock {
   pointer-events: auto; width: 100%; max-width: 384px; height: 64px; padding: 0 10px;
-  display: flex; align-items: center; justify-content: space-around; border-radius: 999px;
+  display: flex; align-items: center; gap: 6px; border-radius: 999px;
   background: color-mix(in srgb, var(--card) 95%, transparent);
   -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px);
   box-shadow: -6px -6px 16px #fff, 7px 7px 18px rgba(180, 172, 160, .6);
 }
 html.dark #nav .dock { box-shadow: 0 8px 24px rgba(0, 0, 0, .45); }
 #nav a {
-  width: 48px; height: 48px; border-radius: 999px; display: grid; place-items: center;
+  flex: 1; height: 52px; border-radius: 999px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px;
   color: #8a8478; text-decoration: none; transition: transform .15s, color .15s;
 }
 html.dark #nav a { color: #a9a69e; }
 #nav a:active { transform: scale(.94); }
 #nav a[aria-current="page"] { color: var(--accent); box-shadow: var(--sh-inset-sm); }
+#nav a small { font-size: 10px; font-weight: 700; }
 #nav a .material-symbols-outlined { font-size: 24px; }
 
 /* ---- layout helpers ---- */

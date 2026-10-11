@@ -2,24 +2,19 @@
 import { init, S, subscribe, reloadFromStorage } from './core/store.js';
 import { nowHM } from './core/dates.js';
 import { $ } from './core/util.js';
-import { ROUTES, currentRoute, go } from './router.js';
+import { currentRoute } from './router.js';
 import { bindActions, patchHTML } from './ui/dom.js';
-import { applyTheme, toggleDark } from './ui/theme.js';
+import { applyTheme } from './ui/theme.js';
 import { icon } from './ui/widgets.js';
-import { openSettings, openProfile } from './features/settings.js';
+import { openSettings } from './features/settings.js';
 import { checkReminders } from './features/reminders.js';
 
-import dashboard from './pages/dashboard.js';
-import tasks from './pages/tasks.js';
-import planner from './pages/planner.js';
+import today from './pages/today.js';
+import money from './pages/money.js';
 import gym from './pages/gym.js';
-import wallet from './pages/wallet.js';
 
-const PAGES = { dashboard, tasks, planner, gym, wallet };
-const NAV = [
-  ['dashboard', 'dashboard', 'پیشخوان'], ['tasks', 'check_circle', 'کارها و عادت‌ها'], ['planner', 'calendar_today', 'برنامه‌ریزی'],
-  ['gym', 'fitness_center', 'ورزش'], ['wallet', 'account_balance_wallet', 'کیف پول'],
-];
+const PAGES = { today, money, gym };
+const NAV = [['today', 'check_circle', 'امروز'], ['money', 'account_balance_wallet', 'پول'], ['gym', 'fitness_center', 'ورزش']];
 
 let page = null;
 let view = null;
@@ -42,7 +37,6 @@ function render() {
 
 function show() {
   const id = currentRoute();
-  if (!ROUTES.includes(id)) { go('dashboard'); return; }
   clearInterval(tickTimer);
   page = PAGES[id];
   view = document.createElement('div');
@@ -62,14 +56,14 @@ function show() {
 
 function buildNav() {
   $('#nav').innerHTML = `<div class="dock">${NAV.map(([id, ic, label]) =>
-    `<a href="#/${id}" data-route="${id}" aria-label="${label}" title="${label}">${icon(ic)}</a>`).join('')}</div>`;
+    `<a href="#/${id}" data-route="${id}" aria-label="${label}">${icon(ic)}<small>${label}</small></a>`).join('')}</div>`;
 }
 
 function boot() {
   init();
   applyTheme();
   buildNav();
-  bindActions($('#header'), { act: { settings: openSettings, theme: toggleDark, profile: openProfile } });
+  bindActions($('#header'), { act: { settings: openSettings } });
   subscribe(render);
   window.addEventListener('hashchange', show);
   window.addEventListener('pageshow', (e) => { if (e.persisted) { reloadFromStorage(); applyTheme(); render(); } });

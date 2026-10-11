@@ -1,6 +1,6 @@
-/* Hash routing: "#/dashboard", "#/wallet", … The shell (main.js) listens for changes. */
-export const ROUTES = ['dashboard', 'tasks', 'planner', 'gym', 'wallet'];
-export const DEFAULT_ROUTE = 'dashboard';
+/* Hash routing: "#/today", "#/money", "#/gym". Unknown hashes (including old ones) go to Today. */
+export const ROUTES = ['today', 'money', 'gym'];
+export const DEFAULT_ROUTE = 'today';
 
 export function currentRoute() {
   const id = location.hash.replace(/^#\/?/, '').split('?')[0];
