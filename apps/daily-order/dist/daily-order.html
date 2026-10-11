@@ -404,6 +404,14 @@ textarea.input { min-height: 110px; resize: vertical; line-height: 1.8; }
 .set-chip.on { background: var(--sage); color: #fff; box-shadow: var(--sh-raised-sm); }
 .meal { width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 11px 12px; border-radius: 16px; text-align: start; }
 .weight-now { padding: 4px 0; }
+.week-bar { padding: 8px 12px; }
+.week-bar-head { width: 100%; display: flex; align-items: center; gap: 12px; padding: 8px 4px; text-align: start; }
+.week-list { display: flex; flex-direction: column; gap: 6px; padding: 6px 0 4px; }
+.day-row { display: flex; align-items: center; gap: 12px; padding: 8px 10px; border-radius: 14px; background: var(--well); box-shadow: var(--sh-inset-sm); text-align: start; }
+.day-row.on { box-shadow: var(--sh-raised-sm), 0 0 0 2px color-mix(in srgb, var(--accent) 45%, transparent); background: var(--card); }
+.plan-day { width: 38px; height: 38px; border-radius: 12px; display: grid; place-items: center; background: var(--card); font-weight: 800; color: var(--muted); flex: none; box-shadow: var(--sh-raised-sm); }
+.day-row.on .plan-day { color: var(--accent); }
+.meal img { width: 34px; height: 34px; border-radius: 10px; object-fit: cover; flex: none; }
 
   </style>
 </head>
@@ -1396,8 +1404,26 @@ __exports.infoSheet = infoSheet;
 __exports.later = later;
 };
 __defs["src/services/ai.js"] = function (__exports) {
-/* Optional host capabilities (e.g. image understanding when embedded in a Claude artifact).
-   Outside such a host every call resolves to null / rejects with { code: 'unavailable' }. */
+/* Food-photo calorie estimation.
+   Order of attempts: the host's own model (when embedded in a Claude artifact) → a Gemini API key the user saved
+   in Settings (works in any browser) → nothing (the caller falls back to manual entry). */
+const { num } = __r("src/core/format.js");
+
+const KEY_STORAGE = 'daily-order-gemini-key'; // kept out of the app document so backups never contain it
+const GEMINI_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent';
+
+const FOOD_PROMPT = 'You are a nutrition assistant. Look at this photo of a meal and estimate the total calories of the visible portion. '
+  + 'Reply with only JSON: {"name": string (dish name in Persian/Farsi), "kcal": number}. '
+  + 'If the image is not food, reply {"name": "غذا تشخیص داده نشد", "kcal": 0}.';
+
+function getGeminiKey() {
+  try { return localStorage.getItem(KEY_STORAGE) || ''; } catch { return ''; }
+}
+function setGeminiKey(value) {
+  try { if (value) localStorage.setItem(KEY_STORAGE, value.trim()); else localStorage.removeItem(KEY_STORAGE); } catch { /* storage unavailable */ }
+}
+
+/** Optional host capabilities (e.g. embedded in a Claude artifact). Resolves null when absent. */
 function cap(name) {
   const candidates = [window, window.parent !== window ? window.parent : null];
   for (const w of candidates) {
@@ -1408,16 +1434,64 @@ function cap(name) {
   return Promise.resolve(null);
 }
 
-async function askVision(file, prompt) {
-  const sample = await cap('sample');
-  if (!sample) throw { code: 'unavailable' };
-  const limits = sample.limits ? await sample.limits().catch(() => null) : null;
-  if (!limits || !limits.images) throw { code: 'images_unavailable' };
-  return sample.json(prompt, { images: [file], modelTier: 'default' });
+/** Normalise whatever the model returned into { name, kcal }. */
+function parseFood(raw) {
+  let r = raw;
+  if (typeof r === 'string') {
+    const m = r.match(/\{[\s\S]*\}/);
+    if (!m) throw { code: 'bad_response' };
+    r = JSON.parse(m[0]);
+  }
+  if (!r || typeof r !== 'object') throw { code: 'bad_response' };
+  return { name: String(r.name || 'غذا').trim() || 'غذا', kcal: Math.max(0, Math.round(num(r.kcal))) };
 }
 
+async function viaHost(file) {
+  const sample = await cap('sample');
+  if (!sample) return null;
+  const limits = sample.limits ? await sample.limits().catch(() => null) : null;
+  if (!limits || !limits.images) return null;
+  return parseFood(await sample.json(FOOD_PROMPT, { images: [file], modelTier: 'default' }));
+}
+
+async function viaGemini(key, dataUrl, fetchImpl = fetch) {
+  const [head, data] = dataUrl.split(',');
+  const mime = (head.match(/data:(.*?);/) || [])[1] || 'image/jpeg';
+  const res = await fetchImpl(`${GEMINI_URL}?key=${encodeURIComponent(key)}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      contents: [{ parts: [{ text: FOOD_PROMPT }, { inline_data: { mime_type: mime, data } }] }],
+      generationConfig: { responseMimeType: 'application/json', temperature: 0.2 },
+    }),
+  });
+  if (!res.ok) throw { code: res.status === 400 || res.status === 403 ? 'bad_key' : 'http_error', status: res.status };
+  const body = await res.json();
+  const text = body && body.candidates && body.candidates[0] && body.candidates[0].content && body.candidates[0].content.parts
+    && body.candidates[0].content.parts.map((p) => p.text || '').join('');
+  return parseFood(text || '');
+}
+
+/** file → { name, kcal }. Throws { code } when no method is available or the call failed. */
+async function estimateFood(file, shrink) {
+  const host = await viaHost(file).catch(() => null);
+  if (host) return host;
+  const key = getGeminiKey();
+  if (!key) throw { code: 'no_method' };
+  const dataUrl = await shrink(file, 1024);
+  if (!dataUrl) throw { code: 'bad_image' };
+  return viaGemini(key, dataUrl);
+}
+
+
+
+__exports.FOOD_PROMPT = FOOD_PROMPT;
+__exports.getGeminiKey = getGeminiKey;
+__exports.setGeminiKey = setGeminiKey;
 __exports.cap = cap;
-__exports.askVision = askVision;
+__exports.parseFood = parseFood;
+__exports.estimateFood = estimateFood;
+__exports._viaGemini = viaGemini;
 };
 __defs["src/services/files.js"] = function (__exports) {
 /* Saving, picking and shrinking files. */
@@ -1470,9 +1544,13 @@ function shrinkImage(file, max, cb) {
   img.src = url;
 }
 
+/** Promise flavour of shrinkImage: resolves a JPEG data URL, or null on failure. */
+const shrinkImageAsync = (file, max) => new Promise((resolve) => shrinkImage(file, max, resolve));
+
 __exports.saveFile = saveFile;
 __exports.pickFile = pickFile;
 __exports.shrinkImage = shrinkImage;
+__exports.shrinkImageAsync = shrinkImageAsync;
 };
 __defs["src/features/settings.js"] = function (__exports) {
 /* Settings and data backup. */
@@ -1482,6 +1560,7 @@ const { toast } = __r("src/ui/toast.js");
 const { form, menu, confirmBox } = __r("src/ui/sheet.js");
 const { applyTheme } = __r("src/ui/theme.js");
 const { saveFile, pickFile } = __r("src/services/files.js");
+const { getGeminiKey, setGeminiKey } = __r("src/services/ai.js");
 
 function exportData() {
   saveFile(`daily-order-backup-${today()}.json`, JSON.stringify(S, null, 2), 'application/json', 'فایل پشتیبان آماده شد');
@@ -1520,11 +1599,13 @@ function openSettings() {
       { name: 'currency', label: 'واحد پول', type: 'chips', value: S.profile.currency, options: [{ value: '€', label: '€' }, { value: '$', label: '$' }, { value: 'تومان', label: 'تومان' }] },
       { name: 'calendar', label: 'تقویم', type: 'chips', value: S.profile.calendar || 'jalali', options: [{ value: 'jalali', label: 'شمسی' }, { value: 'gregorian', label: 'میلادی' }] },
       { name: 'dark', label: 'حالت تاریک', type: 'switch', value: S.dark },
+      { name: 'gemini', label: 'کلید Gemini (برای تشخیص کالری از عکس غذا)', value: getGeminiKey(), placeholder: 'AIza…' },
     ],
     extra: [{ label: 'داده‌ها…', run: dataMenu }],
     onSubmit(v) {
       Object.assign(S.profile, { name: (v.name || '').trim(), currency: v.currency, calendar: v.calendar || 'jalali' });
       S.dark = !!v.dark;
+      setGeminiKey(v.gemini || '');
       commit();
       applyTheme();
     },
@@ -2810,6 +2891,24 @@ function autoStartTimer() {
   return false;
 }
 
+/** The session for `date`; created from the weekday's plan the first time the day is opened. */
+function sessionFromPlan(date) {
+  let s = S.gym.sessions[date];
+  const plan = S.gym.weekly[parseIso(date).getDay()];
+  if (!s && plan && parsePlan(plan.items).length) {
+    s = session(date, true);
+    loadPlanInto(s, plan);
+  }
+  return s;
+}
+
+/** After the weekday plan changed: re-apply it to a day that has no progress yet. */
+function resyncSessionWithPlan(date) {
+  const s = S.gym.sessions[date];
+  const plan = S.gym.weekly[parseIso(date).getDay()];
+  if (s && !s.finished && setsOf(s).done === 0 && plan) loadPlanInto(s, plan);
+}
+
 /* ---------- weekly plan ("name | sets | reps | weight" per line) ---------- */
 function parsePlan(text) {
   return String(text || '').split('\n').map((l) => l.trim()).filter(Boolean).map((line) => {
@@ -2880,6 +2979,8 @@ __exports.sessionMinutes = sessionMinutes;
 __exports.stopTimer = stopTimer;
 __exports.finishSession = finishSession;
 __exports.autoStartTimer = autoStartTimer;
+__exports.sessionFromPlan = sessionFromPlan;
+__exports.resyncSessionWithPlan = resyncSessionWithPlan;
 __exports.parsePlan = parsePlan;
 __exports.loadPlanInto = loadPlanInto;
 __exports.mealsOn = mealsOn;
@@ -2896,14 +2997,16 @@ __defs["src/features/gym-sheets.js"] = function (__exports) {
 /* Workout, calories and weight dialogs — kept deliberately short. */
 const { S, commit } = __r("src/core/store.js");
 const { uid } = __r("src/core/util.js");
-const { today } = __r("src/core/dates.js");
+const { today, WD_LONG, parseIso } = __r("src/core/dates.js");
 const { fa, num } = __r("src/core/format.js");
 const { toast } = __r("src/ui/toast.js");
-const { form, confirmBox } = __r("src/ui/sheet.js");
+const { form, confirmBox, infoSheet, later } = __r("src/ui/sheet.js");
+const { pickFile, shrinkImageAsync } = __r("src/services/files.js");
+const { estimateFood } = __r("src/services/ai.js");
 const G = __r("src/domain/gym.js");
 
-function exerciseSheet(id) {
-  const s = G.session(today(), true);
+function exerciseSheet(id, date = today()) {
+  const s = G.session(date, true);
   const e = id ? s.exercises.find((x) => x.id === id) : null;
   form({
     title: e ? 'ویرایش حرکت' : 'حرکت جدید',
@@ -2939,7 +3042,7 @@ function finishOrReopen() {
   });
 }
 
-function mealSheet(m) {
+function mealSheet(m, date = today()) {
   const editing = m && m.id;
   form({
     title: editing ? 'ویرایش وعده' : 'وعده جدید',
@@ -2949,13 +3052,13 @@ function mealSheet(m) {
     ],
     extra: editing ? [{
       label: 'حذف', cls: 'danger',
-      run: () => { const list = G.mealsOn(); const i = list.indexOf(m); list.splice(i, 1); commit(); toast('وعده حذف شد', { label: 'واگرد', run: () => { list.splice(i, 0, m); commit(); } }); },
+      run: () => { const list = G.mealsOn(date); const i = list.indexOf(m); list.splice(i, 1); commit(); toast('وعده حذف شد', { label: 'واگرد', run: () => { list.splice(i, 0, m); commit(); } }); },
     }] : [],
     onSubmit(v) {
       const kcal = Math.round(num(v.kcal));
       if (!kcal) { toast('کالری را وارد کنید'); return false; }
       const o = { name: (v.name || '').trim() || 'وعده', kcal };
-      if (editing) Object.assign(m, o); else G.addMeal({ ...o, p: 0, c: 0, f: 0 });
+      if (editing) Object.assign(m, o); else G.addMeal({ ...o, p: 0, c: 0, f: 0 }, date);
       commit();
     },
   });
@@ -2991,56 +3094,150 @@ function nudgeWeight(delta) {
   commit();
 }
 
+/* ---------- weekly program for one weekday ---------- */
+function planSheet(date) {
+  const wd = parseIso(date).getDay();
+  const p = S.gym.weekly[wd] || { name: '', items: '' };
+  form({
+    title: `برنامه ${WD_LONG[wd]}`,
+    sub: 'هر حرکت در یک خط: نام | تعداد ست | تکرار | وزنه (اختیاری). برای روز استراحت خالی بگذارید.',
+    focus: false,
+    fields: [
+      { name: 'name', label: 'نام برنامه', value: p.name, placeholder: 'مثلاً سینه و پشت‌بازو' },
+      { name: 'items', label: 'حرکات', type: 'textarea', value: p.items, placeholder: 'پرس سینه | 4 | 10 | 30 kg\nشنا | 3 | 15' },
+    ],
+    onSubmit(v) {
+      if (!(v.name || '').trim() && !(v.items || '').trim()) delete S.gym.weekly[wd];
+      else S.gym.weekly[wd] = { name: (v.name || '').trim() || 'تمرین', items: v.items || '' };
+      G.resyncSessionWithPlan(date);
+      G.sessionFromPlan(date);
+      commit();
+      toast('برنامه ذخیره شد');
+    },
+  });
+}
+
+/* ---------- food photo → calories → saved on the chosen day ---------- */
+const WHY = {
+  no_method: 'برای تشخیص خودکار، کلید Gemini را در تنظیمات وارد کنید. فعلاً کالری را خودتان وارد کنید.',
+  bad_key: 'کلید Gemini معتبر نیست. در تنظیمات اصلاحش کنید. فعلاً کالری را خودتان وارد کنید.',
+};
+
+function foodPhoto(date) {
+  pickFile('image/*', true, async (file) => {
+    const close = infoSheet('تشخیص کالری', '<p class="sheet-sub"><span class="material-symbols-outlined spin">progress_activity</span> در حال تحلیل عکس…</p>');
+    let guess = null;
+    let reason = '';
+    try { guess = await estimateFood(file, shrinkImageAsync); } catch (e) { reason = WHY[e && e.code] || 'تشخیص خودکار انجام نشد. کالری را خودتان وارد کنید.'; }
+    const thumb = await shrinkImageAsync(file, 160);
+    close();
+    later(() => confirmFood(date, guess, thumb, reason));
+  });
+}
+
+function confirmFood(date, guess, thumb, reason) {
+  form({
+    title: guess ? 'تأیید غذا' : 'ثبت غذا',
+    sub: guess ? 'عدد تخمینی است؛ در صورت نیاز اصلاح کنید.' : reason,
+    fields: [
+      { name: 'kcal', label: 'کالری (kcal)', type: 'number', value: guess ? guess.kcal || '' : '' },
+      { name: 'name', label: 'غذا', value: guess ? guess.name : '' },
+    ],
+    submit: 'ذخیره در این روز',
+    onSubmit(v) {
+      const kcal = Math.round(num(v.kcal));
+      if (!kcal) { toast('کالری را وارد کنید'); return false; }
+      G.addMeal({ name: (v.name || '').trim() || 'وعده', kcal, p: 0, c: 0, f: 0, photo: thumb || null }, date);
+      commit();
+      toast(`${fa(kcal)} کالری ثبت شد`);
+    },
+  });
+}
+
 __exports.exerciseSheet = exerciseSheet;
 __exports.finishOrReopen = finishOrReopen;
 __exports.mealSheet = mealSheet;
 __exports.goalSheet = goalSheet;
 __exports.weightSheet = weightSheet;
 __exports.nudgeWeight = nudgeWeight;
+__exports.planSheet = planSheet;
+__exports.foodPhoto = foodPhoto;
 };
 __defs["src/pages/gym.js"] = function (__exports) {
 let __default;
-/* Gym: today's workout, today's calories, current weight. */
-const { S, commit } = __r("src/core/store.js");
-const { today } = __r("src/core/dates.js");
+/* Gym: a "gym program" bar → the 7 weekdays → that day's program, calories (with food photo) and weight. */
+const { S, commit, refresh } = __r("src/core/store.js");
+const { iso, addDays, today, weekStart, WD_LONG, WD_SHORT, parseIso } = __r("src/core/dates.js");
 const { fa, faInt, esc } = __r("src/core/format.js");
+const { faDayMonth } = __r("src/core/calendar.js");
 const { toast } = __r("src/ui/toast.js");
 const { icon, progress } = __r("src/ui/widgets.js");
 const G = __r("src/domain/gym.js");
-const { exerciseSheet, finishOrReopen, mealSheet, goalSheet, weightSheet, nudgeWeight } = __r("src/features/gym-sheets.js");
+const { exerciseSheet, finishOrReopen, mealSheet, goalSheet, weightSheet, nudgeWeight, planSheet, foodPhoto } = __r("src/features/gym-sheets.js");
+
+let selected = today();
+let weekOpen = false;
+
+const planOf = (date) => S.gym.weekly[parseIso(date).getDay()];
+const weekDates = () => Array.from({ length: 7 }, (_, i) => iso(addDays(weekStart(new Date()), i)));
+
+function weekBar() {
+  const plan = planOf(selected);
+  const label = `${WD_LONG[parseIso(selected).getDay()]} • ${plan && plan.name ? esc(plan.name) : 'استراحت'}`;
+  const days = weekOpen ? `<div class="week-list">${weekDates().map((d) => {
+    const p = planOf(d);
+    const on = d === selected;
+    return `<button class="day-row${on ? ' on' : ''}" data-act="day" data-date="${d}">
+      <span class="plan-day">${WD_SHORT[parseIso(d).getDay()]}</span>
+      <span class="grow col"><b class="truncate">${p && p.name ? esc(p.name) : 'استراحت'}</b><small class="muted">${WD_LONG[parseIso(d).getDay()]}${d === today() ? ' • امروز' : ''}</small></span>
+      ${on ? icon('check', 'accent') : ''}</button>`;
+  }).join('')}</div>` : '';
+  return `<section class="card week-bar">
+    <button class="week-bar-head" data-act="toggle-week" aria-expanded="${weekOpen}">
+      ${icon('fitness_center', 'accent')}
+      <span class="grow col"><b>برنامه باشگاه</b><small class="muted">${label}</small></span>
+      <span class="chev material-symbols-outlined${weekOpen ? ' open' : ''}">expand_more</span>
+    </button>${days}</section>`;
+}
 
 function exerciseRow(e) {
   const full = e.done >= e.sets;
   const sets = Array.from({ length: e.sets }, (_, k) => `<button class="set-chip${k < e.done ? ' on' : ''}" data-act="set" data-id="${e.id}" data-k="${k}">${fa(k + 1)}</button>`).join('');
   return `<div class="card-sm exercise">
-    <button class="ex-text" data-act="ex-edit" data-id="${e.id}"><b class="truncate${full ? ' muted strike' : ''}">${esc(e.name)}</b><small class="muted">${fa(e.sets)} ست × ${fa(e.reps)}</small></button>
+    <button class="ex-text" data-act="ex-edit" data-id="${e.id}"><b class="truncate${full ? ' muted strike' : ''}">${esc(e.name)}</b><small class="muted">${fa(e.sets)} ست × ${fa(e.reps)}${e.weight ? ` • ${esc(e.weight)}` : ''}</small></button>
     <div class="row wrap">${sets}</div></div>`;
 }
 
-function workout() {
-  const s = G.session(today());
-  const st = G.setsOf(s);
+function program() {
+  const s = G.sessionFromPlan(selected) || G.session(selected);
+  const plan = planOf(selected);
   const has = s && s.exercises.length;
+  const st = G.setsOf(s);
+  const isToday = selected === today();
+  const future = selected > today();
   return `<section class="card stack">
-    <div class="row-between"><b class="t-head">تمرین امروز</b><span class="pill">${icon('local_fire_department', 'accent')}${fa(G.streak())} روز پیاپی</span></div>
-    ${has ? `<div class="stack-xs"><div class="row-between small"><span class="muted">${esc(s.name)}</span><b>${fa(st.done)}/${fa(st.tot)} ست</b></div>${progress(st.tot ? (st.done / st.tot) * 100 : 0, 'var(--accent)')}</div>` : ''}
-    <div class="stack-sm">${has ? s.exercises.map(exerciseRow).join('') : '<div class="empty">هنوز حرکتی ثبت نشده</div>'}</div>
-    <div class="grid2 gap-sm"><button class="btn-add" data-act="ex-add">${icon('add_circle')}حرکت</button>
-      ${has ? `<button class="btn-add sage" data-act="finish">${icon('flag')}${s.finished ? 'بازکردن' : 'پایان'}</button>` : '<span></span>'}</div>
+    <div class="row-between"><b class="t-head">${esc((plan && plan.name) || (s && s.exercises.length && s.name) || 'برنامه این روز')}</b>
+      ${isToday ? `<span class="pill">${icon('local_fire_department', 'accent')}${fa(G.streak())} روز پیاپی</span>` : `<small class="muted">${faDayMonth(parseIso(selected))}</small>`}</div>
+    ${has ? `<div class="stack-xs"><div class="row-between small"><span class="muted">پیشرفت</span><b>${fa(st.done)}/${fa(st.tot)} ست</b></div>${progress(st.tot ? (st.done / st.tot) * 100 : 0, 'var(--accent)')}</div>` : ''}
+    <div class="stack-sm">${has ? s.exercises.map(exerciseRow).join('') : `<div class="empty">${plan || future ? 'حرکتی در برنامه نیست' : 'روز استراحت یا هنوز برنامه‌ای ثبت نشده'}</div>`}</div>
+    <div class="grid2 gap-sm"><button class="btn-add" data-act="plan">${icon('edit_calendar')}ویرایش برنامه</button>
+      ${isToday && has ? `<button class="btn-add sage" data-act="finish">${icon('flag')}${s.finished ? 'بازکردن' : 'پایان'}</button>` : `<button class="btn-add muted" data-act="ex-add">${icon('add_circle')}حرکت</button>`}</div>
   </section>`;
 }
 
 function calories() {
   const goal = S.gym.goals.kcal;
-  const meals = G.mealsOn();
+  const meals = G.mealsOn(selected);
   const total = G.sumMeals(meals).kcal;
   const left = goal - total;
+  const rows = meals.map((m) => `<button class="well meal" data-act="meal" data-id="${m.id}">
+    ${m.photo ? `<img src="${m.photo}" alt="">` : icon('restaurant', 'muted')}<b class="grow truncate">${esc(m.name)}</b><b class="accent">${faInt(m.kcal)}</b></button>`).join('');
   return `<section class="card stack">
-    <div class="row-between"><b class="t-head">کالری امروز</b><button class="link muted" data-act="goal">هدف ${faInt(goal)}</button></div>
+    <div class="row-between"><b class="t-head">کالری ${selected === today() ? 'امروز' : faDayMonth(parseIso(selected))}</b><button class="link muted" data-act="goal">هدف ${faInt(goal)}</button></div>
     <div class="row-between"><span><b class="big">${faInt(total)}</b> <small class="muted">kcal</small></span><small class="${left < 0 ? 'neg' : 'muted'}">${left >= 0 ? `${faInt(left)} مانده` : `${faInt(-left)} بیشتر از هدف`}</small></div>
     ${progress((total / goal) * 100, total > goal ? 'var(--danger)' : 'var(--accent)')}
-    ${meals.map((m) => `<button class="well meal" data-act="meal" data-id="${m.id}"><b class="truncate">${esc(m.name)}</b><b class="accent">${faInt(m.kcal)}</b></button>`).join('')}
-    <button class="btn-add" data-act="meal-new">${icon('add_circle')}وعده</button>
+    ${rows}
+    <div class="grid2 gap-sm"><button class="btn-add" data-act="photo">${icon('photo_camera')}عکس غذا</button><button class="btn-add muted" data-act="meal-new">${icon('add_circle')}دستی</button></div>
   </section>`;
 }
 
@@ -3060,21 +3257,25 @@ function weight() {
 __default = {
   id: 'gym',
   title: 'ورزش',
-  render: () => `${workout()}${calories()}${weight()}`,
+  mount() { selected = today(); weekOpen = false; },
+  render: () => `${weekBar()}${program()}${calories()}${weight()}`,
   act: {
-    'ex-add': () => exerciseSheet(),
-    'ex-edit': (el) => exerciseSheet(el.dataset.id),
+    'toggle-week'() { weekOpen = !weekOpen; refresh(); },
+    day(el) { selected = el.dataset.date; weekOpen = false; G.sessionFromPlan(selected); commit(); },
+    plan: () => planSheet(selected),
+    'ex-add': () => exerciseSheet(null, selected),
+    'ex-edit': (el) => exerciseSheet(el.dataset.id, selected),
     set(el) {
-      const e = G.session(today()).exercises.find((x) => x.id === el.dataset.id);
+      const e = G.session(selected).exercises.find((x) => x.id === el.dataset.id);
       const k = +el.dataset.k;
       e.done = k < e.done ? k : k + 1;
-      G.autoStartTimer();
       commit();
       if (e.done >= e.sets) toast(`«${e.name}» کامل شد`);
     },
     finish: finishOrReopen,
-    meal(el) { const m = G.mealsOn().find((x) => x.id === el.dataset.id); if (m) mealSheet(m); },
-    'meal-new': () => mealSheet(),
+    photo: () => foodPhoto(selected),
+    meal(el) { const m = G.mealsOn(selected).find((x) => x.id === el.dataset.id); if (m) mealSheet(m, selected); },
+    'meal-new': () => mealSheet(null, selected),
     goal: goalSheet,
     weight: weightSheet,
     nudge: (el) => nudgeWeight(+el.dataset.d),

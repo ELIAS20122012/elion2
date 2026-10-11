@@ -5,6 +5,14 @@ Format: date · agent · what was done · state (finished / half-done + how to c
 
 ---
 
+## 2026-10-11 (6) · Claude (Claude Code, cloud)
+- صفحه‌ی ورزش Daily Order طبق خواسته‌ی Elias: نوار «برنامه باشگاه» → ۷ روز → برنامه‌ی هر روز + نوار کالری همان روز + «عکس غذا»
+  (کالری تخمینی را تأیید می‌کند و روی همان روز ذخیره می‌شود). تخمین: میزبان Claude یا کلید Gemini در تنظیمات
+  (localStorage جدا از سند، `gemini-flash-latest`). فراخوانی واقعی Gemini آزمایش زنده نشد؛ با mock تست شد (tests/ai.test.js + e2e).
+- State: finished.
+
+---
+
 ## 2026-10-11 (5) · Claude (Claude Code, cloud)
 - Daily Order ساده شد (Elias: «خیلی سلو و گزینه زیاد»): از ۵ صفحه به ۳ صفحه (امروز / پول / ورزش)، بدون آکاردئون و منوی تودرتو،
   فرم‌ها کوتاه، پرداخت قسط/قبض یک‌لمسی با واگرد. حذف از UI: برنامه‌ریز بلوکی، مرور هفتگی، اولویت/دسته/زیرکار/تکرار،

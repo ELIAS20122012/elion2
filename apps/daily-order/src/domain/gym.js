@@ -62,6 +62,24 @@ export function autoStartTimer() {
   return false;
 }
 
+/** The session for `date`; created from the weekday's plan the first time the day is opened. */
+export function sessionFromPlan(date) {
+  let s = S.gym.sessions[date];
+  const plan = S.gym.weekly[parseIso(date).getDay()];
+  if (!s && plan && parsePlan(plan.items).length) {
+    s = session(date, true);
+    loadPlanInto(s, plan);
+  }
+  return s;
+}
+
+/** After the weekday plan changed: re-apply it to a day that has no progress yet. */
+export function resyncSessionWithPlan(date) {
+  const s = S.gym.sessions[date];
+  const plan = S.gym.weekly[parseIso(date).getDay()];
+  if (s && !s.finished && setsOf(s).done === 0 && plan) loadPlanInto(s, plan);
+}
+
 /* ---------- weekly plan ("name | sets | reps | weight" per line) ---------- */
 export function parsePlan(text) {
   return String(text || '').split('\n').map((l) => l.trim()).filter(Boolean).map((line) => {

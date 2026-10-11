@@ -47,3 +47,6 @@ export function shrinkImage(file, max, cb) {
   img.onerror = () => { URL.revokeObjectURL(url); cb(null); };
   img.src = url;
 }
+
+/** Promise flavour of shrinkImage: resolves a JPEG data URL, or null on failure. */
+export const shrinkImageAsync = (file, max) => new Promise((resolve) => shrinkImage(file, max, resolve));

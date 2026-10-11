@@ -5,6 +5,7 @@ import { toast } from '../ui/toast.js';
 import { form, menu, confirmBox } from '../ui/sheet.js';
 import { applyTheme } from '../ui/theme.js';
 import { saveFile, pickFile } from '../services/files.js';
+import { getGeminiKey, setGeminiKey } from '../services/ai.js';
 
 export function exportData() {
   saveFile(`daily-order-backup-${today()}.json`, JSON.stringify(S, null, 2), 'application/json', 'فایل پشتیبان آماده شد');
@@ -43,11 +44,13 @@ export function openSettings() {
       { name: 'currency', label: 'واحد پول', type: 'chips', value: S.profile.currency, options: [{ value: '€', label: '€' }, { value: '$', label: '$' }, { value: 'تومان', label: 'تومان' }] },
       { name: 'calendar', label: 'تقویم', type: 'chips', value: S.profile.calendar || 'jalali', options: [{ value: 'jalali', label: 'شمسی' }, { value: 'gregorian', label: 'میلادی' }] },
       { name: 'dark', label: 'حالت تاریک', type: 'switch', value: S.dark },
+      { name: 'gemini', label: 'کلید Gemini (برای تشخیص کالری از عکس غذا)', value: getGeminiKey(), placeholder: 'AIza…' },
     ],
     extra: [{ label: 'داده‌ها…', run: dataMenu }],
     onSubmit(v) {
       Object.assign(S.profile, { name: (v.name || '').trim(), currency: v.currency, calendar: v.calendar || 'jalali' });
       S.dark = !!v.dark;
+      setGeminiKey(v.gemini || '');
       commit();
       applyTheme();
     },

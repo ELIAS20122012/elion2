@@ -36,3 +36,11 @@
 .set-chip.on { background: var(--sage); color: #fff; box-shadow: var(--sh-raised-sm); }
 .meal { width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 11px 12px; border-radius: 16px; text-align: start; }
 .weight-now { padding: 4px 0; }
+.week-bar { padding: 8px 12px; }
+.week-bar-head { width: 100%; display: flex; align-items: center; gap: 12px; padding: 8px 4px; text-align: start; }
+.week-list { display: flex; flex-direction: column; gap: 6px; padding: 6px 0 4px; }
+.day-row { display: flex; align-items: center; gap: 12px; padding: 8px 10px; border-radius: 14px; background: var(--well); box-shadow: var(--sh-inset-sm); text-align: start; }
+.day-row.on { box-shadow: var(--sh-raised-sm), 0 0 0 2px color-mix(in srgb, var(--accent) 45%, transparent); background: var(--card); }
+.plan-day { width: 38px; height: 38px; border-radius: 12px; display: grid; place-items: center; background: var(--card); font-weight: 800; color: var(--muted); flex: none; box-shadow: var(--sh-raised-sm); }
+.day-row.on .plan-day { color: var(--accent); }
+.meal img { width: 34px; height: 34px; border-radius: 10px; object-fit: cover; flex: none; }

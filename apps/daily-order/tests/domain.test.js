@@ -2,7 +2,7 @@ import test, { beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { S, replaceState, migrate } from '../src/core/store.js';
 import { seed, emptyState } from '../src/core/seed.js';
-import { today, iso, addDays } from '../src/core/dates.js';
+import { today, iso, addDays, parseIso } from '../src/core/dates.js';
 import { monthKey } from '../src/core/calendar.js';
 import * as fin from '../src/domain/finance.js';
 import * as T from '../src/domain/tasks.js';
@@ -205,4 +205,43 @@ test('meal totals and weight change', () => {
   assert.equal(G.weightChange(30), -2.5);
   G.setWeight(today(), 78);
   assert.equal(S.gym.weights.length, 2); // same-day entry is replaced
+});
+
+test('a day opened for the first time is built from that weekday plan', () => {
+  S.gym.sessions = {};
+  const sat = iso(addDays(new Date(), -((new Date().getDay() + 1) % 7))); // this week's Saturday (≤ today)
+  S.gym.weekly = { 6: { name: 'سینه', items: 'پرس | 4 | 10 | 30 kg\nشنا | 3 | 15' } };
+  const s = G.sessionFromPlan(sat);
+  assert.equal(s.name, 'سینه');
+  assert.equal(s.exercises.length, 2);
+  assert.equal(G.sessionFromPlan(sat), s, 'second call reuses the session');
+  // any day of the week works, including days still ahead
+  const future = iso(addDays(new Date(), 3));
+  S.gym.weekly[parseIso(future).getDay()] = { name: 'بعدی', items: 'a | 1 | 1' };
+  assert.equal(G.sessionFromPlan(future).exercises.length, 1);
+  // a day without a plan stays empty
+  S.gym.weekly = {};
+  assert.equal(G.sessionFromPlan(iso(addDays(new Date(), 5))), undefined);
+});
+
+test('editing the plan re-applies it only to a day without progress', () => {
+  const day = today();
+  const wd = new Date().getDay();
+  S.gym.weekly = { [wd]: { name: 'قدیم', items: 'الف | 3 | 10' } };
+  S.gym.sessions = {};
+  const s = G.sessionFromPlan(day);
+  S.gym.weekly[wd] = { name: 'جدید', items: 'ب | 2 | 8\nج | 2 | 8' };
+  G.resyncSessionWithPlan(day);
+  assert.deepEqual(s.exercises.map((e) => e.name), ['ب', 'ج']);
+  s.exercises[0].done = 1;
+  S.gym.weekly[wd] = { name: 'سوم', items: 'د | 1 | 1' };
+  G.resyncSessionWithPlan(day);
+  assert.deepEqual(s.exercises.map((e) => e.name), ['ب', 'ج'], 'progress is never overwritten');
+});
+
+test('meals are stored per day', () => {
+  const other = iso(addDays(new Date(), -2));
+  G.addMeal({ name: 'x', kcal: 400, p: 0, c: 0, f: 0, photo: 'data:' }, other);
+  assert.equal(G.sumMeals(G.mealsOn(other)).kcal, 400);
+  assert.equal(G.mealsOn(other)[0].photo, 'data:');
 });
