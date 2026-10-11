@@ -19,7 +19,24 @@ export const INC_CATS = ['salary', 'gift', 'transfer', 'other'];
 /* The short lists offered when adding something new. */
 export const SIMPLE_EXP = ['food', 'shopping', 'transport', 'bills', 'health', 'other'];
 export const SIMPLE_INC = ['salary', 'gift', 'other'];
-export const catOf = (key) => TXCAT[key] || TXCAT.other;
+/* Categories the user made themselves (name only) live next to the built-in ones. */
+export const customCats = () => S.wallet.customCats || (S.wallet.customCats = []);
+export const catOf = (key) => TXCAT[key] || customCats().find((c) => c.id === key) && { label: customCats().find((c) => c.id === key).label, icon: 'sell' } || TXCAT.other;
+export const expenseCats = () => [...EXP_CATS, ...customCats().map((c) => c.id)];
+/** The id of the expense category with this name — an existing one, or a new one of the user's own. */
+export function categoryByName(label) {
+  const name = label.trim();
+  const found = expenseCats().find((k) => catOf(k).label === name);
+  if (found) return found;
+  const c = { id: `c${uid()}`, label: name };
+  customCats().push(c);
+  return c.id;
+}
+export const hasTx = (key) => S.tx.some((t) => t.category === key);
+export function dropCustomIfUnused(key) {
+  if (!customCats().some((c) => c.id === key) || hasTx(key)) return;
+  S.wallet.customCats = customCats().filter((c) => c.id !== key);
+}
 
 export const ACC_TYPES = {
   bank: { label: 'حساب بانکی', icon: 'account_balance' }, card: { label: 'کارت', icon: 'credit_card' },
@@ -122,7 +139,7 @@ export const budgetUsedPct = () => (monthBudget() ? ((monthlyTotal() + monthSum(
 export function categoryBudgetRows(mk = currentMonthKey()) {
   const spent = expenseByCategory(mk);
   const budgets = catBudgets();
-  return EXP_CATS.filter((k) => spent[k] || budgets[k]).map((k) => ({ key: k, spent: spent[k] || 0, budget: budgets[k] || 0 }));
+  return expenseCats().filter((k) => spent[k] || budgets[k]).map((k) => ({ key: k, spent: spent[k] || 0, budget: budgets[k] || 0 }));
 }
 
 /** The category with the highest spending this month, or null. */

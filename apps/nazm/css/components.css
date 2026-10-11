@@ -353,3 +353,4 @@ textarea.input { min-height: 72px; line-height: 1.6; }
 .hub-i small { font-size: 10px; color: var(--muted); }
 .sub-head { display: flex; align-items: center; gap: 4px; margin-top: -4px; }
 .sub-head h2 { font-size: 16px; font-weight: 800; color: var(--ink); margin: 0; }
+.link.bad { color: var(--danger); }

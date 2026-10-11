@@ -339,3 +339,15 @@ test('appointments: ics export carries time, place and an alarm', async () => {
   const off = A.toIcs([A.saveAppt(null, { title: 'x', kind: 'meet', date: '2026-11-03', time: '10:00', remind: 'off' })]);
   assert.ok(!off.includes('VALARM'));
 });
+
+test('budget: custom categories are created from a name and reused', () => {
+  replaceState(emptyState());
+  const k = fin.categoryByName('سیگار');
+  assert.equal(fin.catOf(k).label, 'سیگار');
+  assert.equal(fin.categoryByName('سیگار'), k);
+  assert.equal(fin.categoryByName(fin.catOf('food').label), 'food');
+  fin.catBudgets()[k] = 50;
+  assert.ok(fin.categoryBudgetRows().some((r) => r.key === k && r.budget === 50));
+  fin.dropCustomIfUnused(k);
+  assert.equal(fin.customCats().length, 0);
+});

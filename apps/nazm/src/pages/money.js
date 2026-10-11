@@ -10,7 +10,7 @@ import * as fin from '../domain/finance.js';
 import * as MO from '../domain/monthly.js';
 import * as SV from '../domain/savings.js';
 import { parseMoneyLine, splitAmount } from '../domain/quick.js';
-import { txSheet, historySheet, monthlySheet, savingSheet, budgetSheet, removeBudget, removeCatBudget, catBudgetSheet, addCatBudget, exportCsv } from '../features/finance-sheets.js';
+import { txSheet, historySheet, monthlySheet, savingSheet, budgetSheet, removeBudget, removeCatBudget, catBudgetSheet, exportCsv } from '../features/finance-sheets.js';
 
 const ORDER = ['tx', 'monthly', 'budget', 'savings', 'report'];
 const ICONS = { tx: 'receipt_long', monthly: 'event_repeat', budget: 'donut_large', savings: 'savings', report: 'bar_chart' };
@@ -78,13 +78,13 @@ function budgetTab() {
   const left = fin.budgetLeft();
   const rows = fin.categoryBudgetRows().map((r) => {
     const c = fin.catOf(r.key);
-    return row({ ic: c.icon, title: c.label, act: 'cat-budget', attrs: `data-k="${r.key}"`,
+    return row({ ic: '', title: c.label,
       sub: `${M(r.spent)}${r.budget ? ` از ${M(r.budget)}` : ' · بدون بودجه'}${r.budget ? bar((r.spent / r.budget) * 100, r.spent > r.budget) : ''}`,
-      trailing: r.budget ? `<button class="x-btn" data-act="cat-remove" data-k="${r.key}" aria-label="حذف بودجه">${icon('close')}</button>` : '' });
+      trailing: `<span class="gym-tools"><button class="link" data-act="cat-budget" data-k="${r.key}">${r.budget ? 'ویرایش' : 'تعیین'}</button>${r.budget ? `<button class="link bad" data-act="cat-remove" data-k="${r.key}">حذف</button>` : ''}</span>` });
   }).join('');
   const main = budget
     ? `<section class="card stack-s">
-      <div class="row-between"><b>بودجه‌ی ${monthLabel(currentMonthKey())}</b><span class="gym-tools"><button class="link" data-act="set-budget">ویرایش</button><button class="x-btn" data-act="budget-remove" aria-label="حذف بودجه">${icon('close')}</button></span></div>
+      <div class="row-between"><b>بودجه‌ی ${monthLabel(currentMonthKey())}</b><span class="gym-tools"><button class="link" data-act="set-budget">ویرایش</button><button class="link bad" data-act="budget-remove">حذف</button></span></div>
       <div class="lines-plain"><div><span>بودجه</span><b class="ltr">${M(budget)}</b></div><div><span>قسط‌های ثابت</span><b class="ltr">− ${M(fixed)}</b></div><div><span>خرج‌شده</span><b class="ltr">− ${M(spent)}</b></div></div>
       <div class="row-between"><small>باقی‌مانده</small><b class="big ltr ${left < 0 ? 'neg' : ''}">${M(left)}</b></div>
       ${bar(fin.budgetUsedPct(), left < 0)}
@@ -144,7 +144,7 @@ export default {
     'set-budget': budgetSheet,
     'budget-remove': removeBudget,
     'cat-remove'(el) { removeCatBudget(el.dataset.k); },
-    'new-cat': addCatBudget,
+    'new-cat': () => catBudgetSheet(null),
     'cat-budget': (el) => catBudgetSheet(el.dataset.k),
     csv: () => exportCsv(S.tx, 'all'),
     quick(el) {

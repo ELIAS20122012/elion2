@@ -457,6 +457,7 @@ textarea.input { min-height: 72px; line-height: 1.6; }
 .hub-i small { font-size: 10px; color: var(--muted); }
 .sub-head { display: flex; align-items: center; gap: 4px; margin-top: -4px; }
 .sub-head h2 { font-size: 16px; font-weight: 800; color: var(--ink); margin: 0; }
+.link.bad { color: var(--danger); }
 
 /* Everything is shared in components.css; screen-specific rules would go here. */
 
@@ -2402,7 +2403,24 @@ const INC_CATS = ['salary', 'gift', 'transfer', 'other'];
 /* The short lists offered when adding something new. */
 const SIMPLE_EXP = ['food', 'shopping', 'transport', 'bills', 'health', 'other'];
 const SIMPLE_INC = ['salary', 'gift', 'other'];
-const catOf = (key) => TXCAT[key] || TXCAT.other;
+/* Categories the user made themselves (name only) live next to the built-in ones. */
+const customCats = () => S.wallet.customCats || (S.wallet.customCats = []);
+const catOf = (key) => TXCAT[key] || customCats().find((c) => c.id === key) && { label: customCats().find((c) => c.id === key).label, icon: 'sell' } || TXCAT.other;
+const expenseCats = () => [...EXP_CATS, ...customCats().map((c) => c.id)];
+/** The id of the expense category with this name — an existing one, or a new one of the user's own. */
+function categoryByName(label) {
+  const name = label.trim();
+  const found = expenseCats().find((k) => catOf(k).label === name);
+  if (found) return found;
+  const c = { id: `c${uid()}`, label: name };
+  customCats().push(c);
+  return c.id;
+}
+const hasTx = (key) => S.tx.some((t) => t.category === key);
+function dropCustomIfUnused(key) {
+  if (!customCats().some((c) => c.id === key) || hasTx(key)) return;
+  S.wallet.customCats = customCats().filter((c) => c.id !== key);
+}
 
 const ACC_TYPES = {
   bank: { label: 'حساب بانکی', icon: 'account_balance' }, card: { label: 'کارت', icon: 'credit_card' },
@@ -2505,7 +2523,7 @@ const budgetUsedPct = () => (monthBudget() ? ((monthlyTotal() + monthSum('expens
 function categoryBudgetRows(mk = currentMonthKey()) {
   const spent = expenseByCategory(mk);
   const budgets = catBudgets();
-  return EXP_CATS.filter((k) => spent[k] || budgets[k]).map((k) => ({ key: k, spent: spent[k] || 0, budget: budgets[k] || 0 }));
+  return expenseCats().filter((k) => spent[k] || budgets[k]).map((k) => ({ key: k, spent: spent[k] || 0, budget: budgets[k] || 0 }));
 }
 
 /** The category with the highest spending this month, or null. */
@@ -2520,7 +2538,12 @@ __exports.EXP_CATS = EXP_CATS;
 __exports.INC_CATS = INC_CATS;
 __exports.SIMPLE_EXP = SIMPLE_EXP;
 __exports.SIMPLE_INC = SIMPLE_INC;
+__exports.customCats = customCats;
 __exports.catOf = catOf;
+__exports.expenseCats = expenseCats;
+__exports.categoryByName = categoryByName;
+__exports.hasTx = hasTx;
+__exports.dropCustomIfUnused = dropCustomIfUnused;
 __exports.ACC_TYPES = ACC_TYPES;
 __exports.accType = accType;
 __exports.findAccount = findAccount;
@@ -3084,7 +3107,7 @@ function txSheet(type, preset = {}, editId) {
   const t = editId ? fin.findTx(editId) : null;
   type = t ? t.type : type;
   const keys = t ? (type === 'income' ? fin.INC_CATS : fin.EXP_CATS) : (type === 'income' ? fin.SIMPLE_INC : fin.SIMPLE_EXP);
-  const cats = keys.map((k) => ({ value: k, label: fin.catOf(k).label, icon: fin.catOf(k).icon }));
+  const cats = (type === 'income' ? keys : [...keys, ...fin.customCats().map((c) => c.id).filter((k) => !keys.includes(k))]).map((k) => ({ value: k, label: fin.catOf(k).label, icon: fin.catOf(k).icon }));
   const fields = [
     { name: 'amount', label: `مبلغ (${S.profile.currency})`, type: 'number', value: t ? t.amount : preset.amount || '', placeholder: '0' },
     { name: 'category', label: 'دسته', type: 'chips', value: t ? t.category : preset.category || cats[0].value, options: cats },
@@ -3191,27 +3214,40 @@ function removeBudget() {
 
 function removeCatBudget(key) {
   const old = fin.catBudgets()[key];
+  const custom = fin.customCats().find((c) => c.id === key);
+  const label = fin.catOf(key).label;
   delete fin.catBudgets()[key];
+  fin.dropCustomIfUnused(key);
   commit();
-  toast(`بودجه‌ی «${fin.catOf(key).label}» حذف شد`, { label: 'واگرد', run: () => { fin.catBudgets()[key] = old; commit(); } });
+  toast(`بودجه‌ی «${label}» حذف شد`, { label: 'واگرد', run: () => { if (custom) fin.customCats().push(custom); fin.catBudgets()[key] = old; commit(); } });
 }
 
+/** key = null → a new budget for any name you type (a new category is created when the name is new). */
 function catBudgetSheet(key) {
-  const c = fin.catOf(key);
+  const custom = key && fin.customCats().find((c) => c.id === key);
+  const fields = [];
+  if (!key || custom) fields.push({ name: 'name', label: 'نام دسته (هر چه می‌خواهید)', value: custom ? custom.label : '' });
+  fields.push({ name: 'b', label: `سقف ماهانه (${S.profile.currency})`, type: 'number', value: key ? fin.catBudgets()[key] || '' : '' });
   form({
-    title: `بودجه ${c.label}`,
-    extra: fin.catBudgets()[key] ? [{ label: 'حذف', cls: 'danger', run: () => removeCatBudget(key) }] : [],
-    fields: [{ name: 'b', label: `سقف ماهانه (${S.profile.currency})`, type: 'number', value: fin.catBudgets()[key] || '' }],
+    title: key ? `بودجه ${fin.catOf(key).label}` : 'بودجه‌ی دسته‌ی تازه',
+    fields, focus: !key,
+    extra: key && fin.catBudgets()[key] ? [{ label: 'حذف', cls: 'danger', run: () => removeCatBudget(key) }] : [],
     onSubmit(v) {
       const b = num(v.b);
-      if (b > 0) fin.catBudgets()[key] = b; else delete fin.catBudgets()[key];
+      if (b <= 0) { toast('سقف ماهانه را بنویسید'); return false; }
+      let k = key;
+      if (!k) {
+        const name = (v.name || '').trim();
+        if (!name) { toast('نام دسته را بنویسید'); return false; }
+        k = fin.categoryByName(name);
+      } else if (custom) {
+        const name = (v.name || '').trim();
+        if (name) custom.label = name;
+      }
+      fin.catBudgets()[k] = b;
       commit();
     },
   });
-}
-
-function addCatBudget() {
-  menu('بودجه‌ی دسته', fin.EXP_CATS.filter((k) => !fin.catBudgets()[k]).map((k) => ({ icon: fin.catOf(k).icon, label: fin.catOf(k).label, run: () => catBudgetSheet(k) })));
 }
 
 /* ---------- monthly payments ---------- */
@@ -3269,7 +3305,6 @@ __exports.budgetSheet = budgetSheet;
 __exports.removeBudget = removeBudget;
 __exports.removeCatBudget = removeCatBudget;
 __exports.catBudgetSheet = catBudgetSheet;
-__exports.addCatBudget = addCatBudget;
 __exports.monthlySheet = monthlySheet;
 __exports.savingSheet = savingSheet;
 };
@@ -3287,7 +3322,7 @@ const fin = __r("src/domain/finance.js");
 const MO = __r("src/domain/monthly.js");
 const SV = __r("src/domain/savings.js");
 const { parseMoneyLine, splitAmount } = __r("src/domain/quick.js");
-const { txSheet, historySheet, monthlySheet, savingSheet, budgetSheet, removeBudget, removeCatBudget, catBudgetSheet, addCatBudget, exportCsv } = __r("src/features/finance-sheets.js");
+const { txSheet, historySheet, monthlySheet, savingSheet, budgetSheet, removeBudget, removeCatBudget, catBudgetSheet, exportCsv } = __r("src/features/finance-sheets.js");
 
 const ORDER = ['tx', 'monthly', 'budget', 'savings', 'report'];
 const ICONS = { tx: 'receipt_long', monthly: 'event_repeat', budget: 'donut_large', savings: 'savings', report: 'bar_chart' };
@@ -3355,13 +3390,13 @@ function budgetTab() {
   const left = fin.budgetLeft();
   const rows = fin.categoryBudgetRows().map((r) => {
     const c = fin.catOf(r.key);
-    return row({ ic: c.icon, title: c.label, act: 'cat-budget', attrs: `data-k="${r.key}"`,
+    return row({ ic: '', title: c.label,
       sub: `${M(r.spent)}${r.budget ? ` از ${M(r.budget)}` : ' · بدون بودجه'}${r.budget ? bar((r.spent / r.budget) * 100, r.spent > r.budget) : ''}`,
-      trailing: r.budget ? `<button class="x-btn" data-act="cat-remove" data-k="${r.key}" aria-label="حذف بودجه">${icon('close')}</button>` : '' });
+      trailing: `<span class="gym-tools"><button class="link" data-act="cat-budget" data-k="${r.key}">${r.budget ? 'ویرایش' : 'تعیین'}</button>${r.budget ? `<button class="link bad" data-act="cat-remove" data-k="${r.key}">حذف</button>` : ''}</span>` });
   }).join('');
   const main = budget
     ? `<section class="card stack-s">
-      <div class="row-between"><b>بودجه‌ی ${monthLabel(currentMonthKey())}</b><span class="gym-tools"><button class="link" data-act="set-budget">ویرایش</button><button class="x-btn" data-act="budget-remove" aria-label="حذف بودجه">${icon('close')}</button></span></div>
+      <div class="row-between"><b>بودجه‌ی ${monthLabel(currentMonthKey())}</b><span class="gym-tools"><button class="link" data-act="set-budget">ویرایش</button><button class="link bad" data-act="budget-remove">حذف</button></span></div>
       <div class="lines-plain"><div><span>بودجه</span><b class="ltr">${M(budget)}</b></div><div><span>قسط‌های ثابت</span><b class="ltr">− ${M(fixed)}</b></div><div><span>خرج‌شده</span><b class="ltr">− ${M(spent)}</b></div></div>
       <div class="row-between"><small>باقی‌مانده</small><b class="big ltr ${left < 0 ? 'neg' : ''}">${M(left)}</b></div>
       ${bar(fin.budgetUsedPct(), left < 0)}
@@ -3421,7 +3456,7 @@ __default = {
     'set-budget': budgetSheet,
     'budget-remove': removeBudget,
     'cat-remove'(el) { removeCatBudget(el.dataset.k); },
-    'new-cat': addCatBudget,
+    'new-cat': () => catBudgetSheet(null),
     'cat-budget': (el) => catBudgetSheet(el.dataset.k),
     csv: () => exportCsv(S.tx, 'all'),
     quick(el) {

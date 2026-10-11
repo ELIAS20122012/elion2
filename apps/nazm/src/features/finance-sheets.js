@@ -18,7 +18,7 @@ export function txSheet(type, preset = {}, editId) {
   const t = editId ? fin.findTx(editId) : null;
   type = t ? t.type : type;
   const keys = t ? (type === 'income' ? fin.INC_CATS : fin.EXP_CATS) : (type === 'income' ? fin.SIMPLE_INC : fin.SIMPLE_EXP);
-  const cats = keys.map((k) => ({ value: k, label: fin.catOf(k).label, icon: fin.catOf(k).icon }));
+  const cats = (type === 'income' ? keys : [...keys, ...fin.customCats().map((c) => c.id).filter((k) => !keys.includes(k))]).map((k) => ({ value: k, label: fin.catOf(k).label, icon: fin.catOf(k).icon }));
   const fields = [
     { name: 'amount', label: `مبلغ (${S.profile.currency})`, type: 'number', value: t ? t.amount : preset.amount || '', placeholder: '0' },
     { name: 'category', label: 'دسته', type: 'chips', value: t ? t.category : preset.category || cats[0].value, options: cats },
@@ -125,27 +125,40 @@ export function removeBudget() {
 
 export function removeCatBudget(key) {
   const old = fin.catBudgets()[key];
+  const custom = fin.customCats().find((c) => c.id === key);
+  const label = fin.catOf(key).label;
   delete fin.catBudgets()[key];
+  fin.dropCustomIfUnused(key);
   commit();
-  toast(`بودجه‌ی «${fin.catOf(key).label}» حذف شد`, { label: 'واگرد', run: () => { fin.catBudgets()[key] = old; commit(); } });
+  toast(`بودجه‌ی «${label}» حذف شد`, { label: 'واگرد', run: () => { if (custom) fin.customCats().push(custom); fin.catBudgets()[key] = old; commit(); } });
 }
 
+/** key = null → a new budget for any name you type (a new category is created when the name is new). */
 export function catBudgetSheet(key) {
-  const c = fin.catOf(key);
+  const custom = key && fin.customCats().find((c) => c.id === key);
+  const fields = [];
+  if (!key || custom) fields.push({ name: 'name', label: 'نام دسته (هر چه می‌خواهید)', value: custom ? custom.label : '' });
+  fields.push({ name: 'b', label: `سقف ماهانه (${S.profile.currency})`, type: 'number', value: key ? fin.catBudgets()[key] || '' : '' });
   form({
-    title: `بودجه ${c.label}`,
-    extra: fin.catBudgets()[key] ? [{ label: 'حذف', cls: 'danger', run: () => removeCatBudget(key) }] : [],
-    fields: [{ name: 'b', label: `سقف ماهانه (${S.profile.currency})`, type: 'number', value: fin.catBudgets()[key] || '' }],
+    title: key ? `بودجه ${fin.catOf(key).label}` : 'بودجه‌ی دسته‌ی تازه',
+    fields, focus: !key,
+    extra: key && fin.catBudgets()[key] ? [{ label: 'حذف', cls: 'danger', run: () => removeCatBudget(key) }] : [],
     onSubmit(v) {
       const b = num(v.b);
-      if (b > 0) fin.catBudgets()[key] = b; else delete fin.catBudgets()[key];
+      if (b <= 0) { toast('سقف ماهانه را بنویسید'); return false; }
+      let k = key;
+      if (!k) {
+        const name = (v.name || '').trim();
+        if (!name) { toast('نام دسته را بنویسید'); return false; }
+        k = fin.categoryByName(name);
+      } else if (custom) {
+        const name = (v.name || '').trim();
+        if (name) custom.label = name;
+      }
+      fin.catBudgets()[k] = b;
       commit();
     },
   });
-}
-
-export function addCatBudget() {
-  menu('بودجه‌ی دسته', fin.EXP_CATS.filter((k) => !fin.catBudgets()[k]).map((k) => ({ icon: fin.catOf(k).icon, label: fin.catOf(k).label, run: () => catBudgetSheet(k) })));
 }
 
 /* ---------- monthly payments ---------- */
