@@ -5,6 +5,16 @@ Format: date · agent · what was done · state (finished / half-done + how to c
 
 ---
 
+## 2026-10-11 (4) · Claude (Claude Code, cloud)
+- Daily Order (اپ نظم روزانه، قبلاً آرتیفکت claude.ai) آمد به `apps/daily-order/` و از نو ساخته شد: به‌جای HTML استاتیک
+  Tailwind + یک app.js ۲۱۰کیلوبایتی که المان‌ها را با متن پیدا و دستکاری می‌کرد، حالا شِل واحد + روتر hash + ماژول‌های ES
+  (core / domain / ui / services / features / pages) + CSS خودمان. بدون بیلد، بدون CDN تیلویند. قابلیت‌ها و کلید ذخیره‌ی
+  `daily-order-v2` همان است (داده‌ی قبلی با `migrate()` خوانده می‌شود). README در همان پوشه.
+- تست: `apps/daily-order/tests/*.test.js` (۳۰ تست core/domain) به `npm test` اضافه شد؛ کل مجموعه سبز.
+- State: finished. اجرا: `cd apps/daily-order && python3 -m http.server 8765`.
+
+---
+
 ## 2026-10-11 (3) · Claude (Cowork)
 - Notebook (src/plugins/notebook.ts): every text Elias forwards in Telegram (or "#یادداشت …", "#خام …" = no AI) is
   saved as one Markdown note in C:\Elion\notebook (plugins.options.notebook.dir), local git keeps every version.

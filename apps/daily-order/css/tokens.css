@@ -1,0 +1,49 @@
+/* Design tokens: warm neumorphic palette. Dark mode swaps the same variables via html.dark. */
+:root {
+  --bg: #ece8e1;
+  --card: #fcf9f3;
+  --well: #efebe1;
+  --canvas: #f7f4ee;
+  --text: #1e293b;
+  --muted: #64748b;
+  --line: #e3ddd1;
+  --accent: #de8353;
+  --accent-soft: rgba(222, 131, 83, .16);
+  --sage: #8eaa97;
+  --sage-text: #4d7c62;
+  --lav: #6b6f9c;
+  --danger: #c2410c;
+  --on-accent: #fff;
+
+  --sh-raised: -4px -4px 10px #fff, 5px 5px 12px rgba(180, 172, 160, .55);
+  --sh-raised-sm: -2px -2px 6px #fff, 3px 3px 8px rgba(180, 172, 160, .45);
+  --sh-inset: inset 3px 3px 7px rgba(180, 172, 160, .55), inset -3px -3px 7px #fff;
+  --sh-inset-sm: inset 2px 2px 4px rgba(180, 172, 160, .5), inset -2px -2px 4px #fff;
+  --sh-sheet: 0 -10px 40px rgba(60, 50, 40, .18);
+
+  --r-card: 28px;
+  --r-md: 20px;
+  --r-sm: 14px;
+  --gutter: 20px;
+  --font: 'Vazirmatn', Tahoma, sans-serif;
+}
+
+html.dark {
+  --bg: #1b1b19;
+  --card: #272723;
+  --well: #1f1f1c;
+  --canvas: #1d1d1a;
+  --text: #ece8e1;
+  --muted: #a3a8b3;
+  --line: #3b3b36;
+  --accent-soft: rgba(222, 131, 83, .22);
+  --sage-text: #8eaa97;
+  --lav: #a3a7d6;
+  --danger: #f0a37a;
+
+  --sh-raised: -3px -3px 8px rgba(255, 255, 255, .035), 5px 5px 12px rgba(0, 0, 0, .5);
+  --sh-raised-sm: -2px -2px 5px rgba(255, 255, 255, .03), 3px 3px 8px rgba(0, 0, 0, .45);
+  --sh-inset: inset 3px 3px 7px rgba(0, 0, 0, .5), inset -2px -2px 5px rgba(255, 255, 255, .04);
+  --sh-inset-sm: inset 2px 2px 4px rgba(0, 0, 0, .5), inset -1px -1px 3px rgba(255, 255, 255, .04);
+  --sh-sheet: 0 -10px 40px rgba(0, 0, 0, .5);
+}

@@ -9,7 +9,7 @@
   "scripts": {
     "elias": "node --disable-warning=ExperimentalWarning src/cli.ts",
     "daemon": "node --disable-warning=ExperimentalWarning src/cli.ts daemon",
-    "test": "node --disable-warning=ExperimentalWarning --test \"tests/**/*.test.ts\"",
+    "test": "node --disable-warning=ExperimentalWarning --test \"tests/**/*.test.ts\" \"apps/*/tests/*.test.js\"",
     "typecheck": "tsc -p ."
   },
   "devDependencies": {
