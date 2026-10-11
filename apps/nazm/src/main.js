@@ -30,10 +30,43 @@ function render() {
   }
 }
 
+/* The round button hops from the old icon to the new one in an arc; the notch in the bar follows it. */
+let ballX = null;
+const HOP_MS = 520;
 function placeNavDot() {
   const nav = $('#nav');
   const a = nav.querySelector('a[aria-current="page"]');
-  if (a) nav.style.setProperty('--x', `${a.offsetLeft + a.offsetWidth / 2}px`);
+  const ball = nav.querySelector('.ball');
+  if (!a || !ball) return;
+  const x = a.offsetLeft + a.offsetWidth / 2;
+  const inner = ball.firstElementChild;
+  const setIcon = () => { inner.innerHTML = a.querySelector('.material-symbols-outlined').outerHTML; };
+  const still = ballX === null || ballX === x || matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (still) {
+    setIcon();
+    ball.style.transform = `translateX(${x - 27}px)`;
+    nav.style.setProperty('--x', `${x}px`);
+  } else {
+    const from = ballX;
+    const dist = Math.abs(x - from);
+    const lift = -Math.min(46, 22 + dist / 8);
+    ball.getAnimations().forEach((an) => an.cancel());
+    inner.getAnimations().forEach((an) => an.cancel());
+    ball.style.transform = `translateX(${x - 27}px)`;
+    ball.animate([{ transform: `translateX(${from - 27}px)` }, { transform: `translateX(${x - 27}px)` }], { duration: HOP_MS, easing: 'cubic-bezier(.45, 0, .25, 1)' });
+    inner.animate([
+      { transform: 'translateY(0) scale(1, 1)', easing: 'ease-out' },
+      { transform: 'translateY(4px) scale(1.18, .8)', offset: 0.1, easing: 'cubic-bezier(.2, .8, .3, 1)' },
+      { transform: `translateY(${lift}px) scale(.88, 1.16)`, offset: 0.45, easing: 'cubic-bezier(.6, 0, .8, .4)' },
+      { transform: 'translateY(2px) scale(1.22, .78)', offset: 0.78, easing: 'ease-out' },
+      { transform: 'translateY(-7px) scale(.95, 1.05)', offset: 0.88, easing: 'ease-in' },
+      { transform: 'translateY(0) scale(1, 1)' },
+    ], { duration: HOP_MS + 220 });
+    nav.animate([{ '--x': `${from}px` }, { '--x': `${x}px` }], { duration: HOP_MS, easing: 'cubic-bezier(.45, 0, .25, 1)', fill: 'forwards' });
+    setTimeout(setIcon, HOP_MS / 2);
+    nav.style.setProperty('--x', `${x}px`);
+  }
+  ballX = x;
 }
 
 function show() {
@@ -55,7 +88,7 @@ function show() {
 
 function buildChrome() {
   $('#top').innerHTML = `<button class="tb-btn" data-act="profile" aria-label="پروفایل">${icon('account_circle')}</button><span class="wordmark">نظم</span><button class="tb-btn" data-act="settings" aria-label="تنظیمات">${icon('settings')}</button>`;
-  $('#nav').innerHTML = NAV.map(([id, ic, label]) => `<a href="#/${id}" data-route="${id}" aria-label="${label}">${icon(ic)}<small>${label}</small></a>`).join('');
+  $('#nav').innerHTML = `${NAV.map(([id, ic, label]) => `<a href="#/${id}" data-route="${id}" aria-label="${label}">${icon(ic)}<small>${label}</small></a>`).join('')}<span class="ball" aria-hidden="true"><span class="ball-in"></span></span>`;
 }
 
 function splash() {
