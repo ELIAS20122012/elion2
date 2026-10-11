@@ -8,6 +8,7 @@ import { form, menu, infoSheet, later } from '../ui/sheet.js';
 import { saveFile } from '../services/files.js';
 import * as fin from '../domain/finance.js';
 import * as MO from '../domain/monthly.js';
+import * as SV from '../domain/savings.js';
 
 const M = (v) => money(v);
 const accOptions = () => S.accounts.map((a) => ({ value: a.id, label: a.name, icon: fin.accType(a).icon }));
@@ -27,7 +28,6 @@ export function txSheet(type, preset = {}, editId) {
   if (S.accounts.length > 1) fields.push({ name: 'acc', label: 'حساب', type: 'chips', value: t ? fin.txAccount(t) : fin.defAcc(), options: accOptions() });
   form({
     title: t ? 'ویرایش' : type === 'income' ? 'درآمد جدید' : 'هزینه جدید',
-    sub: t && t.monthlyId ? 'این هزینه از «قسط‌ها» ثبت شده؛ حذفش تیک آن ماه را برمی‌دارد.' : undefined,
     fields,
     extra: t ? [{ label: 'حذف', cls: 'danger', run: () => removeTx(t.id) }] : [],
     onSubmit(v) {
@@ -42,9 +42,8 @@ export function txSheet(type, preset = {}, editId) {
 export function removeTx(id) {
   const undo = fin.deleteTx(id);
   if (!undo) return;
-  const link = MO.detach(undo.tx);
   commit();
-  toast('تراکنش حذف شد', { label: 'واگرد', run: () => { fin.restoreTx(undo); MO.reattach(link); commit(); } });
+  toast('تراکنش حذف شد', { label: 'واگرد', run: () => { fin.restoreTx(undo); commit(); } });
 }
 
 /* ---------- ledger list ---------- */
@@ -105,7 +104,7 @@ export function reportSheet() {
 /* ---------- budgets ---------- */
 export function budgetSheet() {
   form({
-    title: 'بودجه ماهانه', sub: `خرج این ماه: ${M(fin.monthSum('expense'))}`,
+    title: 'بودجه ماهانه', sub: `قسط‌های ثابت: ${M(MO.total())} • خرج این ماه: ${M(fin.monthSum('expense'))}`,
     fields: [{ name: 'b', label: `سقف ماهانه (${S.profile.currency})`, type: 'number', value: fin.monthBudget() || '' }],
     onSubmit(v) {
       const b = num(v.b);
@@ -152,6 +151,27 @@ export function monthlySheet(id) {
       const amount = Math.abs(num(v.amount));
       if (!title || !amount) { toast('نام و مبلغ را وارد کنید'); return false; }
       MO.saveMonthly(m, { title, amount });
+      commit();
+    },
+  });
+}
+
+/* ---------- savings ---------- */
+export function savingSheet(id) {
+  const x = id ? SV.findSaving(id) : null;
+  form({
+    title: x ? 'ویرایش پس‌انداز' : 'پس‌انداز جدید',
+    fields: [
+      { name: 'place', label: 'کجا؟ (مثلاً بانک، طلا، صندوق)', value: x ? x.place : '' },
+      { name: 'amount', label: `چقدر؟ (${S.profile.currency})`, type: 'number', value: x ? x.amount : '' },
+    ],
+    focus: !x,
+    extra: x ? [{ label: 'حذف', cls: 'danger', run: () => { const r = SV.removeSaving(x.id); commit(); toast('حذف شد', { label: 'واگرد', run: () => { S.savings.splice(r.index, 0, r.item); commit(); } }); } }] : [],
+    onSubmit(v) {
+      const place = (v.place || '').trim();
+      const amount = Math.abs(num(v.amount));
+      if (!place || !amount) { toast('محل و مبلغ را وارد کنید'); return false; }
+      SV.saveSaving(x, { place, amount });
       commit();
     },
   });

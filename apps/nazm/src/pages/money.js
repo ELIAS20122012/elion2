@@ -5,14 +5,15 @@ import { fa, esc, money } from '../core/format.js';
 import { faDayMonth, monthLabel, currentMonthKey } from '../core/calendar.js';
 import { toast } from '../ui/toast.js';
 import { icon } from '../ui/widgets.js';
-import { pageHead, addLine, takeLine, putBack, drawers, toggleDrawer, pills, row, check, empty, section, bar, bars, tabOf, setTab } from '../ui/kit.js';
+import { pageHead, addLine, takeLine, putBack, drawers, toggleDrawer, pills, row, empty, section, bar, bars, tabOf, setTab } from '../ui/kit.js';
 import * as fin from '../domain/finance.js';
 import * as MO from '../domain/monthly.js';
+import * as SV from '../domain/savings.js';
 import { parseMoneyLine, splitAmount } from '../domain/quick.js';
-import { txSheet, historySheet, monthlySheet, budgetSheet, catBudgetSheet, addCatBudget, exportCsv } from '../features/finance-sheets.js';
+import { txSheet, historySheet, monthlySheet, savingSheet, budgetSheet, catBudgetSheet, addCatBudget, exportCsv } from '../features/finance-sheets.js';
 
-const ORDER = ['tx', 'monthly', 'budget', 'report'];
-const LABELS = { tx: 'تراکنش‌ها', monthly: 'قسط‌ها', budget: 'بودجه', report: 'گزارش' };
+const ORDER = ['tx', 'monthly', 'budget', 'savings', 'report'];
+const LABELS = { tx: 'تراکنش‌ها', monthly: 'قسط‌ها', budget: 'بودجه', savings: 'پس‌انداز', report: 'گزارش' };
 let filter = 'all';
 let q = '';
 const M = (v) => money(v);
@@ -22,7 +23,7 @@ function summary() {
   const hide = S.privacy;
   const bal = fin.balance();
   const left = fin.budgetLeft();
-  const used = fin.monthBudget() ? (fin.monthSum('expense') / fin.monthBudget()) * 100 : 0;
+  const used = fin.budgetUsedPct();
   const cur = S.profile.currency === 'تومان' ? 'ت' : S.profile.currency;
   const amount = hide ? '••••••' : `${bal < 0 ? '-' : ''}${Math.abs(bal).toLocaleString('en-US', { maximumFractionDigits: 2 })}`;
   return `<section class="balance-card">
@@ -33,7 +34,7 @@ function summary() {
     </section>
     <div class="duo">
       <button class="mini" data-act="to-budget"><small>بودجه‌ی باقی‌مانده</small><b class="ltr ${left < 0 ? 'neg' : ''}">${money(Math.max(0, left), hide)}</b>${bar(used, used >= 100)}</button>
-      <button class="mini" data-act="to-monthly"><small>قسط‌های باقی‌مانده این ماه</small><b class="ltr">${money(MO.remainingTotal(), hide)}</b><small>${MO.remainingCount() ? `${fa(MO.remainingCount())} مورد` : 'همه پرداخت شد ✓'}</small></button>
+      <button class="mini" data-act="to-monthly"><small>قسط‌های ثابت ماهانه</small><b class="ltr">${money(MO.total(), hide)}</b><small>${fa(MO.list().length)} مورد</small></button>
     </div>`;
 }
 
@@ -54,15 +55,26 @@ function txTab() {
 }
 
 function monthlyTab() {
-  const rows = MO.list().map((m) => row({ ic: '', title: esc(m.title), cls: MO.isPaid(m) ? 'is-done' : '', sub: M(m.amount), act: 'monthly-edit', attrs: `data-id="${m.id}"`, trailing: check('monthly-pay', m.id, MO.isPaid(m)) })).join('');
-  return `<section class="card row-between"><span><small>${monthLabel(currentMonthKey())}</small><b class="big ltr block">${M(MO.remainingTotal())}</b><small>باقی‌مانده از ${M(MO.total())}</small></span><span class="end"><small>پرداخت‌شده</small><b class="ltr block pos">${M(MO.paidTotal())}</b></span></section>
+  const rows = MO.list().map((m) => row({ ic: '', title: esc(m.title), sub: M(m.amount), act: 'monthly-edit', attrs: `data-id="${m.id}"`,
+    trailing: `<button class="x-btn" data-act="monthly-remove" data-id="${m.id}" aria-label="حذف">${icon('close')}</button>` })).join('');
+  return `<section class="card row-between"><span><small>جمع قسط‌های ماهانه</small><b class="big ltr block">${M(MO.total())}</b></span><span class="end"><small>باقی‌مانده‌ی بودجه</small><b class="ltr block ${fin.budgetLeft() < 0 ? 'neg' : 'pos'}">${M(fin.budgetLeft())}</b></span></section>
     <div class="list cols2">${rows || empty('هنوز چیزی ثبت نشده — مثلاً «برق ۵۰» بنویسید')}</div>
-    <small class="center block">با تیک زدن، هزینه‌ی همین ماه ثبت می‌شود؛ ماه بعد خودکار از اول شروع می‌شود.</small>`;
+    <small class="center block">این مبلغ‌ها هر ماه از بودجه کم می‌شوند. وقتی قسطی تمام شد، با × حذفش کنید.</small>`;
+}
+
+function savingsTab() {
+  const rows = SV.list().map((x) => row({ ic: '', title: esc(x.place), sub: M(x.amount), act: 'saving-edit', attrs: `data-id="${x.id}"`,
+    trailing: `<button class="x-btn" data-act="saving-remove" data-id="${x.id}" aria-label="حذف">${icon('close')}</button>` })).join('');
+  return `<section class="card row-between"><span><small>جمع پس‌انداز</small><b class="big ltr block">${M(SV.total())}</b></span><span class="end"><small>${fa(SV.list().length)} جا</small></span></section>
+    <div class="list cols2">${rows || empty('هنوز چیزی ثبت نشده — مثلاً «طلا ۸۰۰» بنویسید')}</div>
+    <small class="center block">بنویس کجا پس‌انداز کرده‌ای و چقدر. با × حذف می‌شود.</small>`;
 }
 
 function budgetTab() {
   const budget = fin.monthBudget();
   const spent = fin.monthSum('expense');
+  const fixed = MO.total();
+  const left = fin.budgetLeft();
   const rows = fin.categoryBudgetRows().map((r) => {
     const c = fin.catOf(r.key);
     return row({ ic: c.icon, title: c.label, act: 'cat-budget', attrs: `data-k="${r.key}"`,
@@ -70,9 +82,9 @@ function budgetTab() {
   }).join('');
   return `<section class="card stack-s">
       <div class="row-between"><b>بودجه‌ی ${monthLabel(currentMonthKey())}</b><button class="link" data-act="set-budget">تنظیم</button></div>
-      <div class="row-between"><span><small>خرج‌شده</small><b class="big ltr block">${M(spent)}</b></span><span class="end"><small>باقی‌مانده</small><b class="big ltr block ${budget - spent < 0 ? 'neg' : ''}">${M(Math.max(0, budget - spent))}</b></span></div>
-      ${bar(budget ? (spent / budget) * 100 : 0, spent > budget)}
-      <small>از ${M(budget)}</small>
+      <div class="lines-plain"><div><span>بودجه</span><b class="ltr">${M(budget)}</b></div><div><span>قسط‌های ثابت</span><b class="ltr">− ${M(fixed)}</b></div><div><span>خرج‌شده</span><b class="ltr">− ${M(spent)}</b></div></div>
+      <div class="row-between"><small>باقی‌مانده</small><b class="big ltr ${left < 0 ? 'neg' : ''}">${M(left)}</b></div>
+      ${bar(fin.budgetUsedPct(), left < 0)}
     </section>
     ${section('بودجه‌ی دسته‌ها', `<div class="list">${rows || empty('برای دسته‌ها بودجه تعیین نشده')}</div>`)}
     <button class="link center" data-act="new-cat">+ بودجه برای یک دسته</button>`;
@@ -84,7 +96,7 @@ function reportTab() {
   const cols = flow.map((r, i) => ({ v: r.expense, label: monthLabel(r.key).split(' ')[0], on: i === flow.length - 1 }));
   const tile = (label, value, cls = '') => `<div class="mini static"><small>${label}</small><b class="ltr ${cls}">${value}</b></div>`;
   return `<div class="duo">${tile('خرج این ماه', M(fin.monthSum('expense')), 'neg')}${tile('درآمد این ماه', M(fin.monthSum('income')), 'pos')}</div>
-    <div class="duo">${tile('قسط‌های پرداخت‌شده', M(MO.paidTotal()))}${tile('بیشترین هزینه', top ? `${fin.catOf(top.key).label}` : '—')}</div>
+    <div class="duo">${tile('قسط‌های ثابت', M(MO.total()))}${tile('بیشترین هزینه', top ? `${fin.catOf(top.key).label}` : '—')}</div>
     ${section('خرج ۶ ماه اخیر', `<div class="card">${bars(cols)}</div>`)}
     <button class="link center" data-act="csv">خروجی اکسل (CSV)</button>`;
 }
@@ -94,11 +106,11 @@ export default {
   title: 'مالی',
   mount() { filter = 'all'; q = ''; },
   render() {
-    const bodies = { tx: txTab, monthly: monthlyTab, budget: budgetTab, report: reportTab };
+    const bodies = { tx: txTab, monthly: monthlyTab, budget: budgetTab, savings: savingsTab, report: reportTab };
     const items = ORDER.map((key) => ({ key, label: LABELS[key], body: () => `<div class="stack">${bodies[key]()}</div>` }));
     const stored = tabOf('money', 'tx');
     const open = ORDER.includes(stored) || stored === '' ? stored : 'tx';
-    return `${pageHead('مالی', 'موجودی، خرج و قسط‌ها')}${summary()}${open === 'tx' ? addLine('مثلاً نهار ۱۲۰ — برای درآمد: +حقوق ۱۵۰۰') : open === 'monthly' ? addLine('مثلاً برق ۵۰ — و Enter') : ''}${drawers(items, open)}`;
+    return `${pageHead('مالی', 'موجودی، خرج و قسط‌ها')}${summary()}${open === 'tx' ? addLine('مثلاً نهار ۱۲۰ — برای درآمد: +حقوق ۱۵۰۰') : open === 'monthly' ? addLine('مثلاً برق ۵۰ — و Enter') : open === 'savings' ? addLine('مثلاً طلا ۸۰۰ — و Enter') : ''}${drawers(items, open)}`;
   },
   act: {
     tab: toggleDrawer('money'),
@@ -109,12 +121,20 @@ export default {
     noop() {},
     tx: (el) => txSheet(null, {}, el.dataset.id),
     all: () => historySheet(),
-    'monthly-pay'(el) {
-      const m = MO.findMonthly(el.dataset.id);
-      if (MO.isPaid(m)) MO.unpay(m); else MO.pay(m);
+    'monthly-remove'(el) {
+      const r = MO.removeMonthly(el.dataset.id);
+      if (!r) return;
       commit();
+      toast(`«${r.item.title}» حذف شد`, { label: 'واگرد', run: () => { S.monthly.splice(r.index, 0, r.item); commit(); } });
     },
     'monthly-edit': (el) => monthlySheet(el.dataset.id),
+    'saving-edit': (el) => savingSheet(el.dataset.id),
+    'saving-remove'(el) {
+      const r = SV.removeSaving(el.dataset.id);
+      if (!r) return;
+      commit();
+      toast(`«${r.item.place}» حذف شد`, { label: 'واگرد', run: () => { S.savings.splice(r.index, 0, r.item); commit(); } });
+    },
     'set-budget': budgetSheet,
     'new-cat': addCatBudget,
     'cat-budget': (el) => catBudgetSheet(el.dataset.k),
@@ -122,7 +142,12 @@ export default {
     quick(el) {
       const line = takeLine(el);
       if (!line) return;
-      if (tabOf('money', 'tx') === 'monthly') {
+      const where = tabOf('money', 'tx');
+      if (where === 'savings') {
+        const { title, amount } = splitAmount(line);
+        if (!title || !amount) { toast('محل و مبلغ را بنویسید، مثلاً طلا ۸۰۰'); putBack(el, line); return; }
+        SV.saveSaving(null, { place: title, amount });
+      } else if (where === 'monthly') {
         const { title, amount } = splitAmount(line);
         if (!title || !amount) { toast('نام و مبلغ را بنویسید، مثلاً برق ۵۰'); putBack(el, line); return; }
         MO.saveMonthly(null, { title, amount });

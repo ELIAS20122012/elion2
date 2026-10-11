@@ -6,13 +6,13 @@ export function fromLegacy(state) {
   const out = [];
   (state.loans || []).forEach((l) => {
     if (l.count && Object.keys(l.paid || {}).length >= l.count) return; // fully paid off
-    out.push({ id: uid(), title: l.title, amount: l.amount, paid: {} });
+    out.push({ id: uid(), title: l.title, amount: l.amount });
   });
   (state.bills || []).forEach((b) => {
     if (b.paused) return;
     const paid = Object.values(b.paid || {}).map((p) => p.amount).filter((x) => x > 0);
     const avg = paid.length ? paid.reduce((s, x) => s + x, 0) / paid.length : b.amount;
-    out.push({ id: uid(), title: b.title, amount: Math.round((avg / (b.every || 1)) * 100) / 100, paid: {} });
+    out.push({ id: uid(), title: b.title, amount: Math.round((avg / (b.every || 1)) * 100) / 100 });
   });
   return out;
 }

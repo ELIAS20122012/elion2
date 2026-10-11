@@ -236,6 +236,7 @@ test('shopping list: add, tick, order and clear bought items', () => {
 
 test('budgets: remaining, per-category rows and top category', () => {
   S.wallet.budget = 1000;
+  S.monthly = [];
   S.wallet.catBudgets = { food: 100 };
   S.tx = [
     { id: 'a', type: 'expense', amount: 150, category: 'food', date: today() },
@@ -264,40 +265,32 @@ test('seed has plain monthly payments and no loan/bill collections', () => {
   assert.equal(S.bills, undefined);
 });
 
-test('ticking a monthly payment records an expense; unticking removes it', () => {
+test('monthly payments add up and come off the budget before spending', () => {
   S.tx = []; S.monthly = [];
-  const m = MO.saveMonthly(null, { title: 'برق', amount: 50 });
-  assert.equal(MO.remainingTotal(), 50);
-  MO.pay(m);
-  assert.equal(MO.isPaid(m), true);
-  assert.equal(MO.paidTotal(), 50);
-  assert.equal(MO.remainingCount(), 0);
+  S.wallet.budget = 1000;
+  MO.saveMonthly(null, { title: 'برق', amount: 50 });
+  const car = MO.saveMonthly(null, { title: 'قسط ماشین', amount: 250 });
+  assert.equal(MO.total(), 300);
+  assert.equal(fin.budgetLeft(), 700);
+  fin.saveTx(null, { type: 'expense', amount: 100, category: 'food', note: '', date: today(), accountId: 'main' });
+  assert.equal(fin.budgetLeft(), 600);
+  assert.equal(Math.round(fin.budgetUsedPct()), 40);
+  // no ticking: monthly payments never create expenses by themselves
   assert.equal(S.tx.length, 1);
-  assert.deepEqual([S.tx[0].type, S.tx[0].amount, S.tx[0].note, S.tx[0].monthlyId], ['expense', 50, 'برق', m.id]);
-  MO.pay(m); // second tick in the same month does nothing
-  assert.equal(S.tx.length, 1);
-  MO.unpay(m);
-  assert.equal(MO.isPaid(m), false);
-  assert.equal(S.tx.length, 0);
+  // finished? remove it, and the budget frees up again (undo puts it back in place)
+  const r = MO.removeMonthly(car.id);
+  assert.equal(fin.budgetLeft(), 850);
+  S.monthly.splice(r.index, 0, r.item);
+  assert.equal(fin.budgetLeft(), 600);
+  assert.equal(MO.removeMonthly('nope'), null);
 });
 
-test('the tick resets every month (paid state is keyed by month)', () => {
+test('editing a monthly payment changes the total', () => {
+  S.monthly = [];
   const m = MO.saveMonthly(null, { title: 'اینترنت', amount: 35 });
-  m.paid = { '1999-01': { txId: 'x', date: '1999-01-05' } };
-  assert.equal(MO.isPaid(m), false);
-  assert.equal(MO.isPaid(m, '1999-01'), true);
-});
-
-test('deleting a payment expense by hand un-ticks the month, and undo ticks it again', () => {
-  S.tx = []; S.monthly = [];
-  const m = MO.saveMonthly(null, { title: 'اجاره', amount: 600 });
-  MO.pay(m);
-  const undo = fin.deleteTx(S.tx[0].id);
-  const link = MO.detach(undo.tx);
-  assert.equal(MO.isPaid(m), false);
-  fin.restoreTx(undo); MO.reattach(link);
-  assert.equal(MO.isPaid(m), true);
-  assert.equal(S.tx.length, 1);
+  MO.saveMonthly(m, { title: 'اینترنت خانه', amount: 40 });
+  assert.deepEqual(MO.list().map((x) => [x.title, x.amount]), [['اینترنت خانه', 40]]);
+  assert.equal(MO.total(), 40);
 });
 
 test('legacy loans and bills fold into monthly payments (finished loans and paused bills are skipped)', () => {
@@ -310,4 +303,27 @@ test('legacy loans and bills fold into monthly payments (finished loans and paus
   assert.equal(migrate(doc).monthly[0].title, 'x');
   const had = emptyState(); had.monthly = [{ id: 'k', title: 'k', amount: 1, paid: {} }];
   assert.equal(migrate(had).monthly.length, 1, 'existing monthly list is kept');
+});
+
+/* ---------- savings ---------- */
+import * as SV from '../src/domain/savings.js';
+
+test('savings: where and how much, with a total and removal that can be undone', () => {
+  S.savings = [];
+  const a = SV.saveSaving(null, { place: 'بانک', amount: 1000 });
+  SV.saveSaving(null, { place: 'طلا', amount: 500 });
+  assert.equal(SV.total(), 1500);
+  SV.saveSaving(a, { place: 'بانک ملی', amount: 1200 });
+  assert.deepEqual(SV.list().map((x) => [x.place, x.amount]), [['بانک ملی', 1200], ['طلا', 500]]);
+  const r = SV.removeSaving(a.id);
+  assert.equal(SV.total(), 500);
+  S.savings.splice(r.index, 0, r.item);
+  assert.equal(SV.list()[0].place, 'بانک ملی');
+  assert.equal(SV.removeSaving('nope'), null);
+  assert.equal(SV.findSaving(a.id), a);
+});
+
+test('migrate gives old documents an empty savings list', () => {
+  const old = emptyState(); delete old.savings;
+  assert.deepEqual(migrate(old).savings, []);
 });

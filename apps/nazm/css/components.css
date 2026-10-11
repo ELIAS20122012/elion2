@@ -319,3 +319,8 @@ textarea.input { min-height: 72px; line-height: 1.6; }
 .sec-head h3 { font-size: 13px; }
 .drawer-body { padding-bottom: 8px; }
 .day-card { padding: 8px 12px; }
+.x-btn { width: 22px; height: 22px; flex: none; display: grid; place-items: center; color: var(--muted); border-radius: 50%; }
+.x-btn .material-symbols-outlined { font-size: 15px; }
+.x-btn:hover, .x-btn:active { color: var(--danger); }
+.lines-plain { display: flex; flex-direction: column; gap: 4px; font-size: 13px; }
+.lines-plain div { display: flex; justify-content: space-between; }

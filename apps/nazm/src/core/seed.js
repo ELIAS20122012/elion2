@@ -8,7 +8,7 @@ export function emptyState() {
   return {
     v: STATE_VERSION, privacy: false,
     profile: { name: '', currency: '€', calendar: 'gregorian' },
-    tasks: [], habits: [], blocks: [], plannerHideDone: false, appointments: [], shopping: [], monthly: [],
+    tasks: [], habits: [], blocks: [], plannerHideDone: false, appointments: [], shopping: [], monthly: [], savings: [],
     wallet: { startBalance: 0, budget: 1500, alerts: true, quickSet: 0 },
     accounts: [{ id: 'main', name: 'حساب اصلی', type: 'bank', opening: 0 }],
     tx: [],
@@ -94,11 +94,15 @@ export function seed() {
       { id: 'cash', name: 'کیف پول نقد', type: 'cash', opening: 0 },
     ],
     monthly: [
-      { id: uid(), title: 'قسط ماشین', amount: 250, paid: {} },
-      { id: uid(), title: 'اجاره', amount: 640, paid: {} },
-      { id: uid(), title: 'اینترنت', amount: 35, paid: {} },
-      { id: uid(), title: 'برق و گاز', amount: 95, paid: {} },
-      { id: uid(), title: 'موبایل', amount: 15, paid: {} },
+      { id: uid(), title: 'قسط ماشین', amount: 250 },
+      { id: uid(), title: 'اجاره', amount: 640 },
+      { id: uid(), title: 'اینترنت', amount: 35 },
+      { id: uid(), title: 'برق و گاز', amount: 95 },
+      { id: uid(), title: 'موبایل', amount: 15 },
+    ],
+    savings: [
+      { id: uid(), place: 'حساب پس‌انداز بانک', amount: 3000, date: d(-20) },
+      { id: uid(), place: 'طلا', amount: 800, date: d(-60) },
     ],
     tx,
     gym: {

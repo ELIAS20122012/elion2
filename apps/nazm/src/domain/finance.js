@@ -2,6 +2,7 @@
 import { S } from '../core/store.js';
 import { uid, sum } from '../core/util.js';
 import { today } from '../core/dates.js';
+import { total as monthlyTotal } from './monthly.js';
 import { monthKey, shiftMonthKey, currentMonthKey } from '../core/calendar.js';
 
 /* ---------- catalogues ---------- */
@@ -113,7 +114,9 @@ export function ledgerRows({ month, type = 'all', acc = 'all', q = '' }) {
 /* ---------- budgets & reporting ---------- */
 export const catBudgets = () => S.wallet.catBudgets || (S.wallet.catBudgets = {});
 export const monthBudget = () => S.wallet.budget || 0;
-export const budgetLeft = () => monthBudget() - monthSum('expense');
+/** Fixed monthly payments come off the budget first, then what was spent. */
+export const budgetLeft = () => monthBudget() - monthlyTotal() - monthSum('expense');
+export const budgetUsedPct = () => (monthBudget() ? ((monthlyTotal() + monthSum('expense')) / monthBudget()) * 100 : 0);
 
 /** Spending per expense category this month, with its optional budget. */
 export function categoryBudgetRows(mk = currentMonthKey()) {

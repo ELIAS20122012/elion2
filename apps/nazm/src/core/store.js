@@ -41,6 +41,7 @@ export function migrate(state) {
   state.tx = state.tx || [];
   state.weekly = state.weekly || {};
   if (!state.monthly) state.monthly = fromLegacy(state); // loans/bills → plain monthly payments, once
+  state.savings = state.savings || [];
   state.appointments = state.appointments || [];
   state.shopping = state.shopping || [];
   state.wallet.catBudgets = state.wallet.catBudgets || {};
