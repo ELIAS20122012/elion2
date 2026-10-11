@@ -1,5 +1,15 @@
 # Elias OS — Phase 0 (Kernel)
 
+## پروژه‌های Elion در این ریپو (هر پروژه یک branch)
+
+| Branch | پروژه | پوشه روی کامپیوتر |
+|---|---|---|
+| `main` | Elion / Elias OS — سیستم‌عامل ایجنتیک (تلگرام، پنل وب، پلاگین‌ها، صدا، ویدیو) | `C:\Elion\elias-os` |
+| [`trading-robot`](../../tree/trading-robot) | ELION Trading — ژورنال، داشبورد زنده، پل MT4/MT5، EA، ربات | `C:\Elion\trading-robot` |
+| [`pen-app`](../../tree/pen-app) | Elion Pen (InkFlow) — اپ قلم/نقاشی روی صفحه (C# / WPF) | `C:\Elion\pen app` |
+
+`skills/` (اسکیل‌های addyosmani و Google) کد شخص ثالث است و از ریپوی خودشان نصب می‌شود؛ اینجا نیست.
+
 سیستم‌عامل عاملی شخصی الیاس. هسته (Kernel) عمومی است؛ ترید، محتوا، منتورشیپ و … بعداً به‌صورت پلاگین وصل می‌شوند.
 
 ## فاز ۰ چه چیزی تحویل می‌دهد

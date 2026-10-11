@@ -18,3 +18,4 @@ site-draft/
 *key*
 .env
 .env.*
+__pycache__/
