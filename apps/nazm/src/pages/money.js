@@ -6,11 +6,12 @@ import { faDayMonth, fullDate, relDay, monthLabel, shiftMonthKey, currentMonthKe
 import { toast } from '../ui/toast.js';
 import { menu } from '../ui/sheet.js';
 import { icon } from '../ui/widgets.js';
-import { pageHead, tabs, pills, row, fab, empty, section, bar, bars, tabOf, setTab } from '../ui/kit.js';
+import { pageHead, drawers, toggleDrawer, pills, row, fab, empty, section, bar, bars, tabOf, openOr, setTab } from '../ui/kit.js';
 import * as fin from '../domain/finance.js';
 import { txSheet, historySheet, payLoan, loanSheet, loanMenu, budgetSheet, catBudgetSheet, addCatBudget, exportCsv } from '../features/finance-sheets.js';
 
-const TABS = [{ key: 'tx', label: 'تراکنش‌ها' }, { key: 'loans', label: 'قسط‌ها' }, { key: 'budget', label: 'بودجه' }, { key: 'report', label: 'گزارش' }];
+const ORDER = ['tx', 'loans', 'budget', 'report'];
+const LABELS = { tx: 'تراکنش‌ها', loans: 'قسط‌ها', budget: 'بودجه', report: 'گزارش' };
 let filter = 'all';
 let q = '';
 const M = (v) => money(v);
@@ -100,12 +101,13 @@ export default {
   title: 'مالی',
   mount() { filter = 'all'; q = ''; },
   render() {
-    const tab = tabOf('money', 'tx');
-    const body = tab === 'loans' ? loansTab() : tab === 'budget' ? budgetTab() : tab === 'report' ? reportTab() : txTab();
-    return `${pageHead('مالی', 'موجودی، خرج و قسط‌ها')}${summary()}${tabs(TABS, tab)}<div class="stack">${body}</div>${tab === 'report' ? '' : fab('add')}`;
+    const bodies = { tx: txTab, loans: loansTab, budget: budgetTab, report: reportTab };
+    const items = ORDER.map((key) => ({ key, label: LABELS[key], body: () => `<div class="stack">${bodies[key]()}</div>` }));
+    const open = tabOf('money', 'tx');
+    return `${pageHead('مالی', 'موجودی، خرج و قسط‌ها')}${summary()}${drawers(items, open)}${open === 'report' ? '' : fab('add')}`;
   },
   act: {
-    tab: (el) => setTab('money', el.dataset.v),
+    tab: toggleDrawer('money'),
     privacy() { S.privacy = !S.privacy; commit(); },
     'to-budget': () => setTab('money', 'budget'),
     'to-loans': () => setTab('money', 'loans'),
@@ -120,7 +122,7 @@ export default {
     'cat-budget': (el) => catBudgetSheet(el.dataset.k),
     csv: () => exportCsv(S.tx, 'all'),
     add() {
-      const tab = tabOf('money', 'tx');
+      const tab = openOr('money', 'tx');
       if (tab === 'loans') loanSheet();
       else if (tab === 'budget') menu('بودجه', [{ icon: 'savings', label: 'بودجه‌ی ماهانه', run: budgetSheet }, { icon: 'category', label: 'بودجه برای یک دسته', run: addCatBudget }]);
       else menu('ثبت جدید', [{ icon: 'arrow_upward', label: 'هزینه', run: () => txSheet('expense') }, { icon: 'arrow_downward', label: 'درآمد', run: () => txSheet('income') }]);

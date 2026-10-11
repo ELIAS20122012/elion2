@@ -35,10 +35,18 @@
 .badge.warn { background: var(--accent-soft); color: var(--accent-deep); }
 .badge.bad { background: color-mix(in srgb, var(--danger) 16%, transparent); color: var(--danger); }
 
-/* ---- tabs & pills ---- */
-.tabs { display: flex; gap: 4px; padding: 4px; background: var(--well); border-radius: 999px; overflow-x: auto; }
-.tab { flex: 1; white-space: nowrap; padding: 9px 14px; border-radius: 999px; font-weight: 700; font-size: 13px; color: var(--muted); text-align: center; }
-.tab.on { background: var(--primary); color: var(--on-primary); box-shadow: var(--shadow-sm); }
+/* ---- drawers: small text headers; the list slides down under the one you open ---- */
+.drawers { display: flex; flex-direction: column; }
+.drawer { border-bottom: 1px solid var(--line); }
+.drawer:first-child { border-top: 1px solid var(--line); }
+.drawer-head { width: 100%; display: flex; align-items: center; justify-content: space-between; padding: 14px 2px; font-size: 14.5px; font-weight: 700; color: var(--ink); }
+.drawer.open .drawer-head { color: var(--primary); }
+.dchev { font-size: 20px; color: var(--muted); transition: transform .2s; }
+.drawer.open .dchev { transform: rotate(180deg); color: var(--primary); }
+.drawer-body { padding: 2px 0 18px; animation: drop .22s ease; }
+@keyframes drop { from { opacity: 0; transform: translateY(-6px); } }
+
+/* ---- pills ---- */
 .pills { display: flex; gap: 8px; }
 .pill { padding: 7px 16px; border-radius: 999px; background: var(--card); border: 1px solid var(--line); font-weight: 700; font-size: 12.5px; }
 .pill.on { background: var(--accent-soft); border-color: var(--accent); color: var(--accent-deep); }

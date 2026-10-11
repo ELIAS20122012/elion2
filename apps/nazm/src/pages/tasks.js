@@ -6,14 +6,15 @@ import { faDate, faDayNum, relDay } from '../core/calendar.js';
 import { toast } from '../ui/toast.js';
 import { menu } from '../ui/sheet.js';
 import { icon } from '../ui/widgets.js';
-import { pageHead, tabs, row, check, fab, empty, section, ring, tabOf, setTab } from '../ui/kit.js';
+import { pageHead, drawers, toggleDrawer, row, check, fab, empty, section, ring, tabOf, openOr } from '../ui/kit.js';
 import * as T from '../domain/tasks.js';
 import * as A from '../domain/appointments.js';
 import * as SH from '../domain/shopping.js';
 import { taskSheet, toggleTask, quickAddTask } from '../features/task-sheets.js';
 import { apptSheet, shopSheet, quickShop } from '../features/plan-sheets.js';
 
-const TABS = [{ key: 'calendar', label: 'تقویم' }, { key: 'appts', label: 'قرارها' }, { key: 'daily', label: 'کارهای روزانه' }, { key: 'shop', label: 'خریدها' }];
+const ORDER = ['calendar', 'appts', 'daily', 'shop'];
+const LABELS = { calendar: 'تقویم', appts: 'قرارها', daily: 'کارهای روزانه', shop: 'خریدها' };
 let day = today();
 
 const dayLabel = (d) => (d === today() ? 'امروز' : relDay(d) === 'فردا' ? 'فردا' : faDate(parseIso(d), { weekday: 'long', day: 'numeric', month: 'long' }));
@@ -87,12 +88,12 @@ export default {
   title: 'کارها',
   mount() { day = today(); },
   render() {
-    const tab = tabOf('tasks', 'daily');
-    const body = tab === 'calendar' ? calendarTab() : tab === 'appts' ? apptsTab() : tab === 'shop' ? shopTab() : dailyTab();
-    return `${pageHead('کارها', 'برنامه‌ی روز و هفته')}${tabs(TABS, tab)}<div class="stack">${body}</div>${fab('add')}`;
+    const bodies = { calendar: calendarTab, appts: apptsTab, daily: dailyTab, shop: shopTab };
+    const items = ORDER.map((key) => ({ key, label: LABELS[key], body: () => `<div class="stack">${bodies[key]()}</div>` }));
+    return `${pageHead('کارها', 'برنامه‌ی روز و هفته')}${drawers(items, tabOf('tasks', 'daily'))}${fab('add')}`;
   },
   act: {
-    tab: (el) => setTab('tasks', el.dataset.v),
+    tab: toggleDrawer('tasks'),
     'pick-day'(el) { day = el.dataset.date; refresh(); },
     week(el) { day = iso(addDays(parseIso(day), +el.dataset.d)); refresh(); },
     step(el) { day = iso(addDays(parseIso(day), +el.dataset.d)); refresh(); },
@@ -105,7 +106,7 @@ export default {
     'quick-task'(el) { const input = el.querySelector('input'); if (quickAddTask(input.value, day)) input.value = ''; },
     'quick-shop'(el) { const input = el.querySelector('input'); if (quickShop(input.value)) input.value = ''; },
     add() {
-      const tab = tabOf('tasks', 'daily');
+      const tab = openOr('tasks', 'daily');
       if (tab === 'appts') apptSheet(null, day);
       else if (tab === 'shop') shopSheet();
       else if (tab === 'calendar') menu('افزودن به ' + dayLabel(day), [{ icon: 'task_alt', label: 'کار', run: () => taskSheet(null, day) }, { icon: 'event', label: 'قرار', run: () => apptSheet(null, day) }]);

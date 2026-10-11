@@ -4,15 +4,25 @@ import { go } from '../router.js';
 import { icon } from './widgets.js';
 
 /* ---- the active tab of each section is remembered in S.ui.tabs ---- */
-export const tabOf = (page, def) => (S.ui.tabs && S.ui.tabs[page]) || def;
+/* which drawer is open: '' means all closed; undefined means "never touched" → the default */
+export const tabOf = (page, def) => { const v = S.ui.tabs && S.ui.tabs[page]; return v === undefined ? def : v; };
+export const openOr = (page, def) => tabOf(page, def) || def;
 export function setTab(page, key) { S.ui.tabs = S.ui.tabs || {}; S.ui.tabs[page] = key; commit(); }
 export function goTab(page, key) { S.ui.tabs = S.ui.tabs || {}; S.ui.tabs[page] = key; go(page); }
 
 export const pageHead = (title, desc = '') => `<header class="page-head"><h1>${title}</h1>${desc ? `<p>${desc}</p>` : ''}</header>`;
 
-/** Section tabs: items [{ key, label, ic? }]. */
-export const tabs = (items, current, act = 'tab') =>
-  `<div class="tabs" role="tablist">${items.map((t) => `<button role="tab" class="tab${t.key === current ? ' on' : ''}" data-act="${act}" data-v="${t.key}">${t.label}</button>`).join('')}</div>`;
+/** Text-only drawers (one open at a time): items [{ key, label, body() }]. Tap a header to open / close it. */
+export const drawers = (items, current, act = 'tab') =>
+  `<div class="drawers">${items.map((d) => {
+    const on = d.key === current;
+    return `<section class="drawer${on ? ' open' : ''}" data-k="${d.key}">
+      <button class="drawer-head" data-act="${act}" data-v="${d.key}" aria-expanded="${on}"><span>${d.label}</span>${icon('expand_more', 'dchev')}</button>
+      ${on ? `<div class="drawer-body">${d.body()}</div>` : ''}</section>`;
+  }).join('')}</div>`;
+
+/** Click handler for the drawer headers of a page. */
+export const toggleDrawer = (page) => (el) => setTab(page, tabOf(page, '') === el.dataset.v ? '' : el.dataset.v);
 
 /** Small pill chips (filters). */
 export const pills = (items, current, act) =>

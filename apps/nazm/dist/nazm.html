@@ -139,10 +139,18 @@ small { font-size: 11.5px; color: var(--muted); }
 .badge.warn { background: var(--accent-soft); color: var(--accent-deep); }
 .badge.bad { background: color-mix(in srgb, var(--danger) 16%, transparent); color: var(--danger); }
 
-/* ---- tabs & pills ---- */
-.tabs { display: flex; gap: 4px; padding: 4px; background: var(--well); border-radius: 999px; overflow-x: auto; }
-.tab { flex: 1; white-space: nowrap; padding: 9px 14px; border-radius: 999px; font-weight: 700; font-size: 13px; color: var(--muted); text-align: center; }
-.tab.on { background: var(--primary); color: var(--on-primary); box-shadow: var(--shadow-sm); }
+/* ---- drawers: small text headers; the list slides down under the one you open ---- */
+.drawers { display: flex; flex-direction: column; }
+.drawer { border-bottom: 1px solid var(--line); }
+.drawer:first-child { border-top: 1px solid var(--line); }
+.drawer-head { width: 100%; display: flex; align-items: center; justify-content: space-between; padding: 14px 2px; font-size: 14.5px; font-weight: 700; color: var(--ink); }
+.drawer.open .drawer-head { color: var(--primary); }
+.dchev { font-size: 20px; color: var(--muted); transition: transform .2s; }
+.drawer.open .dchev { transform: rotate(180deg); color: var(--primary); }
+.drawer-body { padding: 2px 0 18px; animation: drop .22s ease; }
+@keyframes drop { from { opacity: 0; transform: translateY(-6px); } }
+
+/* ---- pills ---- */
 .pills { display: flex; gap: 8px; }
 .pill { padding: 7px 16px; border-radius: 999px; background: var(--card); border: 1px solid var(--line); font-weight: 700; font-size: 12.5px; }
 .pill.on { background: var(--accent-soft); border-color: var(--accent); color: var(--accent-deep); }
@@ -2302,15 +2310,25 @@ const { go } = __r("src/router.js");
 const { icon } = __r("src/ui/widgets.js");
 
 /* ---- the active tab of each section is remembered in S.ui.tabs ---- */
-const tabOf = (page, def) => (S.ui.tabs && S.ui.tabs[page]) || def;
+/* which drawer is open: '' means all closed; undefined means "never touched" → the default */
+const tabOf = (page, def) => { const v = S.ui.tabs && S.ui.tabs[page]; return v === undefined ? def : v; };
+const openOr = (page, def) => tabOf(page, def) || def;
 function setTab(page, key) { S.ui.tabs = S.ui.tabs || {}; S.ui.tabs[page] = key; commit(); }
 function goTab(page, key) { S.ui.tabs = S.ui.tabs || {}; S.ui.tabs[page] = key; go(page); }
 
 const pageHead = (title, desc = '') => `<header class="page-head"><h1>${title}</h1>${desc ? `<p>${desc}</p>` : ''}</header>`;
 
-/** Section tabs: items [{ key, label, ic? }]. */
-const tabs = (items, current, act = 'tab') =>
-  `<div class="tabs" role="tablist">${items.map((t) => `<button role="tab" class="tab${t.key === current ? ' on' : ''}" data-act="${act}" data-v="${t.key}">${t.label}</button>`).join('')}</div>`;
+/** Text-only drawers (one open at a time): items [{ key, label, body() }]. Tap a header to open / close it. */
+const drawers = (items, current, act = 'tab') =>
+  `<div class="drawers">${items.map((d) => {
+    const on = d.key === current;
+    return `<section class="drawer${on ? ' open' : ''}" data-k="${d.key}">
+      <button class="drawer-head" data-act="${act}" data-v="${d.key}" aria-expanded="${on}"><span>${d.label}</span>${icon('expand_more', 'dchev')}</button>
+      ${on ? `<div class="drawer-body">${d.body()}</div>` : ''}</section>`;
+  }).join('')}</div>`;
+
+/** Click handler for the drawer headers of a page. */
+const toggleDrawer = (page) => (el) => setTab(page, tabOf(page, '') === el.dataset.v ? '' : el.dataset.v);
 
 /** Small pill chips (filters). */
 const pills = (items, current, act) =>
@@ -2344,10 +2362,12 @@ function bars(cols, act = '') {
 }
 
 __exports.tabOf = tabOf;
+__exports.openOr = openOr;
 __exports.setTab = setTab;
 __exports.goTab = goTab;
 __exports.pageHead = pageHead;
-__exports.tabs = tabs;
+__exports.drawers = drawers;
+__exports.toggleDrawer = toggleDrawer;
 __exports.pills = pills;
 __exports.row = row;
 __exports.check = check;
@@ -2791,14 +2811,15 @@ const { faDate, faDayNum, relDay } = __r("src/core/calendar.js");
 const { toast } = __r("src/ui/toast.js");
 const { menu } = __r("src/ui/sheet.js");
 const { icon } = __r("src/ui/widgets.js");
-const { pageHead, tabs, row, check, fab, empty, section, ring, tabOf, setTab } = __r("src/ui/kit.js");
+const { pageHead, drawers, toggleDrawer, row, check, fab, empty, section, ring, tabOf, openOr } = __r("src/ui/kit.js");
 const T = __r("src/domain/tasks.js");
 const A = __r("src/domain/appointments.js");
 const SH = __r("src/domain/shopping.js");
 const { taskSheet, toggleTask, quickAddTask } = __r("src/features/task-sheets.js");
 const { apptSheet, shopSheet, quickShop } = __r("src/features/plan-sheets.js");
 
-const TABS = [{ key: 'calendar', label: 'تقویم' }, { key: 'appts', label: 'قرارها' }, { key: 'daily', label: 'کارهای روزانه' }, { key: 'shop', label: 'خریدها' }];
+const ORDER = ['calendar', 'appts', 'daily', 'shop'];
+const LABELS = { calendar: 'تقویم', appts: 'قرارها', daily: 'کارهای روزانه', shop: 'خریدها' };
 let day = today();
 
 const dayLabel = (d) => (d === today() ? 'امروز' : relDay(d) === 'فردا' ? 'فردا' : faDate(parseIso(d), { weekday: 'long', day: 'numeric', month: 'long' }));
@@ -2872,12 +2893,12 @@ __default = {
   title: 'کارها',
   mount() { day = today(); },
   render() {
-    const tab = tabOf('tasks', 'daily');
-    const body = tab === 'calendar' ? calendarTab() : tab === 'appts' ? apptsTab() : tab === 'shop' ? shopTab() : dailyTab();
-    return `${pageHead('کارها', 'برنامه‌ی روز و هفته')}${tabs(TABS, tab)}<div class="stack">${body}</div>${fab('add')}`;
+    const bodies = { calendar: calendarTab, appts: apptsTab, daily: dailyTab, shop: shopTab };
+    const items = ORDER.map((key) => ({ key, label: LABELS[key], body: () => `<div class="stack">${bodies[key]()}</div>` }));
+    return `${pageHead('کارها', 'برنامه‌ی روز و هفته')}${drawers(items, tabOf('tasks', 'daily'))}${fab('add')}`;
   },
   act: {
-    tab: (el) => setTab('tasks', el.dataset.v),
+    tab: toggleDrawer('tasks'),
     'pick-day'(el) { day = el.dataset.date; refresh(); },
     week(el) { day = iso(addDays(parseIso(day), +el.dataset.d)); refresh(); },
     step(el) { day = iso(addDays(parseIso(day), +el.dataset.d)); refresh(); },
@@ -2890,7 +2911,7 @@ __default = {
     'quick-task'(el) { const input = el.querySelector('input'); if (quickAddTask(input.value, day)) input.value = ''; },
     'quick-shop'(el) { const input = el.querySelector('input'); if (quickShop(input.value)) input.value = ''; },
     add() {
-      const tab = tabOf('tasks', 'daily');
+      const tab = openOr('tasks', 'daily');
       if (tab === 'appts') apptSheet(null, day);
       else if (tab === 'shop') shopSheet();
       else if (tab === 'calendar') menu('افزودن به ' + dayLabel(day), [{ icon: 'task_alt', label: 'کار', run: () => taskSheet(null, day) }, { icon: 'event', label: 'قرار', run: () => apptSheet(null, day) }]);
@@ -2912,11 +2933,12 @@ const { faDayMonth, faDate } = __r("src/core/calendar.js");
 const { toast } = __r("src/ui/toast.js");
 const { menu } = __r("src/ui/sheet.js");
 const { icon } = __r("src/ui/widgets.js");
-const { pageHead, tabs, row, fab, empty, section, ring, bar, bars, tabOf, setTab } = __r("src/ui/kit.js");
+const { pageHead, drawers, toggleDrawer, row, fab, empty, section, ring, bar, bars, tabOf, openOr } = __r("src/ui/kit.js");
 const G = __r("src/domain/gym.js");
 const { exerciseSheet, finishOrReopen, mealSheet, goalSheet, planSheet, foodPhoto, toggleTimer } = __r("src/features/gym-sheets.js");
 
-const TABS = [{ key: 'program', label: 'برنامه تمرین' }, { key: 'calories', label: 'کالری' }, { key: 'photo', label: 'عکس غذا' }];
+const ORDER = ['program', 'calories', 'photo'];
+const LABELS = { program: 'برنامه تمرین', calories: 'کالری', photo: 'عکس غذا' };
 let selected = today();
 
 const planOf = (date) => S.gym.weekly[parseIso(date).getDay()];
@@ -3002,12 +3024,12 @@ __default = {
   title: 'ورزش',
   mount() { selected = today(); },
   render() {
-    const tab = tabOf('gym', 'program');
-    const body = tab === 'calories' ? caloriesTab() : tab === 'photo' ? photoTab() : programTab();
-    return `${pageHead('ورزش', 'تمرین، کالری و غذا')}${tabs(TABS, tab)}<div class="stack">${body}</div>${fab('add')}`;
+    const bodies = { program: programTab, calories: caloriesTab, photo: photoTab };
+    const items = ORDER.map((key) => ({ key, label: LABELS[key], body: () => `<div class="stack">${bodies[key]()}</div>` }));
+    return `${pageHead('ورزش', 'تمرین، کالری و غذا')}${drawers(items, tabOf('gym', 'program'))}${fab('add')}`;
   },
   act: {
-    tab: (el) => setTab('gym', el.dataset.v),
+    tab: toggleDrawer('gym'),
     day(el) { selected = el.dataset.date; G.sessionFromPlan(selected); commit(); },
     trend(el) { selected = weekDates()[+el.dataset.i]; commit(); },
     plan: () => planSheet(selected),
@@ -3026,7 +3048,7 @@ __default = {
     hist(el) { const m = G.mealsOn(el.dataset.date).find((x) => x.id === el.dataset.id); if (m) mealSheet(m, el.dataset.date); },
     photo: () => foodPhoto(selected),
     add() {
-      const tab = tabOf('gym', 'program');
+      const tab = openOr('gym', 'program');
       if (tab === 'program') exerciseSheet(null, selected);
       else if (tab === 'photo') foodPhoto(selected);
       else menu('افزودن غذا', [{ icon: 'photo_camera', label: 'عکس غذا', run: () => foodPhoto(selected) }, { icon: 'edit', label: 'دستی', run: () => mealSheet(null, selected) }]);
@@ -3535,11 +3557,12 @@ const { faDayMonth, fullDate, relDay, monthLabel, shiftMonthKey, currentMonthKey
 const { toast } = __r("src/ui/toast.js");
 const { menu } = __r("src/ui/sheet.js");
 const { icon } = __r("src/ui/widgets.js");
-const { pageHead, tabs, pills, row, fab, empty, section, bar, bars, tabOf, setTab } = __r("src/ui/kit.js");
+const { pageHead, drawers, toggleDrawer, pills, row, fab, empty, section, bar, bars, tabOf, openOr, setTab } = __r("src/ui/kit.js");
 const fin = __r("src/domain/finance.js");
 const { txSheet, historySheet, payLoan, loanSheet, loanMenu, budgetSheet, catBudgetSheet, addCatBudget, exportCsv } = __r("src/features/finance-sheets.js");
 
-const TABS = [{ key: 'tx', label: 'تراکنش‌ها' }, { key: 'loans', label: 'قسط‌ها' }, { key: 'budget', label: 'بودجه' }, { key: 'report', label: 'گزارش' }];
+const ORDER = ['tx', 'loans', 'budget', 'report'];
+const LABELS = { tx: 'تراکنش‌ها', loans: 'قسط‌ها', budget: 'بودجه', report: 'گزارش' };
 let filter = 'all';
 let q = '';
 const M = (v) => money(v);
@@ -3629,12 +3652,13 @@ __default = {
   title: 'مالی',
   mount() { filter = 'all'; q = ''; },
   render() {
-    const tab = tabOf('money', 'tx');
-    const body = tab === 'loans' ? loansTab() : tab === 'budget' ? budgetTab() : tab === 'report' ? reportTab() : txTab();
-    return `${pageHead('مالی', 'موجودی، خرج و قسط‌ها')}${summary()}${tabs(TABS, tab)}<div class="stack">${body}</div>${tab === 'report' ? '' : fab('add')}`;
+    const bodies = { tx: txTab, loans: loansTab, budget: budgetTab, report: reportTab };
+    const items = ORDER.map((key) => ({ key, label: LABELS[key], body: () => `<div class="stack">${bodies[key]()}</div>` }));
+    const open = tabOf('money', 'tx');
+    return `${pageHead('مالی', 'موجودی، خرج و قسط‌ها')}${summary()}${drawers(items, open)}${open === 'report' ? '' : fab('add')}`;
   },
   act: {
-    tab: (el) => setTab('money', el.dataset.v),
+    tab: toggleDrawer('money'),
     privacy() { S.privacy = !S.privacy; commit(); },
     'to-budget': () => setTab('money', 'budget'),
     'to-loans': () => setTab('money', 'loans'),
@@ -3649,7 +3673,7 @@ __default = {
     'cat-budget': (el) => catBudgetSheet(el.dataset.k),
     csv: () => exportCsv(S.tx, 'all'),
     add() {
-      const tab = tabOf('money', 'tx');
+      const tab = openOr('money', 'tx');
       if (tab === 'loans') loanSheet();
       else if (tab === 'budget') menu('بودجه', [{ icon: 'savings', label: 'بودجه‌ی ماهانه', run: budgetSheet }, { icon: 'category', label: 'بودجه برای یک دسته', run: addCatBudget }]);
       else menu('ثبت جدید', [{ icon: 'arrow_upward', label: 'هزینه', run: () => txSheet('expense') }, { icon: 'arrow_downward', label: 'درآمد', run: () => txSheet('income') }]);

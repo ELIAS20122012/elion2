@@ -6,11 +6,12 @@ import { faDayMonth, faDate } from '../core/calendar.js';
 import { toast } from '../ui/toast.js';
 import { menu } from '../ui/sheet.js';
 import { icon } from '../ui/widgets.js';
-import { pageHead, tabs, row, fab, empty, section, ring, bar, bars, tabOf, setTab } from '../ui/kit.js';
+import { pageHead, drawers, toggleDrawer, row, fab, empty, section, ring, bar, bars, tabOf, openOr } from '../ui/kit.js';
 import * as G from '../domain/gym.js';
 import { exerciseSheet, finishOrReopen, mealSheet, goalSheet, planSheet, foodPhoto, toggleTimer } from '../features/gym-sheets.js';
 
-const TABS = [{ key: 'program', label: 'برنامه تمرین' }, { key: 'calories', label: 'کالری' }, { key: 'photo', label: 'عکس غذا' }];
+const ORDER = ['program', 'calories', 'photo'];
+const LABELS = { program: 'برنامه تمرین', calories: 'کالری', photo: 'عکس غذا' };
 let selected = today();
 
 const planOf = (date) => S.gym.weekly[parseIso(date).getDay()];
@@ -96,12 +97,12 @@ export default {
   title: 'ورزش',
   mount() { selected = today(); },
   render() {
-    const tab = tabOf('gym', 'program');
-    const body = tab === 'calories' ? caloriesTab() : tab === 'photo' ? photoTab() : programTab();
-    return `${pageHead('ورزش', 'تمرین، کالری و غذا')}${tabs(TABS, tab)}<div class="stack">${body}</div>${fab('add')}`;
+    const bodies = { program: programTab, calories: caloriesTab, photo: photoTab };
+    const items = ORDER.map((key) => ({ key, label: LABELS[key], body: () => `<div class="stack">${bodies[key]()}</div>` }));
+    return `${pageHead('ورزش', 'تمرین، کالری و غذا')}${drawers(items, tabOf('gym', 'program'))}${fab('add')}`;
   },
   act: {
-    tab: (el) => setTab('gym', el.dataset.v),
+    tab: toggleDrawer('gym'),
     day(el) { selected = el.dataset.date; G.sessionFromPlan(selected); commit(); },
     trend(el) { selected = weekDates()[+el.dataset.i]; commit(); },
     plan: () => planSheet(selected),
@@ -120,7 +121,7 @@ export default {
     hist(el) { const m = G.mealsOn(el.dataset.date).find((x) => x.id === el.dataset.id); if (m) mealSheet(m, el.dataset.date); },
     photo: () => foodPhoto(selected),
     add() {
-      const tab = tabOf('gym', 'program');
+      const tab = openOr('gym', 'program');
       if (tab === 'program') exerciseSheet(null, selected);
       else if (tab === 'photo') foodPhoto(selected);
       else menu('افزودن غذا', [{ icon: 'photo_camera', label: 'عکس غذا', run: () => foodPhoto(selected) }, { icon: 'edit', label: 'دستی', run: () => mealSheet(null, selected) }]);
