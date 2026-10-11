@@ -10,9 +10,22 @@ export const openOr = (page, def) => tabOf(page, def) || def;
 export function setTab(page, key) { S.ui.tabs = S.ui.tabs || {}; S.ui.tabs[page] = key; commit(); }
 export function goTab(page, key) { S.ui.tabs = S.ui.tabs || {}; S.ui.tabs[page] = key; go(page); }
 
-/** Page title; `add` (an act name) puts a single small + icon in the top corner. */
-export const pageHead = (title, desc = '', add = '') =>
-  `<header class="page-head"><div><h1>${title}</h1>${desc ? `<p>${desc}</p>` : ''}</div>${add ? `<button class="add-ic" data-act="${add}" aria-label="افزودن">${icon('add')}</button>` : ''}</header>`;
+export const pageHead = (title, desc = '') => `<header class="page-head"><div><h1>${title}</h1>${desc ? `<p>${desc}</p>` : ''}</div></header>`;
+
+/** One writing line at the top of a page: type, press Enter (or the ↵ button) and it lands in the list. */
+export const addLine = (placeholder) =>
+  `<div class="add-line"><input data-key="qa" data-enter="quick" autocomplete="off" placeholder="${placeholder}"><button class="enter-btn" data-act="quick" aria-label="ثبت">${icon('keyboard_return')}</button></div>`;
+
+/** Put a rejected line back so the user can fix it. */
+export function putBack(el, line) { (el.matches('input') ? el : el.parentElement.querySelector('input')).value = line; }
+
+/** Read (and clear) the add line from either the input or its button. Returns '' when empty. */
+export function takeLine(el) {
+  const input = el.matches('input') ? el : el.parentElement.querySelector('input');
+  const v = input.value.trim();
+  if (v) { input.value = ''; input.focus(); }
+  return v;
+}
 
 /** Text-only drawers (one open at a time): items [{ key, label, body() }]. Tap a header to open / close it. */
 export const drawers = (items, current, act = 'tab') =>

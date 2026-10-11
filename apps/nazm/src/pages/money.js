@@ -4,9 +4,9 @@ import { parseIso, today } from '../core/dates.js';
 import { fa, esc, money } from '../core/format.js';
 import { faDayMonth, fullDate, relDay, monthLabel, currentMonthKey } from '../core/calendar.js';
 import { toast } from '../ui/toast.js';
-import { menu } from '../ui/sheet.js';
+import { parseMoneyLine } from '../domain/quick.js';
 import { icon } from '../ui/widgets.js';
-import { pageHead, drawers, toggleDrawer, pills, row, empty, section, bar, bars, tabOf, openOr, setTab } from '../ui/kit.js';
+import { pageHead, addLine, takeLine, putBack, drawers, toggleDrawer, pills, row, empty, section, bar, bars, tabOf, setTab } from '../ui/kit.js';
 import * as fin from '../domain/finance.js';
 import { txSheet, historySheet, payLoan, loanSheet, loanMenu, budgetSheet, catBudgetSheet, addCatBudget, exportCsv } from '../features/finance-sheets.js';
 
@@ -65,7 +65,8 @@ function loansTab() {
       trailing: `<button class="icon-btn sm${l.remind !== false ? ' on' : ''}" data-act="remind" data-id="${l.id}" aria-label="یادآور">${icon(l.remind !== false ? 'notifications_active' : 'notifications_off')}</button>${n ? `<button class="btn-sm" data-act="pay-loan" data-id="${l.id}">پرداخت</button>` : ''}` });
   }).join('');
   return `<section class="card row-between"><span><small>مانده‌ی کل اقساط</small><b class="big ltr block">${M(fin.loansRemaining())}</b></span></section>
-    <div class="list">${rows || empty('قسطی ثبت نشده')}</div>`;
+    <div class="list">${rows || empty('قسطی ثبت نشده')}</div>
+    <button class="link center" data-act="new-loan">+ قسط جدید</button>`;
 }
 
 function budgetTab() {
@@ -82,7 +83,8 @@ function budgetTab() {
       ${bar(budget ? (spent / budget) * 100 : 0, spent > budget)}
       <small>از ${M(budget)}</small>
     </section>
-    ${section('بودجه‌ی دسته‌ها', `<div class="list">${rows || empty('برای دسته‌ها بودجه تعیین نشده')}</div>`)}`;
+    ${section('بودجه‌ی دسته‌ها', `<div class="list">${rows || empty('برای دسته‌ها بودجه تعیین نشده')}</div>`)}
+    <button class="link center" data-act="new-cat">+ بودجه برای یک دسته</button>`;
 }
 
 function reportTab() {
@@ -104,7 +106,7 @@ export default {
     const bodies = { tx: txTab, loans: loansTab, budget: budgetTab, report: reportTab };
     const items = ORDER.map((key) => ({ key, label: LABELS[key], body: () => `<div class="stack">${bodies[key]()}</div>` }));
     const open = tabOf('money', 'tx');
-    return `${pageHead('مالی', 'موجودی، خرج و قسط‌ها', open === 'report' ? '' : 'add')}${summary()}${drawers(items, open)}`;
+    return `${pageHead('مالی', 'موجودی، خرج و قسط‌ها')}${summary()}${open === 'tx' ? addLine('مثلاً نهار ۱۲۰ — برای درآمد: +حقوق ۱۵۰۰') : ''}${drawers(items, open)}`;
   },
   act: {
     tab: toggleDrawer('money'),
@@ -119,13 +121,17 @@ export default {
     'pay-loan'(el) { const l = S.loans.find((x) => x.id === el.dataset.id); payLoan(l, fin.loanNextN(l)); },
     remind(el) { const l = S.loans.find((x) => x.id === el.dataset.id); l.remind = l.remind === false; commit(); toast(l.remind ? 'یادآور روشن شد' : 'یادآور خاموش شد'); },
     'set-budget': budgetSheet,
+    'new-loan': () => loanSheet(),
+    'new-cat': addCatBudget,
     'cat-budget': (el) => catBudgetSheet(el.dataset.k),
     csv: () => exportCsv(S.tx, 'all'),
-    add() {
-      const tab = openOr('money', 'tx');
-      if (tab === 'loans') loanSheet();
-      else if (tab === 'budget') menu('بودجه', [{ icon: 'savings', label: 'بودجه‌ی ماهانه', run: budgetSheet }, { icon: 'category', label: 'بودجه برای یک دسته', run: addCatBudget }]);
-      else menu('ثبت جدید', [{ icon: 'arrow_upward', label: 'هزینه', run: () => txSheet('expense') }, { icon: 'arrow_downward', label: 'درآمد', run: () => txSheet('income') }]);
+    quick(el) {
+      const line = takeLine(el);
+      if (!line) return;
+      const { type, title, amount } = parseMoneyLine(line);
+      if (!amount) { toast('مبلغ را هم بنویسید، مثلاً نهار ۱۲۰'); putBack(el, line); return; }
+      fin.saveTx(null, { type, amount, category: type === 'income' ? 'salary' : 'other', note: title, date: today(), accountId: fin.defAcc() });
+      commit();
     },
   },
   input: { q(el) { q = el.value; refresh(); } },

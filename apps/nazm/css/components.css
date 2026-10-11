@@ -281,6 +281,8 @@ textarea.input { min-height: 72px; line-height: 1.6; }
 
 /* ---- single "+" icon in the page corner (replaces add lines and the floating button) ---- */
 .page-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
-.add-ic { width: 34px; height: 34px; flex: none; border-radius: 50%; display: grid; place-items: center; background: var(--accent); color: #fff; box-shadow: 0 4px 10px rgba(217, 128, 95, .35); }
-.add-ic .material-symbols-outlined { font-size: 22px; }
-.add-ic:active { transform: scale(.92); }
+
+/* ---- one writing line with a small ↵ button ---- */
+.enter-btn { width: 32px; height: 32px; flex: none; border-radius: 50%; display: grid; place-items: center; background: var(--accent); color: #fff; }
+.enter-btn .material-symbols-outlined { font-size: 19px; }
+.enter-btn:active { transform: scale(.92); }

@@ -1,11 +1,10 @@
 /* Tasks: calendar · appointments · daily tasks · shopping. One "+" always opens a small form. */
-import { S, refresh } from '../core/store.js';
+import { S, commit, refresh } from '../core/store.js';
 import { iso, addDays, parseIso, today, weekStart, WD_SHORT } from '../core/dates.js';
 import { fa, esc } from '../core/format.js';
 import { faDate, faDayNum, relDay } from '../core/calendar.js';
-import { menu } from '../ui/sheet.js';
 import { icon } from '../ui/widgets.js';
-import { pageHead, drawers, toggleDrawer, row, check, empty, section, ring, tabOf, openOr } from '../ui/kit.js';
+import { pageHead, addLine, takeLine, drawers, toggleDrawer, row, check, empty, section, ring, tabOf, openOr } from '../ui/kit.js';
 import * as T from '../domain/tasks.js';
 import * as A from '../domain/appointments.js';
 import { taskSheet, toggleTask } from '../features/task-sheets.js';
@@ -78,7 +77,7 @@ export default {
   render() {
     const bodies = { calendar: calendarTab, appts: apptsTab, daily: dailyTab };
     const items = ORDER.map((key) => ({ key, label: LABELS[key], body: () => `<div class="stack">${bodies[key]()}</div>` }));
-    return `${pageHead('کارها', 'برنامه‌ی روز و هفته', 'add')}${drawers(items, tabOf('tasks', 'daily'))}`;
+    return `${pageHead('کارها', 'برنامه‌ی روز و هفته')}${addLine(openOr('tasks', 'daily') === 'appts' ? 'قرار تازه… و Enter' : 'کار تازه… و Enter')}${drawers(items, tabOf('tasks', 'daily'))}`;
   },
   act: {
     tab: toggleDrawer('tasks'),
@@ -88,11 +87,12 @@ export default {
     'task-check': (el) => toggleTask(el.dataset.id),
     'task-edit': (el) => taskSheet(el.dataset.id),
     'appt-edit': (el) => apptSheet(el.dataset.id),
-    add() {
-      const tab = openOr('tasks', 'daily');
-      if (tab === 'appts') apptSheet(null, day);
-      else if (tab === 'calendar') menu('افزودن به ' + dayLabel(day), [{ icon: 'task_alt', label: 'کار', run: () => taskSheet(null, day) }, { icon: 'event', label: 'قرار', run: () => apptSheet(null, day) }]);
-      else taskSheet(null, day);
+    quick(el) {
+      const title = takeLine(el);
+      if (!title) return;
+      if (openOr('tasks', 'daily') === 'appts') A.saveAppt(null, { title, kind: 'reminder', date: day, time: '', place: '' });
+      else S.tasks.push(T.newTask({ title, date: day }));
+      commit();
     },
   },
 };

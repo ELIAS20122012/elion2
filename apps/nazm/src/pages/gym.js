@@ -4,9 +4,10 @@ import { iso, addDays, today, weekStart, WD_SHORT, WD_LONG, parseIso } from '../
 import { fa, faInt, esc } from '../core/format.js';
 import { faDayMonth, faDate } from '../core/calendar.js';
 import { toast } from '../ui/toast.js';
-import { menu } from '../ui/sheet.js';
+import { splitAmount } from '../domain/quick.js';
+import { uid } from '../core/util.js';
 import { icon } from '../ui/widgets.js';
-import { pageHead, drawers, toggleDrawer, row, empty, section, ring, bar, bars, tabOf, openOr } from '../ui/kit.js';
+import { pageHead, addLine, takeLine, putBack, drawers, toggleDrawer, row, empty, section, ring, bar, bars, tabOf, openOr } from '../ui/kit.js';
 import * as G from '../domain/gym.js';
 import { exerciseSheet, finishOrReopen, mealSheet, goalSheet, planSheet, foodPhoto, toggleTimer } from '../features/gym-sheets.js';
 
@@ -92,6 +93,8 @@ function photoTab() {
     ${section('تاریخچه‌ی غذاها', `<div class="list">${hist.map((m) => row({ ic: 'restaurant', title: esc(m.name), sub: `${faDayMonth(parseIso(m.date))} · ${fa(m.kcal)} کیلوکالری${m.p ? ` · ${fa(m.p)}g پروتئین` : ''}`, act: 'hist', attrs: `data-id="${m.id}" data-date="${m.date}"`, trailing: `<img class="mini-photo" src="${m.photo}" alt="">` })).join('') || empty('هنوز عکسی ثبت نشده')}</div>`)}`;
 }
 
+const lineFor = (tab) => (tab === 'program' ? addLine('حرکت تازه… و Enter') : tab === 'calories' ? addLine('غذا و کالری، مثلاً ماست ۱۲۰ — و Enter') : '');
+
 export default {
   id: 'gym',
   title: 'ورزش',
@@ -99,7 +102,7 @@ export default {
   render() {
     const bodies = { program: programTab, calories: caloriesTab, photo: photoTab };
     const items = ORDER.map((key) => ({ key, label: LABELS[key], body: () => `<div class="stack">${bodies[key]()}</div>` }));
-    return `${pageHead('ورزش', 'تمرین، کالری و غذا', 'add')}${drawers(items, tabOf('gym', 'program'))}`;
+    return `${pageHead('ورزش', 'تمرین، کالری و غذا')}${lineFor(tabOf('gym', 'program'))}${drawers(items, tabOf('gym', 'program'))}`;
   },
   act: {
     tab: toggleDrawer('gym'),
@@ -120,11 +123,19 @@ export default {
     meal(el) { const m = G.mealsOn(selected).find((x) => x.id === el.dataset.id); if (m) mealSheet(m, selected); },
     hist(el) { const m = G.mealsOn(el.dataset.date).find((x) => x.id === el.dataset.id); if (m) mealSheet(m, el.dataset.date); },
     photo: () => foodPhoto(selected),
-    add() {
-      const tab = openOr('gym', 'program');
-      if (tab === 'program') exerciseSheet(null, selected);
-      else if (tab === 'photo') foodPhoto(selected);
-      else menu('افزودن غذا', [{ icon: 'photo_camera', label: 'عکس غذا', run: () => foodPhoto(selected) }, { icon: 'edit', label: 'دستی', run: () => mealSheet(null, selected) }]);
+    quick(el) {
+      const line = takeLine(el);
+      if (!line) return;
+      if (openOr('gym', 'program') === 'calories') {
+        const { title, amount } = splitAmount(line);
+        if (!amount) { toast('کالری را هم بنویسید، مثلاً ماست ۱۲۰'); putBack(el, line); return; }
+        G.addMeal({ name: title || 'وعده', kcal: Math.round(amount), p: 0, c: 0, f: 0 }, selected);
+      } else {
+        const s = G.session(selected, true);
+        s.exercises.push({ id: uid(), name: line, sets: 3, reps: '12', unit: 'تکرار', weight: '', done: 0 });
+        s.finished = false;
+      }
+      commit();
     },
   },
 };

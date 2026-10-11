@@ -1,7 +1,7 @@
 import { $$ } from '../core/util.js';
 
 /** Bind delegated click / input / change / long-press handling on a view root.
- *  Markup opts in with data-act="name" (click), data-input="name", data-change="name", data-hold="name". */
+ *  Markup opts in with data-act="name" (click), data-enter="name" (Enter key), data-input, data-change, data-hold. */
 export function bindActions(root, { act = {}, input = {}, change = {}, hold = {} }) {
   let held = false;
   let timer;
@@ -24,6 +24,12 @@ export function bindActions(root, { act = {}, input = {}, change = {}, hold = {}
   root.addEventListener('change', (ev) => {
     const el = target(ev, 'data-change');
     if (el && change[el.dataset.change]) change[el.dataset.change](el, ev);
+  });
+
+  root.addEventListener('keydown', (ev) => {
+    if (ev.key !== 'Enter' || ev.isComposing) return;
+    const el = target(ev, 'data-enter');
+    if (el && act[el.dataset.enter]) { ev.preventDefault(); act[el.dataset.enter](el, ev); }
   });
 
   const startHold = (ev) => {

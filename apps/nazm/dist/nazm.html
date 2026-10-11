@@ -385,9 +385,11 @@ textarea.input { min-height: 72px; line-height: 1.6; }
 
 /* ---- single "+" icon in the page corner (replaces add lines and the floating button) ---- */
 .page-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
-.add-ic { width: 34px; height: 34px; flex: none; border-radius: 50%; display: grid; place-items: center; background: var(--accent); color: #fff; box-shadow: 0 4px 10px rgba(217, 128, 95, .35); }
-.add-ic .material-symbols-outlined { font-size: 22px; }
-.add-ic:active { transform: scale(.92); }
+
+/* ---- one writing line with a small ↵ button ---- */
+.enter-btn { width: 32px; height: 32px; flex: none; border-radius: 50%; display: grid; place-items: center; background: var(--accent); color: #fff; }
+.enter-btn .material-symbols-outlined { font-size: 19px; }
+.enter-btn:active { transform: scale(.92); }
 
 /* Everything is shared in components.css; screen-specific rules would go here. */
 
@@ -1022,7 +1024,7 @@ __defs["src/ui/dom.js"] = function (__exports) {
 const { $$ } = __r("src/core/util.js");
 
 /** Bind delegated click / input / change / long-press handling on a view root.
- *  Markup opts in with data-act="name" (click), data-input="name", data-change="name", data-hold="name". */
+ *  Markup opts in with data-act="name" (click), data-enter="name" (Enter key), data-input, data-change, data-hold. */
 function bindActions(root, { act = {}, input = {}, change = {}, hold = {} }) {
   let held = false;
   let timer;
@@ -1045,6 +1047,12 @@ function bindActions(root, { act = {}, input = {}, change = {}, hold = {} }) {
   root.addEventListener('change', (ev) => {
     const el = target(ev, 'data-change');
     if (el && change[el.dataset.change]) change[el.dataset.change](el, ev);
+  });
+
+  root.addEventListener('keydown', (ev) => {
+    if (ev.key !== 'Enter' || ev.isComposing) return;
+    const el = target(ev, 'data-enter');
+    if (el && act[el.dataset.enter]) { ev.preventDefault(); act[el.dataset.enter](el, ev); }
   });
 
   const startHold = (ev) => {
@@ -2399,9 +2407,22 @@ const openOr = (page, def) => tabOf(page, def) || def;
 function setTab(page, key) { S.ui.tabs = S.ui.tabs || {}; S.ui.tabs[page] = key; commit(); }
 function goTab(page, key) { S.ui.tabs = S.ui.tabs || {}; S.ui.tabs[page] = key; go(page); }
 
-/** Page title; `add` (an act name) puts a single small + icon in the top corner. */
-const pageHead = (title, desc = '', add = '') =>
-  `<header class="page-head"><div><h1>${title}</h1>${desc ? `<p>${desc}</p>` : ''}</div>${add ? `<button class="add-ic" data-act="${add}" aria-label="افزودن">${icon('add')}</button>` : ''}</header>`;
+const pageHead = (title, desc = '') => `<header class="page-head"><div><h1>${title}</h1>${desc ? `<p>${desc}</p>` : ''}</div></header>`;
+
+/** One writing line at the top of a page: type, press Enter (or the ↵ button) and it lands in the list. */
+const addLine = (placeholder) =>
+  `<div class="add-line"><input data-key="qa" data-enter="quick" autocomplete="off" placeholder="${placeholder}"><button class="enter-btn" data-act="quick" aria-label="ثبت">${icon('keyboard_return')}</button></div>`;
+
+/** Put a rejected line back so the user can fix it. */
+function putBack(el, line) { (el.matches('input') ? el : el.parentElement.querySelector('input')).value = line; }
+
+/** Read (and clear) the add line from either the input or its button. Returns '' when empty. */
+function takeLine(el) {
+  const input = el.matches('input') ? el : el.parentElement.querySelector('input');
+  const v = input.value.trim();
+  if (v) { input.value = ''; input.focus(); }
+  return v;
+}
 
 /** Text-only drawers (one open at a time): items [{ key, label, body() }]. Tap a header to open / close it. */
 const drawers = (items, current, act = 'tab') =>
@@ -2450,6 +2471,9 @@ __exports.openOr = openOr;
 __exports.setTab = setTab;
 __exports.goTab = goTab;
 __exports.pageHead = pageHead;
+__exports.addLine = addLine;
+__exports.putBack = putBack;
+__exports.takeLine = takeLine;
 __exports.drawers = drawers;
 __exports.toggleDrawer = toggleDrawer;
 __exports.pills = pills;
@@ -2801,13 +2825,12 @@ __exports.shopSheet = shopSheet;
 __defs["src/pages/tasks.js"] = function (__exports) {
 let __default;
 /* Tasks: calendar · appointments · daily tasks · shopping. One "+" always opens a small form. */
-const { S, refresh } = __r("src/core/store.js");
+const { S, commit, refresh } = __r("src/core/store.js");
 const { iso, addDays, parseIso, today, weekStart, WD_SHORT } = __r("src/core/dates.js");
 const { fa, esc } = __r("src/core/format.js");
 const { faDate, faDayNum, relDay } = __r("src/core/calendar.js");
-const { menu } = __r("src/ui/sheet.js");
 const { icon } = __r("src/ui/widgets.js");
-const { pageHead, drawers, toggleDrawer, row, check, empty, section, ring, tabOf, openOr } = __r("src/ui/kit.js");
+const { pageHead, addLine, takeLine, drawers, toggleDrawer, row, check, empty, section, ring, tabOf, openOr } = __r("src/ui/kit.js");
 const T = __r("src/domain/tasks.js");
 const A = __r("src/domain/appointments.js");
 const { taskSheet, toggleTask } = __r("src/features/task-sheets.js");
@@ -2880,7 +2903,7 @@ __default = {
   render() {
     const bodies = { calendar: calendarTab, appts: apptsTab, daily: dailyTab };
     const items = ORDER.map((key) => ({ key, label: LABELS[key], body: () => `<div class="stack">${bodies[key]()}</div>` }));
-    return `${pageHead('کارها', 'برنامه‌ی روز و هفته', 'add')}${drawers(items, tabOf('tasks', 'daily'))}`;
+    return `${pageHead('کارها', 'برنامه‌ی روز و هفته')}${addLine(openOr('tasks', 'daily') === 'appts' ? 'قرار تازه… و Enter' : 'کار تازه… و Enter')}${drawers(items, tabOf('tasks', 'daily'))}`;
   },
   act: {
     tab: toggleDrawer('tasks'),
@@ -2890,17 +2913,43 @@ __default = {
     'task-check': (el) => toggleTask(el.dataset.id),
     'task-edit': (el) => taskSheet(el.dataset.id),
     'appt-edit': (el) => apptSheet(el.dataset.id),
-    add() {
-      const tab = openOr('tasks', 'daily');
-      if (tab === 'appts') apptSheet(null, day);
-      else if (tab === 'calendar') menu('افزودن به ' + dayLabel(day), [{ icon: 'task_alt', label: 'کار', run: () => taskSheet(null, day) }, { icon: 'event', label: 'قرار', run: () => apptSheet(null, day) }]);
-      else taskSheet(null, day);
+    quick(el) {
+      const title = takeLine(el);
+      if (!title) return;
+      if (openOr('tasks', 'daily') === 'appts') A.saveAppt(null, { title, kind: 'reminder', date: day, time: '', place: '' });
+      else S.tasks.push(T.newTask({ title, date: day }));
+      commit();
     },
   },
 };
 
 
 __exports.default = __default;
+};
+__defs["src/domain/quick.js"] = function (__exports) {
+/* Parsing of one typed line ("نهار 120", "+حقوق 1500", "ماست ۱۲۰"). Pure — no DOM. */
+const { en } = __r("src/core/format.js");
+
+/** Split a line into its text and the LAST number in it (Persian digits and commas accepted). */
+function splitAmount(line) {
+  const text = en(String(line || '')).trim();
+  const m = text.match(/(\d[\d,]*(?:\.\d+)?)(?!.*\d)/);
+  if (!m) return { title: text, amount: 0 };
+  const amount = parseFloat(m[1].replace(/,/g, ''));
+  const title = (text.slice(0, m.index) + text.slice(m.index + m[1].length)).replace(/\s+/g, ' ').trim();
+  return { title, amount: Number.isFinite(amount) ? amount : 0 };
+}
+
+/** "+حقوق 1500" is income, anything else an expense. */
+function parseMoneyLine(line) {
+  const raw = String(line || '').trim();
+  const income = /^[+＋]/.test(raw);
+  const { title, amount } = splitAmount(income ? raw.slice(1) : raw);
+  return { type: income ? 'income' : 'expense', title, amount };
+}
+
+__exports.splitAmount = splitAmount;
+__exports.parseMoneyLine = parseMoneyLine;
 };
 __defs["src/pages/gym.js"] = function (__exports) {
 let __default;
@@ -2910,9 +2959,10 @@ const { iso, addDays, today, weekStart, WD_SHORT, WD_LONG, parseIso } = __r("src
 const { fa, faInt, esc } = __r("src/core/format.js");
 const { faDayMonth, faDate } = __r("src/core/calendar.js");
 const { toast } = __r("src/ui/toast.js");
-const { menu } = __r("src/ui/sheet.js");
+const { splitAmount } = __r("src/domain/quick.js");
+const { uid } = __r("src/core/util.js");
 const { icon } = __r("src/ui/widgets.js");
-const { pageHead, drawers, toggleDrawer, row, empty, section, ring, bar, bars, tabOf, openOr } = __r("src/ui/kit.js");
+const { pageHead, addLine, takeLine, putBack, drawers, toggleDrawer, row, empty, section, ring, bar, bars, tabOf, openOr } = __r("src/ui/kit.js");
 const G = __r("src/domain/gym.js");
 const { exerciseSheet, finishOrReopen, mealSheet, goalSheet, planSheet, foodPhoto, toggleTimer } = __r("src/features/gym-sheets.js");
 
@@ -2998,6 +3048,8 @@ function photoTab() {
     ${section('تاریخچه‌ی غذاها', `<div class="list">${hist.map((m) => row({ ic: 'restaurant', title: esc(m.name), sub: `${faDayMonth(parseIso(m.date))} · ${fa(m.kcal)} کیلوکالری${m.p ? ` · ${fa(m.p)}g پروتئین` : ''}`, act: 'hist', attrs: `data-id="${m.id}" data-date="${m.date}"`, trailing: `<img class="mini-photo" src="${m.photo}" alt="">` })).join('') || empty('هنوز عکسی ثبت نشده')}</div>`)}`;
 }
 
+const lineFor = (tab) => (tab === 'program' ? addLine('حرکت تازه… و Enter') : tab === 'calories' ? addLine('غذا و کالری، مثلاً ماست ۱۲۰ — و Enter') : '');
+
 __default = {
   id: 'gym',
   title: 'ورزش',
@@ -3005,7 +3057,7 @@ __default = {
   render() {
     const bodies = { program: programTab, calories: caloriesTab, photo: photoTab };
     const items = ORDER.map((key) => ({ key, label: LABELS[key], body: () => `<div class="stack">${bodies[key]()}</div>` }));
-    return `${pageHead('ورزش', 'تمرین، کالری و غذا', 'add')}${drawers(items, tabOf('gym', 'program'))}`;
+    return `${pageHead('ورزش', 'تمرین، کالری و غذا')}${lineFor(tabOf('gym', 'program'))}${drawers(items, tabOf('gym', 'program'))}`;
   },
   act: {
     tab: toggleDrawer('gym'),
@@ -3026,11 +3078,19 @@ __default = {
     meal(el) { const m = G.mealsOn(selected).find((x) => x.id === el.dataset.id); if (m) mealSheet(m, selected); },
     hist(el) { const m = G.mealsOn(el.dataset.date).find((x) => x.id === el.dataset.id); if (m) mealSheet(m, el.dataset.date); },
     photo: () => foodPhoto(selected),
-    add() {
-      const tab = openOr('gym', 'program');
-      if (tab === 'program') exerciseSheet(null, selected);
-      else if (tab === 'photo') foodPhoto(selected);
-      else menu('افزودن غذا', [{ icon: 'photo_camera', label: 'عکس غذا', run: () => foodPhoto(selected) }, { icon: 'edit', label: 'دستی', run: () => mealSheet(null, selected) }]);
+    quick(el) {
+      const line = takeLine(el);
+      if (!line) return;
+      if (openOr('gym', 'program') === 'calories') {
+        const { title, amount } = splitAmount(line);
+        if (!amount) { toast('کالری را هم بنویسید، مثلاً ماست ۱۲۰'); putBack(el, line); return; }
+        G.addMeal({ name: title || 'وعده', kcal: Math.round(amount), p: 0, c: 0, f: 0 }, selected);
+      } else {
+        const s = G.session(selected, true);
+        s.exercises.push({ id: uid(), name: line, sets: 3, reps: '12', unit: 'تکرار', weight: '', done: 0 });
+        s.finished = false;
+      }
+      commit();
     },
   },
 };
@@ -3534,9 +3594,9 @@ const { parseIso, today } = __r("src/core/dates.js");
 const { fa, esc, money } = __r("src/core/format.js");
 const { faDayMonth, fullDate, relDay, monthLabel, currentMonthKey } = __r("src/core/calendar.js");
 const { toast } = __r("src/ui/toast.js");
-const { menu } = __r("src/ui/sheet.js");
+const { parseMoneyLine } = __r("src/domain/quick.js");
 const { icon } = __r("src/ui/widgets.js");
-const { pageHead, drawers, toggleDrawer, pills, row, empty, section, bar, bars, tabOf, openOr, setTab } = __r("src/ui/kit.js");
+const { pageHead, addLine, takeLine, putBack, drawers, toggleDrawer, pills, row, empty, section, bar, bars, tabOf, setTab } = __r("src/ui/kit.js");
 const fin = __r("src/domain/finance.js");
 const { txSheet, historySheet, payLoan, loanSheet, loanMenu, budgetSheet, catBudgetSheet, addCatBudget, exportCsv } = __r("src/features/finance-sheets.js");
 
@@ -3595,7 +3655,8 @@ function loansTab() {
       trailing: `<button class="icon-btn sm${l.remind !== false ? ' on' : ''}" data-act="remind" data-id="${l.id}" aria-label="یادآور">${icon(l.remind !== false ? 'notifications_active' : 'notifications_off')}</button>${n ? `<button class="btn-sm" data-act="pay-loan" data-id="${l.id}">پرداخت</button>` : ''}` });
   }).join('');
   return `<section class="card row-between"><span><small>مانده‌ی کل اقساط</small><b class="big ltr block">${M(fin.loansRemaining())}</b></span></section>
-    <div class="list">${rows || empty('قسطی ثبت نشده')}</div>`;
+    <div class="list">${rows || empty('قسطی ثبت نشده')}</div>
+    <button class="link center" data-act="new-loan">+ قسط جدید</button>`;
 }
 
 function budgetTab() {
@@ -3612,7 +3673,8 @@ function budgetTab() {
       ${bar(budget ? (spent / budget) * 100 : 0, spent > budget)}
       <small>از ${M(budget)}</small>
     </section>
-    ${section('بودجه‌ی دسته‌ها', `<div class="list">${rows || empty('برای دسته‌ها بودجه تعیین نشده')}</div>`)}`;
+    ${section('بودجه‌ی دسته‌ها', `<div class="list">${rows || empty('برای دسته‌ها بودجه تعیین نشده')}</div>`)}
+    <button class="link center" data-act="new-cat">+ بودجه برای یک دسته</button>`;
 }
 
 function reportTab() {
@@ -3634,7 +3696,7 @@ __default = {
     const bodies = { tx: txTab, loans: loansTab, budget: budgetTab, report: reportTab };
     const items = ORDER.map((key) => ({ key, label: LABELS[key], body: () => `<div class="stack">${bodies[key]()}</div>` }));
     const open = tabOf('money', 'tx');
-    return `${pageHead('مالی', 'موجودی، خرج و قسط‌ها', open === 'report' ? '' : 'add')}${summary()}${drawers(items, open)}`;
+    return `${pageHead('مالی', 'موجودی، خرج و قسط‌ها')}${summary()}${open === 'tx' ? addLine('مثلاً نهار ۱۲۰ — برای درآمد: +حقوق ۱۵۰۰') : ''}${drawers(items, open)}`;
   },
   act: {
     tab: toggleDrawer('money'),
@@ -3649,13 +3711,17 @@ __default = {
     'pay-loan'(el) { const l = S.loans.find((x) => x.id === el.dataset.id); payLoan(l, fin.loanNextN(l)); },
     remind(el) { const l = S.loans.find((x) => x.id === el.dataset.id); l.remind = l.remind === false; commit(); toast(l.remind ? 'یادآور روشن شد' : 'یادآور خاموش شد'); },
     'set-budget': budgetSheet,
+    'new-loan': () => loanSheet(),
+    'new-cat': addCatBudget,
     'cat-budget': (el) => catBudgetSheet(el.dataset.k),
     csv: () => exportCsv(S.tx, 'all'),
-    add() {
-      const tab = openOr('money', 'tx');
-      if (tab === 'loans') loanSheet();
-      else if (tab === 'budget') menu('بودجه', [{ icon: 'savings', label: 'بودجه‌ی ماهانه', run: budgetSheet }, { icon: 'category', label: 'بودجه برای یک دسته', run: addCatBudget }]);
-      else menu('ثبت جدید', [{ icon: 'arrow_upward', label: 'هزینه', run: () => txSheet('expense') }, { icon: 'arrow_downward', label: 'درآمد', run: () => txSheet('income') }]);
+    quick(el) {
+      const line = takeLine(el);
+      if (!line) return;
+      const { type, title, amount } = parseMoneyLine(line);
+      if (!amount) { toast('مبلغ را هم بنویسید، مثلاً نهار ۱۲۰'); putBack(el, line); return; }
+      fin.saveTx(null, { type, amount, category: type === 'income' ? 'salary' : 'other', note: title, date: today(), accountId: fin.defAcc() });
+      commit();
     },
   },
   input: { q(el) { q = el.value; refresh(); } },
@@ -3671,7 +3737,7 @@ const { commit } = __r("src/core/store.js");
 const { fa, esc } = __r("src/core/format.js");
 const { toast } = __r("src/ui/toast.js");
 const { icon } = __r("src/ui/widgets.js");
-const { pageHead, empty } = __r("src/ui/kit.js");
+const { pageHead, addLine, takeLine, empty } = __r("src/ui/kit.js");
 const SH = __r("src/domain/shopping.js");
 const { shopSheet } = __r("src/features/plan-sheets.js");
 
@@ -3681,12 +3747,13 @@ __default = {
   render() {
     const items = SH.ordered();
     const bought = SH.boughtCount();
-    return `${pageHead('خرید هفتگی', `${fa(SH.remaining())} مورد باقی‌مانده`, 'add')}
+    return `${pageHead('خرید هفتگی', `${fa(SH.remaining())} مورد باقی‌مانده`)}
+      ${addLine('مثلاً ماست… و Enter')}
       ${items.length ? `<div class="shop-grid">${items.map((i) => `<button class="shop-item${i.done ? ' done' : ''}" data-act="toggle" data-hold="item" data-id="${i.id}"><span class="truncate">${esc(i.title)}</span><i class="tick">${icon('check')}</i></button>`).join('')}</div>
         <div class="row-between"><small>نگه‌داشتن روی یک مورد: ویرایش یا حذف</small>${bought ? `<button class="link" data-act="clear">پاک کردن خریده‌شده‌ها (${fa(bought)})</button>` : ''}</div>` : empty('فهرست خرید خالی است')}`;
   },
   act: {
-    add: () => shopSheet(),
+    quick(el) { const t = takeLine(el); if (t) { SH.addItem(t); commit(); } },
     toggle(el) { const i = SH.findItem(el.dataset.id); if (i) { i.done = !i.done; commit(); } },
     clear() { const n = SH.clearBought(); commit(); toast(`${fa(n)} مورد پاک شد`); },
   },
