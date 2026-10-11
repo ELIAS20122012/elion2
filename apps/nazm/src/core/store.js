@@ -2,6 +2,7 @@
    `S` is one stable object; replacing the document rewrites its contents in place. */
 import { config } from './config.js';
 import { seed, emptyState } from './seed.js';
+import { fromLegacy } from './legacy.js';
 
 export const STORAGE_KEY = 'daily-order-v2';
 
@@ -38,9 +39,8 @@ export function migrate(state) {
   state.habits = state.habits || [];
   state.blocks = state.blocks || [];
   state.tx = state.tx || [];
-  state.loans = state.loans || [];
-  state.bills = state.bills || [];
   state.weekly = state.weekly || {};
+  if (!state.monthly) state.monthly = fromLegacy(state); // loans/bills → plain monthly payments, once
   state.appointments = state.appointments || [];
   state.shopping = state.shopping || [];
   state.wallet.catBudgets = state.wallet.catBudgets || {};

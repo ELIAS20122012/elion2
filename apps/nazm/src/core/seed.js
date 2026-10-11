@@ -1,8 +1,6 @@
 /* Sample data for a fresh install, plus the empty skeleton used by "clear all data". */
 import { uid } from './util.js';
-import { iso, addDays, pad } from './dates.js';
-import { toJ, fromJ } from './jalali.js';
-import { addMonthsIso, dayOfMonth, useJ } from './calendar.js';
+import { iso, addDays } from './dates.js';
 
 export const STATE_VERSION = 2;
 
@@ -10,10 +8,10 @@ export function emptyState() {
   return {
     v: STATE_VERSION, privacy: false,
     profile: { name: '', currency: '€', calendar: 'gregorian' },
-    tasks: [], habits: [], blocks: [], plannerHideDone: false, appointments: [], shopping: [],
+    tasks: [], habits: [], blocks: [], plannerHideDone: false, appointments: [], shopping: [], monthly: [],
     wallet: { startBalance: 0, budget: 1500, alerts: true, quickSet: 0 },
     accounts: [{ id: 'main', name: 'حساب اصلی', type: 'bank', opening: 0 }],
-    loans: [], bills: [], tx: [],
+    tx: [],
     gym: {
       goals: { kcal: 2400, p: 160, c: 230, f: 65 }, weekly: {}, sessions: {}, meals: {},
       lastScan: null, weights: [], tab: 'workout', view: 'daily', timerStart: null,
@@ -40,24 +38,6 @@ export function seed() {
     { id: uid(), type: 'income', amount: 1150, category: 'salary', note: 'حقوق', date: d(-39) },
     { id: uid(), type: 'expense', amount: 640, category: 'bills', note: 'اجاره', date: d(-35) },
   );
-
-  /* ---- loans & bills: due dates follow the active calendar ---- */
-  const t0 = d(0);
-  const dueOn = (months, day) => {
-    const x = addMonthsIso(t0, months);
-    return useJ() ? fromJ(toJ(x).jy, toJ(x).jm, day) : `${x.slice(0, 8)}${pad(day)}`;
-  };
-  const cur = dayOfMonth(t0);
-  const soon = (offset, fallbackDay) => (cur + offset > 28 ? dueOn(1, fallbackDay) : dueOn(0, cur + offset));
-  const loan = { id: uid(), title: 'وام خرید خودرو', lender: 'بانک', amount: 250, count: 24, start: dueOn(-5, 15), every: 1, accountId: 'main', remind: true, paid: {} };
-  for (let n = 1; n <= 5; n++) loan.paid[n] = { date: addMonthsIso(loan.start, n - 1), amount: 250, txId: null, before: true };
-  const bills = [
-    { id: uid(), kind: 'rent', title: 'اجاره خانه', amount: 640, every: 1, start: dueOn(0, 1), accountId: 'main', remind: true, paid: {} },
-    { id: uid(), kind: 'internet', title: 'اینترنت خانه', amount: 35, every: 1, start: soon(2, 2), accountId: 'main', remind: true, paid: {} },
-    { id: uid(), kind: 'electricity', title: 'قبض برق و گاز', amount: 95, every: 2, start: dueOn(0, Math.min(28, cur + 6 > 28 ? 28 : cur + 6)), accountId: 'main', remind: true, paid: {} },
-    { id: uid(), kind: 'mobile', title: 'قبض موبایل', amount: 15, every: 1, start: soon(12, 5), accountId: 'cash', remind: true, paid: {} },
-  ];
-  bills[0].paid[bills[0].start] = { date: bills[0].start, amount: 640, txId: null, before: true };
 
   /* ---- gym ---- */
   const weights = [];
@@ -113,7 +93,14 @@ export function seed() {
       { id: 'main', name: 'حساب بانکی', type: 'bank', opening: 0 },
       { id: 'cash', name: 'کیف پول نقد', type: 'cash', opening: 0 },
     ],
-    loans: [loan], bills, tx,
+    monthly: [
+      { id: uid(), title: 'قسط ماشین', amount: 250, paid: {} },
+      { id: uid(), title: 'اجاره', amount: 640, paid: {} },
+      { id: uid(), title: 'اینترنت', amount: 35, paid: {} },
+      { id: uid(), title: 'برق و گاز', amount: 95, paid: {} },
+      { id: uid(), title: 'موبایل', amount: 15, paid: {} },
+    ],
+    tx,
     gym: {
       goals: { kcal: 2400, p: 160, c: 230, f: 65 },
       weekly: {

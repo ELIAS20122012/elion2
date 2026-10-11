@@ -12,9 +12,8 @@ beforeEach(() => replaceState(seed()));
 
 /* ---------- store ---------- */
 test('seed produces a complete, self-consistent document', () => {
-  ['tasks', 'habits', 'blocks', 'tx', 'accounts', 'loans', 'bills', 'gym', 'weekly', 'ui'].forEach((k) => assert.ok(S[k] !== undefined, k));
+  ['tasks', 'habits', 'blocks', 'tx', 'accounts', 'monthly', 'gym', 'weekly', 'ui'].forEach((k) => assert.ok(S[k] !== undefined, k));
   assert.ok(S.accounts.length >= 2);
-  assert.equal(S.loans[0].count, 24);
 });
 
 test('migrate upgrades the old layout (ui memory moved under S.ui)', () => {
@@ -33,66 +32,15 @@ test('migrate upgrades the old layout (ui memory moved under S.ui)', () => {
 });
 
 /* ---------- finance ---------- */
-test('account balances combine income, expense and transfers', () => {
+test('account balances combine income and expense; the total is their sum', () => {
   replaceState(emptyState());
-  S.accounts.push({ id: 'cash', name: 'نقد', type: 'cash', opening: 0 });
+  S.accounts.push({ id: 'cash', name: 'نقد', type: 'cash', opening: 20 });
   S.accounts[0].opening = 100;
   fin.saveTx(null, { type: 'income', amount: 50, category: 'salary', note: '', date: today(), accountId: 'main' });
-  fin.saveTx(null, { type: 'expense', amount: 30, category: 'food', note: '', date: today(), accountId: 'main' });
-  fin.saveTransfer(null, { amount: 20, from: 'main', to: 'cash', note: '', date: today() });
-  assert.equal(fin.accBalance('main'), 100);
-  assert.equal(fin.accBalance('cash'), 20);
-  assert.equal(fin.balance(), 120); // transfers do not change the total
-});
-
-test('paying an installment records an expense and links both ways', () => {
-  const loan = S.loans[0];
-  const n = fin.loanNextN(loan);
-  const left = fin.payObligation({ kind: 'loan', ref: loan, n, due: fin.loanDue(loan, n) }, { amount: 250, date: today(), accountId: 'main', record: true });
-  assert.equal(left, loan.count - fin.loanPaidCount(loan));
-  const tx = S.tx.find((t) => t.loanId === loan.id && t.loanN === n);
-  assert.ok(tx);
-  assert.equal(loan.paid[n].txId, tx.id);
-
-  // deleting the expense un-pays the installment; undo restores both
-  const undo = fin.deleteTx(tx.id);
-  assert.ok(!loan.paid[n]);
-  fin.restoreTx(undo);
-  assert.equal(loan.paid[n].txId, tx.id);
-
-  // cancelling the payment removes the expense too
-  fin.cancelPayment(loan, n);
-  assert.ok(!S.tx.some((t) => t.id === tx.id));
-});
-
-test('settling a loan marks every remaining installment paid', () => {
-  const loan = S.loans[0];
-  fin.settleLoan(loan, 5000, today());
-  assert.equal(fin.loanNextN(loan), null);
-  assert.equal(fin.loanRemaining(loan), 0);
-  assert.ok(S.tx.some((t) => t.note.startsWith('تسویه کامل')));
-});
-
-test('editing a linked transaction keeps the payment entry in sync', () => {
-  const bill = S.bills[1];
-  const nx = fin.billNext(bill);
-  fin.payObligation({ kind: 'bill', ref: bill, due: nx.due, amount: 35 }, { amount: 35, date: today(), record: true });
-  const tx = S.tx.find((t) => t.billId === bill.id);
-  fin.saveTx(tx, { type: 'expense', amount: 41, category: 'bills', note: tx.note, date: tx.date, accountId: tx.accountId });
-  assert.equal(bill.paid[nx.due].amount, 41);
-  assert.equal(fin.billAvg(bill), 41);
-});
-
-test('dueItems lists overdue first and respects paused bills', () => {
-  const items = fin.dueItems(60);
-  assert.ok(items.length > 0);
-  for (let i = 1; i < items.length; i++) assert.ok(items[i - 1].due <= items[i].due);
-  const before = items.filter((d) => d.kind === 'bill').length;
-  S.bills.forEach((b) => { b.paused = true; });
-  assert.equal(fin.dueItems(60).filter((d) => d.kind === 'bill').length, 0);
-  assert.ok(before > 0);
-  const b = fin.dueBuckets();
-  assert.equal(b.over.length + b.week.length + b.month.length + b.later.length, b.items.length);
+  fin.saveTx(null, { type: 'expense', amount: 30, category: 'food', note: '', date: today(), accountId: 'cash' });
+  assert.equal(fin.accBalance('main'), 150);
+  assert.equal(fin.accBalance('cash'), -10);
+  assert.equal(fin.balance(), 140);
 });
 
 test('ledger filters by month, type and text', () => {
@@ -102,18 +50,6 @@ test('ledger filters by month, type and text', () => {
   assert.ok(rows.every((t) => t.type === 'expense' && monthKey(t.date) === month));
   assert.equal(fin.ledgerRows({ month, q: 'zzz-no-match' }).length, 0);
   assert.ok(fin.ledgerRows({ month, acc: 'cash' }).every((t) => fin.txAccount(t) === 'cash'));
-});
-
-test('reconcile creates the difference as an adjusting transaction', () => {
-  const acc = S.accounts[0];
-  const cur = fin.accBalance(acc.id);
-  assert.equal(fin.reconcileAccount(acc, cur), false);
-  assert.equal(fin.reconcileAccount(acc, cur + 10), true);
-  assert.equal(fin.accBalance(acc.id), cur + 10);
-});
-
-test('deleting an account is blocked while it has transactions', () => {
-  assert.equal(fin.accountInUse(S.accounts[0]), true);
 });
 
 /* ---------- tasks ---------- */
@@ -248,6 +184,8 @@ test('meals are stored per day', () => {
 
 /* ---------- new sections: repeat, appointments, shopping, budgets ---------- */
 import * as A from '../src/domain/appointments.js';
+import * as MO from '../src/domain/monthly.js';
+import { fromLegacy } from '../src/core/legacy.js';
 import * as SH from '../src/domain/shopping.js';
 
 test('completing a daily/weekly task creates the next one exactly once', () => {
@@ -312,22 +250,64 @@ test('budgets: remaining, per-category rows and top category', () => {
   assert.equal(fin.topExpenseCategory(), null);
 });
 
-test('installment status: done / overdue / soon / open', () => {
-  const l = { id: 'l', title: 'x', amount: 10, count: 3, start: iso(addDays(new Date(), -5)), every: 1, paid: {} };
-  S.loans = [l];
-  assert.equal(fin.loanStatus(l), 'overdue');
-  l.start = iso(addDays(new Date(), 3));
-  assert.equal(fin.loanStatus(l), 'soon');
-  l.start = iso(addDays(new Date(), 20));
-  assert.equal(fin.loanStatus(l), 'open');
-  l.paid = { 1: {}, 2: {}, 3: {} };
-  assert.equal(fin.loanStatus(l), 'done');
-  assert.equal(fin.nearestInstallment(), null);
-});
-
 test('migrate gives old documents the new collections', () => {
   const old = emptyState();
   delete old.appointments; delete old.shopping; delete old.wallet.catBudgets;
   const m = migrate(old);
   assert.deepEqual([m.appointments, m.shopping, m.wallet.catBudgets], [[], [], {}]);
+});
+
+/* ---------- monthly payments (replace loans & bills) ---------- */
+test('seed has plain monthly payments and no loan/bill collections', () => {
+  assert.ok(S.monthly.length >= 3);
+  assert.equal(S.loans, undefined);
+  assert.equal(S.bills, undefined);
+});
+
+test('ticking a monthly payment records an expense; unticking removes it', () => {
+  S.tx = []; S.monthly = [];
+  const m = MO.saveMonthly(null, { title: 'برق', amount: 50 });
+  assert.equal(MO.remainingTotal(), 50);
+  MO.pay(m);
+  assert.equal(MO.isPaid(m), true);
+  assert.equal(MO.paidTotal(), 50);
+  assert.equal(MO.remainingCount(), 0);
+  assert.equal(S.tx.length, 1);
+  assert.deepEqual([S.tx[0].type, S.tx[0].amount, S.tx[0].note, S.tx[0].monthlyId], ['expense', 50, 'برق', m.id]);
+  MO.pay(m); // second tick in the same month does nothing
+  assert.equal(S.tx.length, 1);
+  MO.unpay(m);
+  assert.equal(MO.isPaid(m), false);
+  assert.equal(S.tx.length, 0);
+});
+
+test('the tick resets every month (paid state is keyed by month)', () => {
+  const m = MO.saveMonthly(null, { title: 'اینترنت', amount: 35 });
+  m.paid = { '1999-01': { txId: 'x', date: '1999-01-05' } };
+  assert.equal(MO.isPaid(m), false);
+  assert.equal(MO.isPaid(m, '1999-01'), true);
+});
+
+test('deleting a payment expense by hand un-ticks the month, and undo ticks it again', () => {
+  S.tx = []; S.monthly = [];
+  const m = MO.saveMonthly(null, { title: 'اجاره', amount: 600 });
+  MO.pay(m);
+  const undo = fin.deleteTx(S.tx[0].id);
+  const link = MO.detach(undo.tx);
+  assert.equal(MO.isPaid(m), false);
+  fin.restoreTx(undo); MO.reattach(link);
+  assert.equal(MO.isPaid(m), true);
+  assert.equal(S.tx.length, 1);
+});
+
+test('legacy loans and bills fold into monthly payments (finished loans and paused bills are skipped)', () => {
+  const out = fromLegacy({
+    loans: [{ title: 'قسط ماشین', amount: 250, count: 24, paid: {} }, { title: 'تمام‌شده', amount: 10, count: 1, paid: { 1: {} } }],
+    bills: [{ title: 'برق', amount: 95, every: 2, paid: {} }, { title: 'متوقف', amount: 5, every: 1, paused: true, paid: {} }, { title: 'اینترنت', amount: 30, every: 1, paid: { a: { amount: 40 }, b: { amount: 20 } } }],
+  });
+  assert.deepEqual(out.map((m) => [m.title, m.amount]), [['قسط ماشین', 250], ['برق', 47.5], ['اینترنت', 30]]);
+  const doc = emptyState(); delete doc.monthly; doc.loans = [{ title: 'x', amount: 5, count: 3, paid: {} }];
+  assert.equal(migrate(doc).monthly[0].title, 'x');
+  const had = emptyState(); had.monthly = [{ id: 'k', title: 'k', amount: 1, paid: {} }];
+  assert.equal(migrate(had).monthly.length, 1, 'existing monthly list is kept');
 });

@@ -1,28 +1,11 @@
-/* In-app reminders for tasks, planner blocks and due payments (run while the app is open). */
+/* In-app reminders for timed tasks (run while the app is open). */
 import { S, persist } from '../core/store.js';
 import { today, nowHM, hmToMin } from '../core/dates.js';
-import { fa } from '../core/format.js';
 import { notify } from '../services/notify.js';
-import { dueItems } from '../domain/finance.js';
 
 const WINDOW_MIN = 30; // fire if we are at most this late
 
-function dueReminder() {
-  if (S.wallet.lastDueNotice === today()) return;
-  const items = dueItems(1).filter((d) => d.ref.remind !== false);
-  if (!items.length) return;
-  const over = items.filter((d) => d.due < today()).length;
-  S.wallet.lastDueNotice = today();
-  persist();
-  const soon = items.length - over;
-  const msg = over
-    ? `${fa(over)} پرداخت معوق دارید${soon ? ` و ${fa(soon)} سررسید امروز/فردا` : ''}`
-    : `${fa(items.length)} سررسید قسط/قبض برای امروز یا فردا`;
-  setTimeout(() => notify(msg), 1200);
-}
-
 export function checkReminders() {
-  try { dueReminder(); } catch (e) { console.error(e); }
   const d = today();
   const now = hmToMin(nowHM());
   let changed = false;

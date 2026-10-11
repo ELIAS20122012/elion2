@@ -2,16 +2,17 @@
 import { S, commit, refresh } from '../core/store.js';
 import { parseIso, today } from '../core/dates.js';
 import { fa, esc, money } from '../core/format.js';
-import { faDayMonth, fullDate, relDay, monthLabel, currentMonthKey } from '../core/calendar.js';
+import { faDayMonth, monthLabel, currentMonthKey } from '../core/calendar.js';
 import { toast } from '../ui/toast.js';
-import { parseMoneyLine } from '../domain/quick.js';
 import { icon } from '../ui/widgets.js';
-import { pageHead, addLine, takeLine, putBack, drawers, toggleDrawer, pills, row, empty, section, bar, bars, tabOf, setTab } from '../ui/kit.js';
+import { pageHead, addLine, takeLine, putBack, drawers, toggleDrawer, pills, row, check, empty, section, bar, bars, tabOf, setTab } from '../ui/kit.js';
 import * as fin from '../domain/finance.js';
-import { txSheet, historySheet, payLoan, loanSheet, loanMenu, budgetSheet, catBudgetSheet, addCatBudget, exportCsv } from '../features/finance-sheets.js';
+import * as MO from '../domain/monthly.js';
+import { parseMoneyLine, splitAmount } from '../domain/quick.js';
+import { txSheet, historySheet, monthlySheet, budgetSheet, catBudgetSheet, addCatBudget, exportCsv } from '../features/finance-sheets.js';
 
-const ORDER = ['tx', 'loans', 'budget', 'report'];
-const LABELS = { tx: 'تراکنش‌ها', loans: 'قسط‌ها', budget: 'بودجه', report: 'گزارش' };
+const ORDER = ['tx', 'monthly', 'budget', 'report'];
+const LABELS = { tx: 'تراکنش‌ها', monthly: 'قسط‌ها', budget: 'بودجه', report: 'گزارش' };
 let filter = 'all';
 let q = '';
 const M = (v) => money(v);
@@ -22,7 +23,6 @@ function summary() {
   const bal = fin.balance();
   const left = fin.budgetLeft();
   const used = fin.monthBudget() ? (fin.monthSum('expense') / fin.monthBudget()) * 100 : 0;
-  const near = fin.nearestInstallment();
   const cur = S.profile.currency === 'تومان' ? 'ت' : S.profile.currency;
   const amount = hide ? '••••••' : `${bal < 0 ? '-' : ''}${Math.abs(bal).toLocaleString('en-US', { maximumFractionDigits: 2 })}`;
   return `<section class="balance-card">
@@ -33,7 +33,7 @@ function summary() {
     </section>
     <div class="duo">
       <button class="mini" data-act="to-budget"><small>بودجه‌ی باقی‌مانده</small><b class="ltr ${left < 0 ? 'neg' : ''}">${money(Math.max(0, left), hide)}</b>${bar(used, used >= 100)}</button>
-      <button class="mini" data-act="to-loans"><small>نزدیک‌ترین قسط</small><b class="truncate">${near ? esc(near.title) : 'قسطی نیست'}</b>${near ? `<small class="${near.due < today() ? 'neg' : ''}">${relDay(near.due)} · ${money(near.amount, hide)}</small>` : '<small>—</small>'}</button>
+      <button class="mini" data-act="to-monthly"><small>قسط‌های باقی‌مانده این ماه</small><b class="ltr">${money(MO.remainingTotal(), hide)}</b><small>${MO.remainingCount() ? `${fa(MO.remainingCount())} مورد` : 'همه پرداخت شد ✓'}</small></button>
     </div>`;
 }
 
@@ -53,20 +53,11 @@ function txTab() {
     <button class="link center" data-act="all">همه‌ی تراکنش‌ها</button>`;
 }
 
-const STATUS = { done: ['پرداخت‌شده', 'ok'], overdue: ['معوق', 'bad'], soon: ['نزدیک', 'warn'], open: ['در انتظار', ''] };
-
-function loansTab() {
-  const rows = S.loans.map((l) => {
-    const n = fin.loanNextN(l);
-    const st = fin.loanStatus(l);
-    const left = l.count - fin.loanPaidCount(l);
-    return row({ ic: 'event_repeat', title: esc(l.title), act: 'loan', attrs: `data-id="${l.id}"`,
-      sub: `${M(l.amount)} · ${n ? `سررسید ${fullDate(fin.loanDue(l, n))}` : 'تسویه شد'} · ${fa(left)} قسط مانده<span class="badge ${STATUS[st][1]}">${STATUS[st][0]}</span>`,
-      trailing: `<button class="icon-btn sm${l.remind !== false ? ' on' : ''}" data-act="remind" data-id="${l.id}" aria-label="یادآور">${icon(l.remind !== false ? 'notifications_active' : 'notifications_off')}</button>${n ? `<button class="btn-sm" data-act="pay-loan" data-id="${l.id}">پرداخت</button>` : ''}` });
-  }).join('');
-  return `<section class="card row-between"><span><small>مانده‌ی کل اقساط</small><b class="big ltr block">${M(fin.loansRemaining())}</b></span></section>
-    <div class="list">${rows || empty('قسطی ثبت نشده')}</div>
-    <button class="link center" data-act="new-loan">+ قسط جدید</button>`;
+function monthlyTab() {
+  const rows = MO.list().map((m) => row({ ic: '', title: esc(m.title), cls: MO.isPaid(m) ? 'is-done' : '', sub: M(m.amount), act: 'monthly-edit', attrs: `data-id="${m.id}"`, trailing: check('monthly-pay', m.id, MO.isPaid(m)) })).join('');
+  return `<section class="card row-between"><span><small>${monthLabel(currentMonthKey())}</small><b class="big ltr block">${M(MO.remainingTotal())}</b><small>باقی‌مانده از ${M(MO.total())}</small></span><span class="end"><small>پرداخت‌شده</small><b class="ltr block pos">${M(MO.paidTotal())}</b></span></section>
+    <div class="list">${rows || empty('هنوز چیزی ثبت نشده — مثلاً «برق ۵۰» بنویسید')}</div>
+    <small class="center block">با تیک زدن، هزینه‌ی همین ماه ثبت می‌شود؛ ماه بعد خودکار از اول شروع می‌شود.</small>`;
 }
 
 function budgetTab() {
@@ -93,7 +84,7 @@ function reportTab() {
   const cols = flow.map((r, i) => ({ v: r.expense, label: monthLabel(r.key).split(' ')[0], on: i === flow.length - 1 }));
   const tile = (label, value, cls = '') => `<div class="mini static"><small>${label}</small><b class="ltr ${cls}">${value}</b></div>`;
   return `<div class="duo">${tile('خرج این ماه', M(fin.monthSum('expense')), 'neg')}${tile('درآمد این ماه', M(fin.monthSum('income')), 'pos')}</div>
-    <div class="duo">${tile('قسط‌های پرداخت‌شده', M(fin.installmentsPaidThisMonth()))}${tile('بیشترین هزینه', top ? `${fin.catOf(top.key).label}` : '—')}</div>
+    <div class="duo">${tile('قسط‌های پرداخت‌شده', M(MO.paidTotal()))}${tile('بیشترین هزینه', top ? `${fin.catOf(top.key).label}` : '—')}</div>
     ${section('خرج ۶ ماه اخیر', `<div class="card">${bars(cols)}</div>`)}
     <button class="link center" data-act="csv">خروجی اکسل (CSV)</button>`;
 }
@@ -103,34 +94,43 @@ export default {
   title: 'مالی',
   mount() { filter = 'all'; q = ''; },
   render() {
-    const bodies = { tx: txTab, loans: loansTab, budget: budgetTab, report: reportTab };
+    const bodies = { tx: txTab, monthly: monthlyTab, budget: budgetTab, report: reportTab };
     const items = ORDER.map((key) => ({ key, label: LABELS[key], body: () => `<div class="stack">${bodies[key]()}</div>` }));
-    const open = tabOf('money', 'tx');
-    return `${pageHead('مالی', 'موجودی، خرج و قسط‌ها')}${summary()}${open === 'tx' ? addLine('مثلاً نهار ۱۲۰ — برای درآمد: +حقوق ۱۵۰۰') : ''}${drawers(items, open)}`;
+    const stored = tabOf('money', 'tx');
+    const open = ORDER.includes(stored) || stored === '' ? stored : 'tx';
+    return `${pageHead('مالی', 'موجودی، خرج و قسط‌ها')}${summary()}${open === 'tx' ? addLine('مثلاً نهار ۱۲۰ — برای درآمد: +حقوق ۱۵۰۰') : open === 'monthly' ? addLine('مثلاً برق ۵۰ — و Enter') : ''}${drawers(items, open)}`;
   },
   act: {
     tab: toggleDrawer('money'),
     privacy() { S.privacy = !S.privacy; commit(); },
     'to-budget': () => setTab('money', 'budget'),
-    'to-loans': () => setTab('money', 'loans'),
+    'to-monthly': () => setTab('money', 'monthly'),
     filter(el) { filter = el.dataset.v; refresh(); },
     noop() {},
     tx: (el) => txSheet(null, {}, el.dataset.id),
     all: () => historySheet(),
-    loan(el) { const l = S.loans.find((x) => x.id === el.dataset.id); if (l) loanMenu(l); },
-    'pay-loan'(el) { const l = S.loans.find((x) => x.id === el.dataset.id); payLoan(l, fin.loanNextN(l)); },
-    remind(el) { const l = S.loans.find((x) => x.id === el.dataset.id); l.remind = l.remind === false; commit(); toast(l.remind ? 'یادآور روشن شد' : 'یادآور خاموش شد'); },
+    'monthly-pay'(el) {
+      const m = MO.findMonthly(el.dataset.id);
+      if (MO.isPaid(m)) MO.unpay(m); else MO.pay(m);
+      commit();
+    },
+    'monthly-edit': (el) => monthlySheet(el.dataset.id),
     'set-budget': budgetSheet,
-    'new-loan': () => loanSheet(),
     'new-cat': addCatBudget,
     'cat-budget': (el) => catBudgetSheet(el.dataset.k),
     csv: () => exportCsv(S.tx, 'all'),
     quick(el) {
       const line = takeLine(el);
       if (!line) return;
-      const { type, title, amount } = parseMoneyLine(line);
-      if (!amount) { toast('مبلغ را هم بنویسید، مثلاً نهار ۱۲۰'); putBack(el, line); return; }
-      fin.saveTx(null, { type, amount, category: type === 'income' ? 'salary' : 'other', note: title, date: today(), accountId: fin.defAcc() });
+      if (tabOf('money', 'tx') === 'monthly') {
+        const { title, amount } = splitAmount(line);
+        if (!title || !amount) { toast('نام و مبلغ را بنویسید، مثلاً برق ۵۰'); putBack(el, line); return; }
+        MO.saveMonthly(null, { title, amount });
+      } else {
+        const { type, title, amount } = parseMoneyLine(line);
+        if (!amount) { toast('مبلغ را هم بنویسید، مثلاً نهار ۱۲۰'); putBack(el, line); return; }
+        fin.saveTx(null, { type, amount, category: type === 'income' ? 'salary' : 'other', note: title, date: today(), accountId: fin.defAcc() });
+      }
       commit();
     },
   },

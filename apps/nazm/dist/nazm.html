@@ -500,236 +500,10 @@ __exports.WD_SHORT = WD_SHORT;
 __exports.WD_LONG = WD_LONG;
 __exports.weekStart = weekStart;
 };
-__defs["src/core/jalali.js"] = function (__exports) {
-/* Jalali (Persian) calendar conversion — jalaali algorithm. */
-const div = (a, b) => ~~(a / b);
-const mod = (a, b) => a - ~~(a / b) * b;
-const BREAKS = [-61, 9, 38, 199, 426, 686, 756, 818, 1111, 1181, 1210, 1635, 2060, 2097, 2192, 2262, 2324, 2394, 2456, 3178];
-
-function jalCal(jy) {
-  const bl = BREAKS.length;
-  const gy = jy + 621;
-  let leapJ = -14, jp = BREAKS[0], jump = 0, jm, n, i;
-  for (i = 1; i < bl; i += 1) {
-    jm = BREAKS[i];
-    jump = jm - jp;
-    if (jy < jm) break;
-    leapJ += div(jump, 33) * 8 + div(mod(jump, 33), 4);
-    jp = jm;
-  }
-  n = jy - jp;
-  leapJ += div(n, 33) * 8 + div(mod(n, 33) + 3, 4);
-  if (mod(jump, 33) === 4 && jump - n === 4) leapJ += 1;
-  const leapG = div(gy, 4) - div((div(gy, 100) + 1) * 3, 4) - 150;
-  const march = 20 + leapJ - leapG;
-  if (jump - n < 6) n = n - jump + div(jump + 4, 33) * 33;
-  let leap = mod(mod(n + 1, 33) - 1, 4);
-  if (leap === -1) leap = 4;
-  return { leap, gy, march };
-}
-
-function g2d(gy, gm, gd) {
-  const d = div((gy + div(gm - 8, 6) + 100100) * 1461, 4) + div(153 * mod(gm + 9, 12) + 2, 5) + gd - 34840408;
-  return d - div(div(gy + 100100 + div(gm - 8, 6), 100) * 3, 4) + 752;
-}
-
-function d2g(jdn) {
-  let j = 4 * jdn + 139361631;
-  j += div(div(4 * jdn + 183187720, 146097) * 3, 4) * 4 - 3908;
-  const i = div(mod(j, 1461), 4) * 5 + 308;
-  const gd = div(mod(i, 153), 5) + 1;
-  const gm = mod(div(i, 153), 12) + 1;
-  const gy = div(j, 1461) - 100100 + div(8 - gm, 6);
-  return { gy, gm, gd };
-}
-
-function j2d(jy, jm, jd) {
-  const r = jalCal(jy);
-  return g2d(r.gy, 3, r.march) + (jm - 1) * 31 - div(jm, 7) * (jm - 7) + jd - 1;
-}
-
-function d2j(jdn) {
-  const gy = d2g(jdn).gy;
-  let jy = gy - 621;
-  const r = jalCal(jy);
-  let k = jdn - g2d(gy, 3, r.march);
-  if (k >= 0) {
-    if (k <= 185) return { jy, jm: 1 + div(k, 31), jd: mod(k, 31) + 1 };
-    k -= 186;
-  } else {
-    jy -= 1;
-    k += 179;
-    if (r.leap === 1) k += 1;
-  }
-  return { jy, jm: 7 + div(k, 30), jd: mod(k, 30) + 1 };
-}
-
-function jMonthLen(jy, jm) {
-  return jm <= 6 ? 31 : jm <= 11 ? 30 : (jalCal(jy).leap === 0 ? 30 : 29);
-}
-
-/** "YYYY-MM-DD" (Gregorian) → { jy, jm, jd } */
-function toJ(isoStr) {
-  const [y, m, d] = isoStr.split('-');
-  return d2j(g2d(+y, +m, +d));
-}
-
-/** Jalali y/m/d → "YYYY-MM-DD" (Gregorian) */
-function fromJ(jy, jm, jd) {
-  const g = d2g(j2d(jy, jm, jd));
-  return `${g.gy}-${String(g.gm).padStart(2, '0')}-${String(g.gd).padStart(2, '0')}`;
-}
-
-__exports.jMonthLen = jMonthLen;
-__exports.toJ = toJ;
-__exports.fromJ = fromJ;
-};
-__defs["src/core/format.js"] = function (__exports) {
-const { config } = __r("src/core/config.js");
-
-const FA = '۰۱۲۳۴۵۶۷۸۹';
-const AR = '٠١٢٣٤٥٦٧٨٩';
-
-/** Latin digits → Persian digits. */
-const fa = (x) => String(x).replace(/\d/g, (d) => FA[d]);
-
-/** Persian / Arabic digits → Latin digits. */
-const en = (x) => String(x)
-  .replace(/[۰-۹]/g, (d) => FA.indexOf(d))
-  .replace(/[٠-٩]/g, (d) => AR.indexOf(d));
-
-/** Lenient number parser for form input (accepts Persian digits and thousands separators). */
-function num(x) {
-  const n = parseFloat(en(String(x == null ? '' : x)).replace(/,/g, ''));
-  return Number.isFinite(n) ? n : 0;
-}
-
-const faInt = (n) => fa(Math.round(n).toLocaleString('en-US'));
-
-function esc(s) {
-  return String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-}
-
-/** Format an amount in the configured currency. Pass `hide` (or enable privacy mode) to mask it. */
-function money(v, hide = config.privacy) {
-  if (hide) return '••••';
-  const c = config.currency || '€';
-  const neg = v < 0;
-  const a = Math.abs(v);
-  const n = a >= 1000 || Math.round(a) === a
-    ? Math.round(a).toLocaleString('en-US')
-    : a.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  return c === 'تومان'
-    ? `⁧${neg ? '-' : ''}${n} تومان⁩`
-    : `⁦${neg ? '-' : ''}${c} ${n}⁩`;
-}
-
-__exports.fa = fa;
-__exports.en = en;
-__exports.num = num;
-__exports.faInt = faInt;
-__exports.esc = esc;
-__exports.money = money;
-};
-__defs["src/core/calendar.js"] = function (__exports) {
-/* Calendar-aware helpers: Jalali by default, Gregorian when the profile says so. */
-const { config } = __r("src/core/config.js");
-const { pad, iso, parseIso, daysBetween, today } = __r("src/core/dates.js");
-const { toJ, fromJ, jMonthLen } = __r("src/core/jalali.js");
-const { fa } = __r("src/core/format.js");
-
-const useJ = () => config.calendar !== 'gregorian';
-
-function faDate(d, opt) {
-  try {
-    return new Intl.DateTimeFormat(useJ() ? 'fa-IR-u-ca-persian' : 'fa-IR-u-ca-gregory', opt).format(d);
-  } catch { return iso(d); }
-}
-const faDayMonth = (d) => faDate(d, { day: 'numeric', month: 'long' });
-const faDayNum = (d) => faDate(d, { day: 'numeric' });
-const fullDate = (s) => faDate(parseIso(s), { day: 'numeric', month: 'long', year: 'numeric' });
-const monthName = (s) => faDate(parseIso(s), { month: 'long' });
-const monthYear = (s) => faDate(parseIso(s), { month: 'long', year: 'numeric' });
-
-/* ---- month keys: "YYYY-MM" in the active calendar ---- */
-function monthKey(dateIso) {
-  if (useJ()) { const j = toJ(dateIso); return `${j.jy}-${pad(j.jm)}`; }
-  return dateIso.slice(0, 7);
-}
-function monthStartIso(key) {
-  const [y, m] = key.split('-');
-  return useJ() ? fromJ(+y, +m, 1) : `${key}-01`;
-}
-function shiftMonthKey(key, n) {
-  const [y0, m0] = key.split('-');
-  let y = +y0;
-  const m = +m0 - 1 + n;
-  y += Math.floor(m / 12);
-  return `${y}-${pad((((m % 12) + 12) % 12) + 1)}`;
-}
-const currentMonthKey = () => monthKey(today());
-const prevMonthKey = () => shiftMonthKey(currentMonthKey(), -1);
-const monthLabel = (key) => monthYear(monthStartIso(key));
-
-function dayOfMonth(dateIso) {
-  return useJ() ? toJ(dateIso).jd : parseIso(dateIso).getDate();
-}
-
-/** Add n calendar months, keeping the anchor day (clamped to the month length). */
-function addMonthsIso(dateIso, n, anchorDay) {
-  if (useJ()) {
-    const j = toJ(dateIso);
-    let m = j.jm - 1 + n;
-    const y = j.jy + Math.floor(m / 12);
-    m = (((m % 12) + 12) % 12) + 1;
-    return fromJ(y, m, Math.min(anchorDay || j.jd, jMonthLen(y, m)));
-  }
-  const d = parseIso(dateIso);
-  const y = d.getFullYear();
-  const m = d.getMonth() + n;
-  const last = new Date(y, m + 1, 0).getDate();
-  return iso(new Date(y, m, Math.min(anchorDay || d.getDate(), last)));
-}
-
-/** "today", "tomorrow", "3 days from now", … */
-function relDay(d) {
-  const n = daysBetween(today(), d);
-  if (n === 0) return 'امروز';
-  if (n === 1) return 'فردا';
-  if (n === -1) return 'دیروز';
-  return n > 0 ? `${fa(n)} روز دیگر` : `${fa(-n)} روز گذشته`;
-}
-
-/** A date as a "yyyy/mm/dd" string (for CSV export). */
-function jalaliString(dateIso) {
-  const j = toJ(dateIso);
-  return `${j.jy}/${pad(j.jm)}/${pad(j.jd)}`;
-}
-
-__exports.useJ = useJ;
-__exports.faDate = faDate;
-__exports.faDayMonth = faDayMonth;
-__exports.faDayNum = faDayNum;
-__exports.fullDate = fullDate;
-__exports.monthName = monthName;
-__exports.monthYear = monthYear;
-__exports.monthKey = monthKey;
-__exports.monthStartIso = monthStartIso;
-__exports.shiftMonthKey = shiftMonthKey;
-__exports.currentMonthKey = currentMonthKey;
-__exports.prevMonthKey = prevMonthKey;
-__exports.monthLabel = monthLabel;
-__exports.dayOfMonth = dayOfMonth;
-__exports.addMonthsIso = addMonthsIso;
-__exports.relDay = relDay;
-__exports.jalaliString = jalaliString;
-};
 __defs["src/core/seed.js"] = function (__exports) {
 /* Sample data for a fresh install, plus the empty skeleton used by "clear all data". */
 const { uid } = __r("src/core/util.js");
-const { iso, addDays, pad } = __r("src/core/dates.js");
-const { toJ, fromJ } = __r("src/core/jalali.js");
-const { addMonthsIso, dayOfMonth, useJ } = __r("src/core/calendar.js");
+const { iso, addDays } = __r("src/core/dates.js");
 
 const STATE_VERSION = 2;
 
@@ -737,10 +511,10 @@ function emptyState() {
   return {
     v: STATE_VERSION, privacy: false,
     profile: { name: '', currency: '€', calendar: 'gregorian' },
-    tasks: [], habits: [], blocks: [], plannerHideDone: false, appointments: [], shopping: [],
+    tasks: [], habits: [], blocks: [], plannerHideDone: false, appointments: [], shopping: [], monthly: [],
     wallet: { startBalance: 0, budget: 1500, alerts: true, quickSet: 0 },
     accounts: [{ id: 'main', name: 'حساب اصلی', type: 'bank', opening: 0 }],
-    loans: [], bills: [], tx: [],
+    tx: [],
     gym: {
       goals: { kcal: 2400, p: 160, c: 230, f: 65 }, weekly: {}, sessions: {}, meals: {},
       lastScan: null, weights: [], tab: 'workout', view: 'daily', timerStart: null,
@@ -767,24 +541,6 @@ function seed() {
     { id: uid(), type: 'income', amount: 1150, category: 'salary', note: 'حقوق', date: d(-39) },
     { id: uid(), type: 'expense', amount: 640, category: 'bills', note: 'اجاره', date: d(-35) },
   );
-
-  /* ---- loans & bills: due dates follow the active calendar ---- */
-  const t0 = d(0);
-  const dueOn = (months, day) => {
-    const x = addMonthsIso(t0, months);
-    return useJ() ? fromJ(toJ(x).jy, toJ(x).jm, day) : `${x.slice(0, 8)}${pad(day)}`;
-  };
-  const cur = dayOfMonth(t0);
-  const soon = (offset, fallbackDay) => (cur + offset > 28 ? dueOn(1, fallbackDay) : dueOn(0, cur + offset));
-  const loan = { id: uid(), title: 'وام خرید خودرو', lender: 'بانک', amount: 250, count: 24, start: dueOn(-5, 15), every: 1, accountId: 'main', remind: true, paid: {} };
-  for (let n = 1; n <= 5; n++) loan.paid[n] = { date: addMonthsIso(loan.start, n - 1), amount: 250, txId: null, before: true };
-  const bills = [
-    { id: uid(), kind: 'rent', title: 'اجاره خانه', amount: 640, every: 1, start: dueOn(0, 1), accountId: 'main', remind: true, paid: {} },
-    { id: uid(), kind: 'internet', title: 'اینترنت خانه', amount: 35, every: 1, start: soon(2, 2), accountId: 'main', remind: true, paid: {} },
-    { id: uid(), kind: 'electricity', title: 'قبض برق و گاز', amount: 95, every: 2, start: dueOn(0, Math.min(28, cur + 6 > 28 ? 28 : cur + 6)), accountId: 'main', remind: true, paid: {} },
-    { id: uid(), kind: 'mobile', title: 'قبض موبایل', amount: 15, every: 1, start: soon(12, 5), accountId: 'cash', remind: true, paid: {} },
-  ];
-  bills[0].paid[bills[0].start] = { date: bills[0].start, amount: 640, txId: null, before: true };
 
   /* ---- gym ---- */
   const weights = [];
@@ -840,7 +596,14 @@ function seed() {
       { id: 'main', name: 'حساب بانکی', type: 'bank', opening: 0 },
       { id: 'cash', name: 'کیف پول نقد', type: 'cash', opening: 0 },
     ],
-    loans: [loan], bills, tx,
+    monthly: [
+      { id: uid(), title: 'قسط ماشین', amount: 250, paid: {} },
+      { id: uid(), title: 'اجاره', amount: 640, paid: {} },
+      { id: uid(), title: 'اینترنت', amount: 35, paid: {} },
+      { id: uid(), title: 'برق و گاز', amount: 95, paid: {} },
+      { id: uid(), title: 'موبایل', amount: 15, paid: {} },
+    ],
+    tx,
     gym: {
       goals: { kcal: 2400, p: 160, c: 230, f: 65 },
       weekly: {
@@ -867,11 +630,34 @@ __exports.STATE_VERSION = STATE_VERSION;
 __exports.emptyState = emptyState;
 __exports.seed = seed;
 };
+__defs["src/core/legacy.js"] = function (__exports) {
+/* One-time upgrade helpers for documents saved by older versions. Pure — no store access. */
+const { uid } = __r("src/core/util.js");
+
+/** Old documents had loans and bills; fold the live ones into plain monthly payments (once). */
+function fromLegacy(state) {
+  const out = [];
+  (state.loans || []).forEach((l) => {
+    if (l.count && Object.keys(l.paid || {}).length >= l.count) return; // fully paid off
+    out.push({ id: uid(), title: l.title, amount: l.amount, paid: {} });
+  });
+  (state.bills || []).forEach((b) => {
+    if (b.paused) return;
+    const paid = Object.values(b.paid || {}).map((p) => p.amount).filter((x) => x > 0);
+    const avg = paid.length ? paid.reduce((s, x) => s + x, 0) / paid.length : b.amount;
+    out.push({ id: uid(), title: b.title, amount: Math.round((avg / (b.every || 1)) * 100) / 100, paid: {} });
+  });
+  return out;
+}
+
+__exports.fromLegacy = fromLegacy;
+};
 __defs["src/core/store.js"] = function (__exports) {
 /* The single source of truth: one JSON document persisted in localStorage.
    `S` is one stable object; replacing the document rewrites its contents in place. */
 const { config } = __r("src/core/config.js");
 const { seed, emptyState } = __r("src/core/seed.js");
+const { fromLegacy } = __r("src/core/legacy.js");
 
 const STORAGE_KEY = 'daily-order-v2';
 
@@ -908,9 +694,8 @@ function migrate(state) {
   state.habits = state.habits || [];
   state.blocks = state.blocks || [];
   state.tx = state.tx || [];
-  state.loans = state.loans || [];
-  state.bills = state.bills || [];
   state.weekly = state.weekly || {};
+  if (!state.monthly) state.monthly = fromLegacy(state); // loans/bills → plain monthly payments, once
   state.appointments = state.appointments || [];
   state.shopping = state.shopping || [];
   state.wallet.catBudgets = state.wallet.catBudgets || {};
@@ -1160,439 +945,15 @@ __exports.notifAllowed = notifAllowed;
 __exports.askNotif = askNotif;
 __exports.notify = notify;
 };
-__defs["src/domain/finance.js"] = function (__exports) {
-/* Money: accounts, ledger, installments, recurring bills and what is due. Pure data logic — no DOM. */
-const { S } = __r("src/core/store.js");
-const { uid, sum } = __r("src/core/util.js");
-const { iso, addDays, today, daysBetween } = __r("src/core/dates.js");
-const { fa } = __r("src/core/format.js");
-const { monthKey, shiftMonthKey, addMonthsIso, dayOfMonth, currentMonthKey, monthName } = __r("src/core/calendar.js");
-
-/* ---------- catalogues ---------- */
-const TXCAT = {
-  shopping: { label: 'خرید', icon: 'shopping_cart' }, bills: { label: 'قبوض و کارت', icon: 'credit_card' },
-  cafe: { label: 'کافه', icon: 'local_cafe' }, food: { label: 'خوراک', icon: 'restaurant' },
-  transport: { label: 'حمل‌ونقل', icon: 'directions_car' }, sport: { label: 'ورزش', icon: 'fitness_center' },
-  travel: { label: 'سفر', icon: 'flight' }, health: { label: 'سلامت', icon: 'spa' }, other: { label: 'سایر', icon: 'payments' },
-  installment: { label: 'قسط و وام', icon: 'event_repeat' }, salary: { label: 'حقوق', icon: 'work' },
-  gift: { label: 'هدیه', icon: 'redeem' }, transfer: { label: 'انتقال', icon: 'swap_horiz' },
-};
-const EXP_CATS = ['shopping', 'food', 'cafe', 'bills', 'installment', 'transport', 'sport', 'travel', 'health', 'other'];
-const INC_CATS = ['salary', 'gift', 'transfer', 'other'];
-/* The short lists offered when adding something new. */
-const SIMPLE_EXP = ['food', 'shopping', 'transport', 'bills', 'health', 'other'];
-const SIMPLE_INC = ['salary', 'gift', 'other'];
-const catOf = (key) => TXCAT[key] || TXCAT.other;
-
-const ACC_TYPES = {
-  bank: { label: 'حساب بانکی', icon: 'account_balance' }, card: { label: 'کارت', icon: 'credit_card' },
-  cash: { label: 'نقد', icon: 'payments' }, saving: { label: 'پس‌انداز', icon: 'savings' },
-};
-const BILL_KINDS = {
-  electricity: { label: 'برق', icon: 'bolt' }, gas: { label: 'گاز', icon: 'local_fire_department' }, water: { label: 'آب', icon: 'water_drop' },
-  internet: { label: 'اینترنت', icon: 'wifi' }, mobile: { label: 'موبایل', icon: 'smartphone' }, rent: { label: 'اجاره', icon: 'home' },
-  insurance: { label: 'بیمه', icon: 'shield' }, subscription: { label: 'اشتراک', icon: 'subscriptions' },
-  tax: { label: 'مالیات / عوارض', icon: 'gavel' }, other: { label: 'سایر', icon: 'receipt_long' },
-};
-const EVERY = { 1: 'ماهانه', 2: 'دوماهه', 3: 'سه‌ماهه', 6: 'شش‌ماهه', 12: 'سالانه' };
-const billKind = (b) => BILL_KINDS[b.kind] || BILL_KINDS.other;
-const accType = (a) => ACC_TYPES[a.type] || ACC_TYPES.bank;
-
-/* ---------- accounts ---------- */
-const findAccount = (id) => S.accounts.find((a) => a.id === id);
-const accName = (id) => (findAccount(id) || { name: 'حساب اصلی' }).name;
-const defAcc = () => (S.accounts[0] || { id: 'main' }).id;
-const txAccount = (t) => t.accountId || defAcc();
-
-function accBalance(id) {
-  const a = findAccount(id);
-  let b = a ? +a.opening || 0 : 0;
-  S.tx.forEach((t) => {
-    const acc = txAccount(t);
-    if (t.type === 'income' && acc === id) b += t.amount;
-    else if (t.type === 'expense' && acc === id) b -= t.amount;
-    else if (t.type === 'transfer') {
-      if (acc === id) b -= t.amount;
-      if (t.toAccountId === id) b += t.amount;
-    }
-  });
-  return b;
-}
-const balance = () => sum(S.accounts, (a) => accBalance(a.id));
-
-function accountInUse(a) {
-  return S.tx.some((t) => txAccount(t) === a.id || t.toAccountId === a.id);
-}
-
-/** Add/subtract the difference so the app matches the real bank balance. */
-function reconcileAccount(a, real) {
-  const diff = Math.round((real - accBalance(a.id)) * 100) / 100;
-  if (!diff) return false;
-  S.tx.push({ id: uid(), type: diff > 0 ? 'income' : 'expense', category: 'other', amount: Math.abs(diff), date: today(), note: 'اصلاح موجودی', accountId: a.id });
-  return true;
-}
-
-/* ---------- ledger queries ---------- */
-const monthSum = (type, mk = currentMonthKey()) =>
-  sum(S.tx.filter((t) => t.type === type && monthKey(t.date) === mk), (t) => t.amount);
-const daySpend = (date) => sum(S.tx.filter((t) => t.type === 'expense' && t.date === date), (t) => t.amount);
-const sortedTx = (list = S.tx) => list.slice().sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
-
-function expenseByCategory(mk = currentMonthKey()) {
-  const by = {};
-  S.tx.filter((t) => t.type === 'expense' && monthKey(t.date) === mk).forEach((t) => { by[t.category] = (by[t.category] || 0) + t.amount; });
-  return by;
-}
-
-/** Income and expense totals for the last `n` months, oldest first. */
-function cashFlow(n = 6) {
-  const mk = currentMonthKey();
-  const rows = [];
-  for (let i = n - 1; i >= 0; i--) {
-    const key = shiftMonthKey(mk, -i);
-    rows.push({ key, income: monthSum('income', key), expense: monthSum('expense', key) });
-  }
-  return rows;
-}
-
-/** 0..1+ fraction of the monthly budget already used. */
-const budgetUsed = () => (S.wallet.budget ? monthSum('expense') / S.wallet.budget : 0);
-
-function txLabel(t) {
-  return t.type === 'transfer' ? `انتقال: ${accName(t.accountId)} ← ${accName(t.toAccountId)}` : catOf(t.category).label;
-}
-
-/* ---------- installments (loans) ---------- */
-const loanDue = (l, n) => addMonthsIso(l.start, (n - 1) * (l.every || 1), dayOfMonth(l.start));
-const loanPaidCount = (l) => Object.keys(l.paid || {}).length;
-function loanNextN(l) {
-  for (let n = 1; n <= l.count; n++) if (!l.paid[n]) return n;
-  return null;
-}
-const loanRemaining = (l) => (l.count - loanPaidCount(l)) * l.amount;
-const loansRemaining = () => sum(S.loans, loanRemaining);
-
-/* ---------- recurring bills ---------- */
-const billDue = (b, k) => addMonthsIso(b.start, k * (b.every || 1), dayOfMonth(b.start));
-function billNext(b) {
-  for (let k = 0; k < 600; k++) {
-    const d = billDue(b, k);
-    if (!b.paid[d]) return { k, due: d };
-  }
-  return null;
-}
-function billAvg(b) {
-  const paid = Object.values(b.paid).map((p) => p.amount).filter((x) => x > 0);
-  return paid.length ? sum(paid) / paid.length : b.amount;
-}
-
-/** Everything due within `days` days (overdue included), soonest first. */
-function dueItems(days) {
-  const limit = iso(addDays(new Date(), days));
-  const out = [];
-  S.loans.forEach((l) => {
-    for (let n = 1; n <= l.count; n++) {
-      if (l.paid[n]) continue;
-      const due = loanDue(l, n);
-      if (due > limit) break;
-      out.push({ kind: 'loan', ref: l, n, due, amount: l.amount, title: l.title, icon: 'event_repeat', sub: `قسط ${fa(n)} از ${fa(l.count)}${l.lender ? ` • ${l.lender}` : ''}` });
-    }
-  });
-  S.bills.forEach((b) => {
-    if (b.paused) return;
-    let overdue = 0;
-    for (let k = 0; k < 600; k++) {
-      const due = billDue(b, k);
-      if (due > limit) break;
-      if (b.paid[due]) continue;
-      if (due < today() && ++overdue > 6) continue;
-      out.push({ kind: 'bill', ref: b, due, amount: Math.round(billAvg(b) * 100) / 100, title: b.title, icon: billKind(b).icon, sub: `${billKind(b).label} • ${EVERY[b.every || 1]}` });
-    }
-  });
-  return out.sort((a, b) => (a.due < b.due ? -1 : a.due > b.due ? 1 : 0));
-}
-
-/** Split dueItems(60) into the buckets the UI shows. */
-function dueBuckets() {
-  const t0 = today();
-  const items = dueItems(60);
-  const gap = (d) => daysBetween(t0, d.due);
-  return {
-    items,
-    over: items.filter((d) => d.due < t0),
-    week: items.filter((d) => d.due >= t0 && gap(d) <= 7),
-    month: items.filter((d) => gap(d) > 7 && gap(d) <= 30),
-    later: items.filter((d) => gap(d) > 30),
-  };
-}
-
-const paidObligationsThisMonth = () =>
-  S.tx.filter((t) => (t.loanId || t.billId) && monthKey(t.date) === currentMonthKey());
-
-/* ---------- ledger entries linked to a payment ---------- */
-function unlinkTx(t) {
-  if (t.loanId) {
-    const l = S.loans.find((x) => x.id === t.loanId);
-    if (l && l.paid[t.loanN] && l.paid[t.loanN].txId === t.id) { const e = l.paid[t.loanN]; delete l.paid[t.loanN]; return e; }
-  }
-  if (t.billId) {
-    const b = S.bills.find((x) => x.id === t.billId);
-    if (b && b.paid[t.billDue] && b.paid[t.billDue].txId === t.id) { const e = b.paid[t.billDue]; delete b.paid[t.billDue]; return e; }
-  }
-  return null;
-}
-function relinkTx(t, entry) {
-  if (!entry) return;
-  if (t.loanId) { const l = S.loans.find((x) => x.id === t.loanId); if (l) l.paid[t.loanN] = entry; }
-  if (t.billId) { const b = S.bills.find((x) => x.id === t.billId); if (b) b.paid[t.billDue] = entry; }
-}
-function syncLinked(t) {
-  const holder = t.loanId ? S.loans.find((x) => x.id === t.loanId) : t.billId ? S.bills.find((x) => x.id === t.billId) : null;
-  const entry = holder && holder.paid[t.loanId ? t.loanN : t.billDue];
-  if (entry) { entry.amount = t.amount; entry.date = t.date; }
-}
-
-/* ---------- transactions ---------- */
-const findTx = (id) => S.tx.find((t) => t.id === id);
-
-/** Create (existing = null) or edit a plain income/expense. */
-function saveTx(existing, { type, amount, category, note, date, accountId }) {
-  if (existing) {
-    Object.assign(existing, { amount, category, note, date: date || existing.date, accountId });
-    syncLinked(existing);
-    return existing;
-  }
-  const t = { id: uid(), type, amount, category, note, date: date || today(), accountId };
-  S.tx.push(t);
-  return t;
-}
-
-function saveTransfer(existing, { amount, from, to, note, date }) {
-  const t = existing || { id: uid(), type: 'transfer', category: 'transfer' };
-  Object.assign(t, { amount, accountId: from, toAccountId: to, note, date: date || today() });
-  if (!existing) S.tx.push(t);
-  return t;
-}
-
-/** Remove a transaction; returns what is needed to undo it. */
-function deleteTx(id) {
-  const i = S.tx.findIndex((t) => t.id === id);
-  if (i < 0) return null;
-  const tx = S.tx.splice(i, 1)[0];
-  return { tx, unlinked: unlinkTx(tx) };
-}
-function restoreTx({ tx, unlinked }) {
-  S.tx.push(tx);
-  relinkTx(tx, unlinked);
-}
-
-/* ---------- paying obligations ---------- */
-/** Mark a due item as paid; optionally records the matching expense. Returns installments left (loans). */
-function payObligation(it, { amount, date, accountId, record }) {
-  const isLoan = it.kind === 'loan';
-  const ref = it.ref;
-  const entry = { date: date || today(), amount, txId: null };
-  if (record) {
-    const tx = { id: uid(), type: 'expense', category: isLoan ? 'installment' : 'bills', amount, date: entry.date, accountId: accountId || ref.accountId || defAcc() };
-    if (isLoan) Object.assign(tx, { note: `قسط ${it.n} از ${ref.count} — ${ref.title}`, loanId: ref.id, loanN: it.n });
-    else Object.assign(tx, { note: `${ref.title} (${monthName(it.due)})`, billId: ref.id, billDue: it.due });
-    S.tx.push(tx);
-    entry.txId = tx.id;
-  }
-  ref.paid[isLoan ? it.n : it.due] = entry;
-  return isLoan ? ref.count - loanPaidCount(ref) : null;
-}
-
-function cancelPayment(ref, key) {
-  const entry = ref.paid[key];
-  if (!entry) return;
-  delete ref.paid[key];
-  if (entry.txId) S.tx = S.tx.filter((t) => t.id !== entry.txId);
-}
-
-/** Pay off every remaining installment at once. */
-function settleLoan(l, amount, date) {
-  const tx = { id: uid(), type: 'expense', category: 'installment', amount, date: date || today(), note: `تسویه کامل — ${l.title}`, accountId: l.accountId || defAcc() };
-  S.tx.push(tx);
-  for (let n = 1; n <= l.count; n++) if (!l.paid[n]) l.paid[n] = { date: tx.date, amount: 0, txId: null, settled: tx.id };
-}
-
-/** Create or update a loan; `paidBefore` marks that many leading installments as already paid. */
-function saveLoan(existing, f) {
-  const l = existing || { id: uid(), paid: {} };
-  Object.assign(l, { title: f.title, lender: f.lender, amount: f.amount, count: f.count, start: f.start, every: f.every, accountId: f.accountId || l.accountId || defAcc(), remind: f.remind });
-  const before = Math.min(f.count, f.paidBefore || 0);
-  for (let n = 1; n <= before; n++) if (!l.paid[n]) l.paid[n] = { date: loanDue(l, n), amount: f.amount, txId: null, before: true };
-  Object.keys(l.paid).forEach((k) => { if (+k > f.count) delete l.paid[k]; });
-  if (!existing) S.loans.push(l);
-  return l;
-}
-
-function deleteLoan(l) {
-  S.loans.splice(S.loans.indexOf(l), 1);
-  S.tx.forEach((t) => { if (t.loanId === l.id) { delete t.loanId; delete t.loanN; } });
-}
-
-function saveBill(existing, f) {
-  const b = existing || { id: uid(), paid: {} };
-  const startChanged = existing && existing.start !== f.start;
-  Object.assign(b, { kind: f.kind, title: f.title, amount: f.amount, every: f.every, start: f.start, accountId: f.accountId || b.accountId || defAcc(), remind: f.remind });
-  if (startChanged) {
-    const keep = {};
-    Object.keys(b.paid).forEach((k) => { if (k >= b.start) keep[k] = b.paid[k]; });
-    b.paid = keep;
-  }
-  if (!existing) S.bills.push(b);
-  return b;
-}
-
-function deleteBill(b) {
-  S.bills.splice(S.bills.indexOf(b), 1);
-  S.tx.forEach((t) => { if (t.billId === b.id) { delete t.billId; delete t.billDue; } });
-}
-
-function saveAccount(existing, { name, type, opening }) {
-  const a = existing || { id: uid() };
-  Object.assign(a, { name, type, opening });
-  if (!existing) S.accounts.push(a);
-  return a;
-}
-
-/** Ledger rows for one month, filtered. */
-function ledgerRows({ month, type = 'all', acc = 'all', q = '' }) {
-  return sortedTx(S.tx.filter((t) => {
-    if (monthKey(t.date) !== month) return false;
-    if (type !== 'all' && t.type !== type) return false;
-    if (acc !== 'all' && txAccount(t) !== acc && t.toAccountId !== acc) return false;
-    if (q && !`${t.note || ''} ${txLabel(t)}`.includes(q)) return false;
-    return true;
-  }));
-}
-
-/* ---------- budgets & reporting ---------- */
-const catBudgets = () => S.wallet.catBudgets || (S.wallet.catBudgets = {});
-const monthBudget = () => S.wallet.budget || 0;
-const budgetLeft = () => monthBudget() - monthSum('expense');
-
-/** Spending per expense category this month, with its optional budget. */
-function categoryBudgetRows(mk = currentMonthKey()) {
-  const spent = expenseByCategory(mk);
-  const budgets = catBudgets();
-  return EXP_CATS.filter((k) => spent[k] || budgets[k]).map((k) => ({ key: k, spent: spent[k] || 0, budget: budgets[k] || 0 }));
-}
-
-/** The category with the highest spending this month, or null. */
-function topExpenseCategory(mk = currentMonthKey()) {
-  const spent = expenseByCategory(mk);
-  const top = Object.keys(spent).sort((a, b) => spent[b] - spent[a])[0];
-  return top ? { key: top, amount: spent[top] } : null;
-}
-
-/** Paid / due-soon / overdue / open — for the installment badge. */
-function loanStatus(l) {
-  const n = loanNextN(l);
-  if (!n) return 'done';
-  const due = loanDue(l, n);
-  if (due < today()) return 'overdue';
-  return daysBetween(today(), due) <= 7 ? 'soon' : 'open';
-}
-
-const installmentsPaidThisMonth = () =>
-  sum(S.tx.filter((t) => t.loanId && monthKey(t.date) === currentMonthKey()), (t) => t.amount);
-
-function nearestInstallment() {
-  const items = dueItems(60).filter((d) => d.kind === 'loan');
-  return items[0] || null;
-}
-
-__exports.TXCAT = TXCAT;
-__exports.EXP_CATS = EXP_CATS;
-__exports.INC_CATS = INC_CATS;
-__exports.SIMPLE_EXP = SIMPLE_EXP;
-__exports.SIMPLE_INC = SIMPLE_INC;
-__exports.catOf = catOf;
-__exports.ACC_TYPES = ACC_TYPES;
-__exports.BILL_KINDS = BILL_KINDS;
-__exports.EVERY = EVERY;
-__exports.billKind = billKind;
-__exports.accType = accType;
-__exports.findAccount = findAccount;
-__exports.accName = accName;
-__exports.defAcc = defAcc;
-__exports.txAccount = txAccount;
-__exports.accBalance = accBalance;
-__exports.balance = balance;
-__exports.accountInUse = accountInUse;
-__exports.reconcileAccount = reconcileAccount;
-__exports.monthSum = monthSum;
-__exports.daySpend = daySpend;
-__exports.sortedTx = sortedTx;
-__exports.expenseByCategory = expenseByCategory;
-__exports.cashFlow = cashFlow;
-__exports.budgetUsed = budgetUsed;
-__exports.txLabel = txLabel;
-__exports.loanDue = loanDue;
-__exports.loanPaidCount = loanPaidCount;
-__exports.loanNextN = loanNextN;
-__exports.loanRemaining = loanRemaining;
-__exports.loansRemaining = loansRemaining;
-__exports.billDue = billDue;
-__exports.billNext = billNext;
-__exports.billAvg = billAvg;
-__exports.dueItems = dueItems;
-__exports.dueBuckets = dueBuckets;
-__exports.paidObligationsThisMonth = paidObligationsThisMonth;
-__exports.unlinkTx = unlinkTx;
-__exports.relinkTx = relinkTx;
-__exports.findTx = findTx;
-__exports.saveTx = saveTx;
-__exports.saveTransfer = saveTransfer;
-__exports.deleteTx = deleteTx;
-__exports.restoreTx = restoreTx;
-__exports.payObligation = payObligation;
-__exports.cancelPayment = cancelPayment;
-__exports.settleLoan = settleLoan;
-__exports.saveLoan = saveLoan;
-__exports.deleteLoan = deleteLoan;
-__exports.saveBill = saveBill;
-__exports.deleteBill = deleteBill;
-__exports.saveAccount = saveAccount;
-__exports.ledgerRows = ledgerRows;
-__exports.catBudgets = catBudgets;
-__exports.monthBudget = monthBudget;
-__exports.budgetLeft = budgetLeft;
-__exports.categoryBudgetRows = categoryBudgetRows;
-__exports.topExpenseCategory = topExpenseCategory;
-__exports.loanStatus = loanStatus;
-__exports.installmentsPaidThisMonth = installmentsPaidThisMonth;
-__exports.nearestInstallment = nearestInstallment;
-};
 __defs["src/features/reminders.js"] = function (__exports) {
-/* In-app reminders for tasks, planner blocks and due payments (run while the app is open). */
+/* In-app reminders for timed tasks (run while the app is open). */
 const { S, persist } = __r("src/core/store.js");
 const { today, nowHM, hmToMin } = __r("src/core/dates.js");
-const { fa } = __r("src/core/format.js");
 const { notify } = __r("src/services/notify.js");
-const { dueItems } = __r("src/domain/finance.js");
 
 const WINDOW_MIN = 30; // fire if we are at most this late
 
-function dueReminder() {
-  if (S.wallet.lastDueNotice === today()) return;
-  const items = dueItems(1).filter((d) => d.ref.remind !== false);
-  if (!items.length) return;
-  const over = items.filter((d) => d.due < today()).length;
-  S.wallet.lastDueNotice = today();
-  persist();
-  const soon = items.length - over;
-  const msg = over
-    ? `${fa(over)} پرداخت معوق دارید${soon ? ` و ${fa(soon)} سررسید امروز/فردا` : ''}`
-    : `${fa(items.length)} سررسید قسط/قبض برای امروز یا فردا`;
-  setTimeout(() => notify(msg), 1200);
-}
-
 function checkReminders() {
-  try { dueReminder(); } catch (e) { console.error(e); }
   const d = today();
   const now = hmToMin(nowHM());
   let changed = false;
@@ -1605,6 +966,53 @@ function checkReminders() {
 }
 
 __exports.checkReminders = checkReminders;
+};
+__defs["src/core/format.js"] = function (__exports) {
+const { config } = __r("src/core/config.js");
+
+const FA = '۰۱۲۳۴۵۶۷۸۹';
+const AR = '٠١٢٣٤٥٦٧٨٩';
+
+/** Latin digits → Persian digits. */
+const fa = (x) => String(x).replace(/\d/g, (d) => FA[d]);
+
+/** Persian / Arabic digits → Latin digits. */
+const en = (x) => String(x)
+  .replace(/[۰-۹]/g, (d) => FA.indexOf(d))
+  .replace(/[٠-٩]/g, (d) => AR.indexOf(d));
+
+/** Lenient number parser for form input (accepts Persian digits and thousands separators). */
+function num(x) {
+  const n = parseFloat(en(String(x == null ? '' : x)).replace(/,/g, ''));
+  return Number.isFinite(n) ? n : 0;
+}
+
+const faInt = (n) => fa(Math.round(n).toLocaleString('en-US'));
+
+function esc(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+/** Format an amount in the configured currency. Pass `hide` (or enable privacy mode) to mask it. */
+function money(v, hide = config.privacy) {
+  if (hide) return '••••';
+  const c = config.currency || '€';
+  const neg = v < 0;
+  const a = Math.abs(v);
+  const n = a >= 1000 || Math.round(a) === a
+    ? Math.round(a).toLocaleString('en-US')
+    : a.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  return c === 'تومان'
+    ? `⁧${neg ? '-' : ''}${n} تومان⁩`
+    : `⁦${neg ? '-' : ''}${c} ${n}⁩`;
+}
+
+__exports.fa = fa;
+__exports.en = en;
+__exports.num = num;
+__exports.faInt = faInt;
+__exports.esc = esc;
+__exports.money = money;
 };
 __defs["src/ui/sheet.js"] = function (__exports) {
 /* Bottom sheets: generic container, form builder, action menu, confirm and info dialogs. */
@@ -2394,6 +1802,183 @@ __exports.confirmClear = confirmClear;
 __exports.openSettings = openSettings;
 __exports.openProfile = openProfile;
 };
+__defs["src/core/jalali.js"] = function (__exports) {
+/* Jalali (Persian) calendar conversion — jalaali algorithm. */
+const div = (a, b) => ~~(a / b);
+const mod = (a, b) => a - ~~(a / b) * b;
+const BREAKS = [-61, 9, 38, 199, 426, 686, 756, 818, 1111, 1181, 1210, 1635, 2060, 2097, 2192, 2262, 2324, 2394, 2456, 3178];
+
+function jalCal(jy) {
+  const bl = BREAKS.length;
+  const gy = jy + 621;
+  let leapJ = -14, jp = BREAKS[0], jump = 0, jm, n, i;
+  for (i = 1; i < bl; i += 1) {
+    jm = BREAKS[i];
+    jump = jm - jp;
+    if (jy < jm) break;
+    leapJ += div(jump, 33) * 8 + div(mod(jump, 33), 4);
+    jp = jm;
+  }
+  n = jy - jp;
+  leapJ += div(n, 33) * 8 + div(mod(n, 33) + 3, 4);
+  if (mod(jump, 33) === 4 && jump - n === 4) leapJ += 1;
+  const leapG = div(gy, 4) - div((div(gy, 100) + 1) * 3, 4) - 150;
+  const march = 20 + leapJ - leapG;
+  if (jump - n < 6) n = n - jump + div(jump + 4, 33) * 33;
+  let leap = mod(mod(n + 1, 33) - 1, 4);
+  if (leap === -1) leap = 4;
+  return { leap, gy, march };
+}
+
+function g2d(gy, gm, gd) {
+  const d = div((gy + div(gm - 8, 6) + 100100) * 1461, 4) + div(153 * mod(gm + 9, 12) + 2, 5) + gd - 34840408;
+  return d - div(div(gy + 100100 + div(gm - 8, 6), 100) * 3, 4) + 752;
+}
+
+function d2g(jdn) {
+  let j = 4 * jdn + 139361631;
+  j += div(div(4 * jdn + 183187720, 146097) * 3, 4) * 4 - 3908;
+  const i = div(mod(j, 1461), 4) * 5 + 308;
+  const gd = div(mod(i, 153), 5) + 1;
+  const gm = mod(div(i, 153), 12) + 1;
+  const gy = div(j, 1461) - 100100 + div(8 - gm, 6);
+  return { gy, gm, gd };
+}
+
+function j2d(jy, jm, jd) {
+  const r = jalCal(jy);
+  return g2d(r.gy, 3, r.march) + (jm - 1) * 31 - div(jm, 7) * (jm - 7) + jd - 1;
+}
+
+function d2j(jdn) {
+  const gy = d2g(jdn).gy;
+  let jy = gy - 621;
+  const r = jalCal(jy);
+  let k = jdn - g2d(gy, 3, r.march);
+  if (k >= 0) {
+    if (k <= 185) return { jy, jm: 1 + div(k, 31), jd: mod(k, 31) + 1 };
+    k -= 186;
+  } else {
+    jy -= 1;
+    k += 179;
+    if (r.leap === 1) k += 1;
+  }
+  return { jy, jm: 7 + div(k, 30), jd: mod(k, 30) + 1 };
+}
+
+function jMonthLen(jy, jm) {
+  return jm <= 6 ? 31 : jm <= 11 ? 30 : (jalCal(jy).leap === 0 ? 30 : 29);
+}
+
+/** "YYYY-MM-DD" (Gregorian) → { jy, jm, jd } */
+function toJ(isoStr) {
+  const [y, m, d] = isoStr.split('-');
+  return d2j(g2d(+y, +m, +d));
+}
+
+/** Jalali y/m/d → "YYYY-MM-DD" (Gregorian) */
+function fromJ(jy, jm, jd) {
+  const g = d2g(j2d(jy, jm, jd));
+  return `${g.gy}-${String(g.gm).padStart(2, '0')}-${String(g.gd).padStart(2, '0')}`;
+}
+
+__exports.jMonthLen = jMonthLen;
+__exports.toJ = toJ;
+__exports.fromJ = fromJ;
+};
+__defs["src/core/calendar.js"] = function (__exports) {
+/* Calendar-aware helpers: Jalali by default, Gregorian when the profile says so. */
+const { config } = __r("src/core/config.js");
+const { pad, iso, parseIso, daysBetween, today } = __r("src/core/dates.js");
+const { toJ, fromJ, jMonthLen } = __r("src/core/jalali.js");
+const { fa } = __r("src/core/format.js");
+
+const useJ = () => config.calendar !== 'gregorian';
+
+function faDate(d, opt) {
+  try {
+    return new Intl.DateTimeFormat(useJ() ? 'fa-IR-u-ca-persian' : 'fa-IR-u-ca-gregory', opt).format(d);
+  } catch { return iso(d); }
+}
+const faDayMonth = (d) => faDate(d, { day: 'numeric', month: 'long' });
+const faDayNum = (d) => faDate(d, { day: 'numeric' });
+const fullDate = (s) => faDate(parseIso(s), { day: 'numeric', month: 'long', year: 'numeric' });
+const monthName = (s) => faDate(parseIso(s), { month: 'long' });
+const monthYear = (s) => faDate(parseIso(s), { month: 'long', year: 'numeric' });
+
+/* ---- month keys: "YYYY-MM" in the active calendar ---- */
+function monthKey(dateIso) {
+  if (useJ()) { const j = toJ(dateIso); return `${j.jy}-${pad(j.jm)}`; }
+  return dateIso.slice(0, 7);
+}
+function monthStartIso(key) {
+  const [y, m] = key.split('-');
+  return useJ() ? fromJ(+y, +m, 1) : `${key}-01`;
+}
+function shiftMonthKey(key, n) {
+  const [y0, m0] = key.split('-');
+  let y = +y0;
+  const m = +m0 - 1 + n;
+  y += Math.floor(m / 12);
+  return `${y}-${pad((((m % 12) + 12) % 12) + 1)}`;
+}
+const currentMonthKey = () => monthKey(today());
+const prevMonthKey = () => shiftMonthKey(currentMonthKey(), -1);
+const monthLabel = (key) => monthYear(monthStartIso(key));
+
+function dayOfMonth(dateIso) {
+  return useJ() ? toJ(dateIso).jd : parseIso(dateIso).getDate();
+}
+
+/** Add n calendar months, keeping the anchor day (clamped to the month length). */
+function addMonthsIso(dateIso, n, anchorDay) {
+  if (useJ()) {
+    const j = toJ(dateIso);
+    let m = j.jm - 1 + n;
+    const y = j.jy + Math.floor(m / 12);
+    m = (((m % 12) + 12) % 12) + 1;
+    return fromJ(y, m, Math.min(anchorDay || j.jd, jMonthLen(y, m)));
+  }
+  const d = parseIso(dateIso);
+  const y = d.getFullYear();
+  const m = d.getMonth() + n;
+  const last = new Date(y, m + 1, 0).getDate();
+  return iso(new Date(y, m, Math.min(anchorDay || d.getDate(), last)));
+}
+
+/** "today", "tomorrow", "3 days from now", … */
+function relDay(d) {
+  const n = daysBetween(today(), d);
+  if (n === 0) return 'امروز';
+  if (n === 1) return 'فردا';
+  if (n === -1) return 'دیروز';
+  return n > 0 ? `${fa(n)} روز دیگر` : `${fa(-n)} روز گذشته`;
+}
+
+/** A date as a "yyyy/mm/dd" string (for CSV export). */
+function jalaliString(dateIso) {
+  const j = toJ(dateIso);
+  return `${j.jy}/${pad(j.jm)}/${pad(j.jd)}`;
+}
+
+__exports.useJ = useJ;
+__exports.faDate = faDate;
+__exports.faDayMonth = faDayMonth;
+__exports.faDayNum = faDayNum;
+__exports.fullDate = fullDate;
+__exports.monthName = monthName;
+__exports.monthYear = monthYear;
+__exports.monthKey = monthKey;
+__exports.monthStartIso = monthStartIso;
+__exports.shiftMonthKey = shiftMonthKey;
+__exports.currentMonthKey = currentMonthKey;
+__exports.prevMonthKey = prevMonthKey;
+__exports.monthLabel = monthLabel;
+__exports.dayOfMonth = dayOfMonth;
+__exports.addMonthsIso = addMonthsIso;
+__exports.relDay = relDay;
+__exports.jalaliString = jalaliString;
+};
 __defs["src/ui/kit.js"] = function (__exports) {
 /* Building blocks shared by the four sections (return HTML strings; callers escape user text). */
 const { S, commit } = __r("src/core/store.js");
@@ -2627,6 +2212,170 @@ __exports.upcoming = upcoming;
 __exports.nextAppointment = nextAppointment;
 __exports.saveAppt = saveAppt;
 __exports.removeAppt = removeAppt;
+};
+__defs["src/domain/finance.js"] = function (__exports) {
+/* Money: accounts, ledger, installments, recurring bills and what is due. Pure data logic — no DOM. */
+const { S } = __r("src/core/store.js");
+const { uid, sum } = __r("src/core/util.js");
+const { today } = __r("src/core/dates.js");
+const { monthKey, shiftMonthKey, currentMonthKey } = __r("src/core/calendar.js");
+
+/* ---------- catalogues ---------- */
+const TXCAT = {
+  shopping: { label: 'خرید', icon: 'shopping_cart' }, bills: { label: 'قبوض و کارت', icon: 'credit_card' },
+  cafe: { label: 'کافه', icon: 'local_cafe' }, food: { label: 'خوراک', icon: 'restaurant' },
+  transport: { label: 'حمل‌ونقل', icon: 'directions_car' }, sport: { label: 'ورزش', icon: 'fitness_center' },
+  travel: { label: 'سفر', icon: 'flight' }, health: { label: 'سلامت', icon: 'spa' }, other: { label: 'سایر', icon: 'payments' },
+  installment: { label: 'قسط و وام', icon: 'event_repeat' }, salary: { label: 'حقوق', icon: 'work' },
+  gift: { label: 'هدیه', icon: 'redeem' }, transfer: { label: 'انتقال', icon: 'swap_horiz' },
+};
+const EXP_CATS = ['shopping', 'food', 'cafe', 'bills', 'installment', 'transport', 'sport', 'travel', 'health', 'other'];
+const INC_CATS = ['salary', 'gift', 'transfer', 'other'];
+/* The short lists offered when adding something new. */
+const SIMPLE_EXP = ['food', 'shopping', 'transport', 'bills', 'health', 'other'];
+const SIMPLE_INC = ['salary', 'gift', 'other'];
+const catOf = (key) => TXCAT[key] || TXCAT.other;
+
+const ACC_TYPES = {
+  bank: { label: 'حساب بانکی', icon: 'account_balance' }, card: { label: 'کارت', icon: 'credit_card' },
+  cash: { label: 'نقد', icon: 'payments' }, saving: { label: 'پس‌انداز', icon: 'savings' },
+};
+const accType = (a) => ACC_TYPES[a.type] || ACC_TYPES.bank;
+
+/* ---------- accounts ---------- */
+const findAccount = (id) => S.accounts.find((a) => a.id === id);
+const accName = (id) => (findAccount(id) || { name: 'حساب اصلی' }).name;
+const defAcc = () => (S.accounts[0] || { id: 'main' }).id;
+const txAccount = (t) => t.accountId || defAcc();
+
+function accBalance(id) {
+  const a = findAccount(id);
+  let b = a ? +a.opening || 0 : 0;
+  S.tx.forEach((t) => {
+    const acc = txAccount(t);
+    if (t.type === 'income' && acc === id) b += t.amount;
+    else if (t.type === 'expense' && acc === id) b -= t.amount;
+    else if (t.type === 'transfer') {
+      if (acc === id) b -= t.amount;
+      if (t.toAccountId === id) b += t.amount;
+    }
+  });
+  return b;
+}
+const balance = () => sum(S.accounts, (a) => accBalance(a.id));
+
+/* ---------- ledger queries ---------- */
+const monthSum = (type, mk = currentMonthKey()) =>
+  sum(S.tx.filter((t) => t.type === type && monthKey(t.date) === mk), (t) => t.amount);
+const daySpend = (date) => sum(S.tx.filter((t) => t.type === 'expense' && t.date === date), (t) => t.amount);
+const sortedTx = (list = S.tx) => list.slice().sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
+
+function expenseByCategory(mk = currentMonthKey()) {
+  const by = {};
+  S.tx.filter((t) => t.type === 'expense' && monthKey(t.date) === mk).forEach((t) => { by[t.category] = (by[t.category] || 0) + t.amount; });
+  return by;
+}
+
+/** Income and expense totals for the last `n` months, oldest first. */
+function cashFlow(n = 6) {
+  const mk = currentMonthKey();
+  const rows = [];
+  for (let i = n - 1; i >= 0; i--) {
+    const key = shiftMonthKey(mk, -i);
+    rows.push({ key, income: monthSum('income', key), expense: monthSum('expense', key) });
+  }
+  return rows;
+}
+
+/** 0..1+ fraction of the monthly budget already used. */
+const budgetUsed = () => (S.wallet.budget ? monthSum('expense') / S.wallet.budget : 0);
+
+function txLabel(t) {
+  return t.type === 'transfer' ? `انتقال: ${accName(t.accountId)} ← ${accName(t.toAccountId)}` : catOf(t.category).label;
+}
+
+/* ---------- transactions ---------- */
+const findTx = (id) => S.tx.find((t) => t.id === id);
+
+/** Create (existing = null) or edit a plain income/expense. */
+function saveTx(existing, { type, amount, category, note, date, accountId }) {
+  if (existing) {
+    Object.assign(existing, { amount, category, note, date: date || existing.date, accountId });
+    return existing;
+  }
+  const t = { id: uid(), type, amount, category, note, date: date || today(), accountId };
+  S.tx.push(t);
+  return t;
+}
+
+/** Remove a transaction; returns what is needed to undo it. */
+function deleteTx(id) {
+  const i = S.tx.findIndex((t) => t.id === id);
+  return i < 0 ? null : { tx: S.tx.splice(i, 1)[0], index: i };
+}
+function restoreTx({ tx, index }) { S.tx.splice(Math.min(index, S.tx.length), 0, tx); }
+
+/** Ledger rows for one month, filtered. */
+function ledgerRows({ month, type = 'all', acc = 'all', q = '' }) {
+  return sortedTx(S.tx.filter((t) => {
+    if (monthKey(t.date) !== month) return false;
+    if (type !== 'all' && t.type !== type) return false;
+    if (acc !== 'all' && txAccount(t) !== acc && t.toAccountId !== acc) return false;
+    if (q && !`${t.note || ''} ${txLabel(t)}`.includes(q)) return false;
+    return true;
+  }));
+}
+
+/* ---------- budgets & reporting ---------- */
+const catBudgets = () => S.wallet.catBudgets || (S.wallet.catBudgets = {});
+const monthBudget = () => S.wallet.budget || 0;
+const budgetLeft = () => monthBudget() - monthSum('expense');
+
+/** Spending per expense category this month, with its optional budget. */
+function categoryBudgetRows(mk = currentMonthKey()) {
+  const spent = expenseByCategory(mk);
+  const budgets = catBudgets();
+  return EXP_CATS.filter((k) => spent[k] || budgets[k]).map((k) => ({ key: k, spent: spent[k] || 0, budget: budgets[k] || 0 }));
+}
+
+/** The category with the highest spending this month, or null. */
+function topExpenseCategory(mk = currentMonthKey()) {
+  const spent = expenseByCategory(mk);
+  const top = Object.keys(spent).sort((a, b) => spent[b] - spent[a])[0];
+  return top ? { key: top, amount: spent[top] } : null;
+}
+
+__exports.TXCAT = TXCAT;
+__exports.EXP_CATS = EXP_CATS;
+__exports.INC_CATS = INC_CATS;
+__exports.SIMPLE_EXP = SIMPLE_EXP;
+__exports.SIMPLE_INC = SIMPLE_INC;
+__exports.catOf = catOf;
+__exports.ACC_TYPES = ACC_TYPES;
+__exports.accType = accType;
+__exports.findAccount = findAccount;
+__exports.accName = accName;
+__exports.defAcc = defAcc;
+__exports.txAccount = txAccount;
+__exports.accBalance = accBalance;
+__exports.balance = balance;
+__exports.monthSum = monthSum;
+__exports.daySpend = daySpend;
+__exports.sortedTx = sortedTx;
+__exports.expenseByCategory = expenseByCategory;
+__exports.cashFlow = cashFlow;
+__exports.budgetUsed = budgetUsed;
+__exports.txLabel = txLabel;
+__exports.findTx = findTx;
+__exports.saveTx = saveTx;
+__exports.deleteTx = deleteTx;
+__exports.restoreTx = restoreTx;
+__exports.ledgerRows = ledgerRows;
+__exports.catBudgets = catBudgets;
+__exports.monthBudget = monthBudget;
+__exports.budgetLeft = budgetLeft;
+__exports.categoryBudgetRows = categoryBudgetRows;
+__exports.topExpenseCategory = topExpenseCategory;
 };
 __defs["src/features/task-sheets.js"] = function (__exports) {
 /* One small sheet for tasks. */
@@ -3098,73 +2847,118 @@ __default = {
 
 __exports.default = __default;
 };
+__defs["src/domain/monthly.js"] = function (__exports) {
+/* Monthly payments (electricity, internet, car installment…): a name, a monthly amount and a
+   "paid this month" tick. No due dates, no loan arithmetic. Pure data logic — no DOM. */
+const { S } = __r("src/core/store.js");
+const { uid } = __r("src/core/util.js");
+const { today } = __r("src/core/dates.js");
+const { currentMonthKey } = __r("src/core/calendar.js");
+const { defAcc } = __r("src/domain/finance.js");
+
+const list = () => S.monthly;
+const findMonthly = (id) => S.monthly.find((m) => m.id === id);
+const isPaid = (m, mk = currentMonthKey()) => !!(m.paid && m.paid[mk]);
+const total = () => S.monthly.reduce((s, m) => s + m.amount, 0);
+const paidTotal = () => S.monthly.filter((m) => isPaid(m)).reduce((s, m) => s + m.amount, 0);
+const remainingTotal = () => total() - paidTotal();
+const remainingCount = () => S.monthly.filter((m) => !isPaid(m)).length;
+
+function saveMonthly(existing, { title, amount }) {
+  const m = existing || { id: uid(), paid: {} };
+  Object.assign(m, { title, amount });
+  if (!existing) S.monthly.push(m);
+  return m;
+}
+
+function removeMonthly(id) {
+  const i = S.monthly.findIndex((m) => m.id === id);
+  return i < 0 ? null : { item: S.monthly.splice(i, 1)[0], index: i };
+}
+
+/** Mark this month's payment as made and record it as an expense. */
+function pay(m) {
+  const mk = currentMonthKey();
+  if (isPaid(m, mk)) return;
+  const tx = { id: uid(), type: 'expense', amount: m.amount, category: 'bills', note: m.title, date: today(), accountId: defAcc(), monthlyId: m.id };
+  S.tx.push(tx);
+  m.paid = m.paid || {};
+  m.paid[mk] = { txId: tx.id, date: tx.date };
+}
+
+/** Undo this month's payment and drop the expense it created. */
+function unpay(m) {
+  const mk = currentMonthKey();
+  const entry = m.paid && m.paid[mk];
+  if (!entry) return;
+  S.tx = S.tx.filter((t) => t.id !== entry.txId);
+  delete m.paid[mk];
+}
+
+/** A payment's expense was deleted by hand: un-tick it. Returns what is needed to undo. */
+function detach(tx) {
+  const m = tx.monthlyId && findMonthly(tx.monthlyId);
+  if (!m) return null;
+  const key = Object.keys(m.paid || {}).find((k) => m.paid[k].txId === tx.id);
+  if (!key) return null;
+  const entry = m.paid[key];
+  delete m.paid[key];
+  return { m, key, entry };
+}
+function reattach(link) { if (link) link.m.paid[link.key] = link.entry; }
+
+__exports.list = list;
+__exports.findMonthly = findMonthly;
+__exports.isPaid = isPaid;
+__exports.total = total;
+__exports.paidTotal = paidTotal;
+__exports.remainingTotal = remainingTotal;
+__exports.remainingCount = remainingCount;
+__exports.saveMonthly = saveMonthly;
+__exports.removeMonthly = removeMonthly;
+__exports.pay = pay;
+__exports.unpay = unpay;
+__exports.detach = detach;
+__exports.reattach = reattach;
+};
 __defs["src/features/finance-sheets.js"] = function (__exports) {
-/* Money dialogs: transactions, transfers, payments, installments, bills, accounts, reports. */
+/* Money dialogs: edit a transaction, history, report, budgets and monthly payments. */
 const { S, commit } = __r("src/core/store.js");
 const { today, parseIso } = __r("src/core/dates.js");
 const { fa, num, esc, money } = __r("src/core/format.js");
-const { faDayMonth, fullDate, relDay, monthKey, monthLabel, monthName, monthYear, useJ, addMonthsIso, currentMonthKey, prevMonthKey, jalaliString } = __r("src/core/calendar.js");
+const { faDayMonth, monthKey, monthLabel, currentMonthKey, prevMonthKey, jalaliString } = __r("src/core/calendar.js");
 const { toast } = __r("src/ui/toast.js");
-const { form, menu, confirmBox, infoSheet, later } = __r("src/ui/sheet.js");
+const { form, menu, infoSheet, later } = __r("src/ui/sheet.js");
 const { saveFile } = __r("src/services/files.js");
 const fin = __r("src/domain/finance.js");
+const MO = __r("src/domain/monthly.js");
 
 const M = (v) => money(v);
 const accOptions = () => S.accounts.map((a) => ({ value: a.id, label: a.name, icon: fin.accType(a).icon }));
-const needPositive = (v, msg = 'مبلغ را وارد کنید') => { const a = Math.abs(num(v)); if (!a) toast(msg); return a; };
 
 /* ---------- transactions ---------- */
 function txSheet(type, preset = {}, editId) {
   const t = editId ? fin.findTx(editId) : null;
   type = t ? t.type : type;
-  if (type === 'transfer') return transferSheet(t);
-
   const keys = t ? (type === 'income' ? fin.INC_CATS : fin.EXP_CATS) : (type === 'income' ? fin.SIMPLE_INC : fin.SIMPLE_EXP);
   const cats = keys.map((k) => ({ value: k, label: fin.catOf(k).label, icon: fin.catOf(k).icon }));
-  const linked = t && (t.loanId || t.billId);
   const fields = [
     { name: 'amount', label: `مبلغ (${S.profile.currency})`, type: 'number', value: t ? t.amount : preset.amount || '', placeholder: '0' },
     { name: 'category', label: 'دسته', type: 'chips', value: t ? t.category : preset.category || cats[0].value, options: cats },
     { name: 'note', label: 'توضیح (اختیاری)', value: t ? t.note : preset.note || '' },
   ];
   if (t) fields.push({ name: 'date', label: 'تاریخ', type: 'date', value: t.date });
-  if (S.accounts.length > 1) {
-    fields.push({ name: 'acc', label: 'حساب', type: 'chips', value: t ? fin.txAccount(t) : fin.defAcc(), options: accOptions() });
-  }
+  if (S.accounts.length > 1) fields.push({ name: 'acc', label: 'حساب', type: 'chips', value: t ? fin.txAccount(t) : fin.defAcc(), options: accOptions() });
   form({
     title: t ? 'ویرایش' : type === 'income' ? 'درآمد جدید' : 'هزینه جدید',
-    sub: linked ? `این تراکنش به ${t.loanId ? 'یک قسط' : 'یک قبض'} متصل است؛ حذف آن، پرداخت را هم لغو می‌کند.` : undefined,
+    sub: t && t.monthlyId ? 'این هزینه از «قسط‌ها» ثبت شده؛ حذفش تیک آن ماه را برمی‌دارد.' : undefined,
     fields,
     extra: t ? [{ label: 'حذف', cls: 'danger', run: () => removeTx(t.id) }] : [],
     onSubmit(v) {
-      const amount = needPositive(v.amount);
-      if (!amount) return false;
+      const amount = Math.abs(num(v.amount));
+      if (!amount) { toast('مبلغ را وارد کنید'); return false; }
       fin.saveTx(t, { type, amount, category: v.category, note: (v.note || '').trim(), date: v.date, accountId: v.acc || (t && t.accountId) || fin.defAcc() });
       commit();
-    },
-  });
-}
-
-function transferSheet(t) {
-  if (S.accounts.length < 2) { toast('برای انتقال، حداقل دو حساب لازم است'); accountSheet(); return; }
-  form({
-    title: t ? 'ویرایش انتقال' : 'انتقال بین حساب‌ها',
-    sub: 'انتقال روی مجموع موجودی، درآمد و هزینه اثری ندارد.',
-    fields: [
-      { name: 'amount', label: `مبلغ (${S.profile.currency})`, type: 'number', value: t ? t.amount : '' },
-      { name: 'from', label: 'از حساب', type: 'chips', value: t ? t.accountId : S.accounts[0].id, options: accOptions() },
-      { name: 'to', label: 'به حساب', type: 'chips', value: t ? t.toAccountId : S.accounts[1].id, options: accOptions() },
-      { name: 'note', label: 'توضیح', value: t ? t.note : '', placeholder: 'اختیاری' },
-      { name: 'date', label: 'تاریخ', type: 'date', value: t ? t.date : today() },
-    ],
-    extra: t ? [{ label: 'حذف', cls: 'danger', run: () => removeTx(t.id) }] : [],
-    onSubmit(v) {
-      const amount = needPositive(v.amount);
-      if (!amount) return false;
-      if (v.from === v.to) { toast('حساب مبدأ و مقصد یکی است'); return false; }
-      fin.saveTransfer(t, { amount, from: v.from, to: v.to, note: (v.note || '').trim(), date: v.date });
-      commit();
-      toast('انتقال ثبت شد');
     },
   });
 }
@@ -3172,365 +2966,70 @@ function transferSheet(t) {
 function removeTx(id) {
   const undo = fin.deleteTx(id);
   if (!undo) return;
+  const link = MO.detach(undo.tx);
   commit();
-  toast(undo.unlinked ? 'تراکنش حذف و پرداخت لغو شد' : 'تراکنش حذف شد', { label: 'واگرد', run: () => { fin.restoreTx(undo); commit(); } });
+  toast('تراکنش حذف شد', { label: 'واگرد', run: () => { fin.restoreTx(undo); MO.reattach(link); commit(); } });
 }
 
-/* ---------- ledger lists ---------- */
+/* ---------- ledger list ---------- */
 function txRowsHtml(list) {
   if (!list.length) return '<div class="empty">تراکنشی ثبت نشده</div>';
   return `<div class="list">${list.map((t) => {
     const c = fin.catOf(t.category);
     const cls = t.type === 'income' ? 'pos' : t.type === 'expense' ? 'neg' : '';
     const sign = t.type === 'income' ? '+' : t.type === 'expense' ? '−' : '⇄ ';
-    const where = S.accounts.length > 1 && t.type !== 'transfer' ? ` • ${esc(fin.accName(fin.txAccount(t)))}` : '';
     return `<div class="item" data-pick="${t.id}" role="button">
-      <span class="item-icon"><span class="material-symbols-outlined">${t.type === 'transfer' ? 'swap_horiz' : c.icon}</span></span>
-      <span class="grow"><span class="item-title">${esc(t.note || c.label)}</span><span class="item-sub">${esc(fin.txLabel(t))} • ${faDayMonth(parseIso(t.date))}${where}</span></span>
+      <span class="item-icon"><span class="material-symbols-outlined">${c.icon}</span></span>
+      <span class="grow"><span class="item-title">${esc(t.note || c.label)}</span><span class="item-sub">${esc(fin.txLabel(t))} • ${faDayMonth(parseIso(t.date))}</span></span>
       <b class="amt ${cls}">${sign}${M(t.amount)}</b></div>`;
   }).join('')}</div>`;
 }
 
-function historySheet(filter, title = 'همه تراکنش‌ها') {
-  const list = fin.sortedTx(filter ? S.tx.filter(filter) : S.tx);
+function historySheet() {
+  const list = fin.sortedTx();
   const groups = new Map();
   list.forEach((t) => { const k = monthKey(t.date); if (!groups.has(k)) groups.set(k, []); groups.get(k).push(t); });
   let html = '';
   groups.forEach((rows, k) => { html += `<div class="group-label">${monthLabel(k)}</div>${txRowsHtml(rows)}`; });
-  if (!html) html = '<div class="empty">تراکنشی ثبت نشده</div>';
-  infoSheet(title, `<p class="sheet-sub">برای ویرایش یا حذف، روی تراکنش بزنید.</p>${html}`,
-    [{ label: 'تراکنش جدید', cls: 'primary', run: () => txSheet('expense') }],
+  infoSheet('همه‌ی تراکنش‌ها', `<p class="sheet-sub">برای ویرایش یا حذف، روی تراکنش بزنید.</p>${html || '<div class="empty">تراکنشی ثبت نشده</div>'}`, [],
     (el, close) => { close(); later(() => txSheet(null, {}, el.dataset.pick)); });
 }
 
-/* ---------- reports ---------- */
+function exportCsv(list, tag) {
+  const q = (x) => { x = String(x == null ? '' : x); return /[",\n]/.test(x) ? `"${x.replace(/"/g, '""')}"` : x; };
+  const rows = [['تاریخ میلادی', 'تاریخ شمسی', 'نوع', 'دسته', 'توضیح', 'مبلغ', 'واحد']];
+  list.slice().sort((a, b) => (a.date < b.date ? -1 : 1)).forEach((t) => {
+    rows.push([t.date, jalaliString(t.date), t.type === 'income' ? 'درآمد' : t.type === 'expense' ? 'هزینه' : 'انتقال', fin.catOf(t.category).label, t.note, t.type === 'expense' ? -t.amount : t.amount, S.profile.currency]);
+  });
+  saveFile(`ledger-${tag}-${today()}.csv`, `﻿${rows.map((r) => r.map(q).join(',')).join('\r\n')}`, 'text/csv');
+}
+
+/* ---------- report ---------- */
 function reportSheet() {
   const mk = currentMonthKey();
   const inc = fin.monthSum('income');
   const exp = fin.monthSum('expense');
   const prev = fin.monthSum('expense', prevMonthKey());
   const diff = prev ? Math.round(((exp - prev) / prev) * 100) : null;
-  const debt = fin.loansRemaining();
-  const due30 = fin.dueItems(30).reduce((s, d) => s + d.amount, 0);
   const by = fin.expenseByCategory(mk);
   const cats = Object.keys(by).sort((a, b) => by[b] - by[a]);
-  const flow = fin.cashFlow(6);
-  const top = Math.max(1, ...flow.flatMap((r) => [r.income, r.expense]));
   const tile = (label, value, cls = '') => `<div><small>${label}</small><b class="${cls}">${value}</b></div>`;
-
   let html = `<p class="sheet-sub">${monthLabel(mk)}</p><div class="stat-grid">
-    ${tile('درآمد این ماه', M(inc), 'pos')}${tile('هزینه این ماه', M(exp), 'neg')}${tile('خالص این ماه', M(inc - exp))}
-    ${tile('هزینه نسبت به ماه قبل', diff == null ? '—' : `${diff > 0 ? '+' : ''}${fa(diff)}٪`)}
-    ${tile('بدهی باقی‌مانده اقساط', M(debt), 'neg')}${tile('دارایی خالص', M(fin.balance() - debt))}
-    ${tile('پرداختنی ۳۰ روز آینده', M(due30))}</div>`;
-
-  html += '<div class="group-label">جریان نقدی ۶ ماه اخیر</div><div class="list">';
-  html += flow.map((r) => `<div class="item item-block">
-    <div class="row-between small"><b>${monthLabel(r.key)}</b><span><span class="pos">+${M(r.income)}</span> / <span class="neg">−${M(r.expense)}</span></span></div>
-    <span class="progress"><i style="width:${Math.round((r.income / top) * 100)}%;background:var(--sage)"></i></span>
-    <span class="progress"><i style="width:${Math.round((r.expense / top) * 100)}%"></i></span></div>`).join('');
-  html += '</div><div class="group-label">هزینه این ماه بر اساس دسته</div>';
-  html += cats.length
-    ? cats.map((k) => {
-      const c = fin.catOf(k);
-      const pct = Math.round((by[k] / exp) * 100);
-      return `<div class="item"><span class="item-icon"><span class="material-symbols-outlined">${c.icon}</span></span>
-        <span class="grow"><span class="item-title">${c.label} <span class="item-sub">${fa(pct)}٪</span></span><span class="progress"><i style="width:${pct}%"></i></span></span>
-        <b class="amt">${M(by[k])}</b></div>`;
-    }).join('')
-    : '<div class="empty">هنوز هزینه‌ای در این ماه ثبت نشده</div>';
-
+    ${tile('درآمد', M(inc), 'pos')}${tile('هزینه', M(exp), 'neg')}${tile('خالص', M(inc - exp))}
+    ${tile('نسبت به ماه قبل', diff == null ? '—' : `${diff > 0 ? '+' : ''}${fa(diff)}٪`)}</div>`;
+  html += '<div class="group-label">هزینه بر اساس دسته</div>';
+  html += cats.length ? cats.map((k) => {
+    const c = fin.catOf(k);
+    const pct = Math.round((by[k] / exp) * 100);
+    return `<div class="item"><span class="item-icon"><span class="material-symbols-outlined">${c.icon}</span></span><span class="grow"><span class="item-title">${c.label} <span class="item-sub">${fa(pct)}٪</span></span><span class="progress"><i style="width:${pct}%"></i></span></span><b class="amt">${M(by[k])}</b></div>`;
+  }).join('') : '<div class="empty">هنوز هزینه‌ای ثبت نشده</div>';
   infoSheet('گزارش مالی', html, [{ label: 'خروجی اکسل (CSV)', run: () => exportCsv(S.tx, 'all') }]);
-}
-
-function exportCsv(list, tag) {
-  const q = (x) => { x = String(x == null ? '' : x); return /[",\n]/.test(x) ? `"${x.replace(/"/g, '""')}"` : x; };
-  const rows = [['تاریخ میلادی', 'تاریخ شمسی', 'نوع', 'دسته', 'توضیح', 'حساب', 'به حساب', 'مبلغ', 'واحد']];
-  list.slice().sort((a, b) => (a.date < b.date ? -1 : 1)).forEach((t) => {
-    rows.push([t.date, jalaliString(t.date), t.type === 'income' ? 'درآمد' : t.type === 'expense' ? 'هزینه' : 'انتقال', fin.catOf(t.category).label, t.note,
-      fin.accName(fin.txAccount(t)), t.type === 'transfer' ? fin.accName(t.toAccountId) : '', t.type === 'expense' ? -t.amount : t.amount, S.profile.currency]);
-  });
-  saveFile(`ledger-${tag}-${today()}.csv`, `﻿${rows.map((r) => r.map(q).join(',')).join('\r\n')}`, 'text/csv');
-}
-
-/* ---------- paying installments & bills ---------- */
-function payDialog(it, done) {
-  const isLoan = it.kind === 'loan';
-  const ref = it.ref;
-  const fields = [
-    { name: 'amount', label: `مبلغ پرداختی (${S.profile.currency})`, type: 'number', value: it.amount },
-    { name: 'date', label: 'تاریخ پرداخت', type: 'date', value: today() },
-  ];
-  if (S.accounts.length > 1) fields.push({ name: 'acc', label: 'پرداخت از حساب', type: 'chips', value: ref.accountId || fin.defAcc(), options: accOptions() });
-  fields.push({ name: 'record', label: 'ثبت به‌عنوان هزینه در حساب‌ها', type: 'switch', value: true });
-  form({
-    title: isLoan ? `پرداخت قسط ${fa(it.n)} — ${ref.title}` : `پرداخت ${ref.title}`,
-    sub: `سررسید: ${fullDate(it.due)} (${relDay(it.due)})`,
-    fields, submit: 'ثبت پرداخت',
-    onSubmit(v) {
-      const amount = needPositive(v.amount);
-      if (!amount) return false;
-      const left = fin.payObligation(it, { amount, date: v.date, accountId: v.acc, record: v.record });
-      commit();
-      toast(isLoan ? (left ? `قسط ثبت شد — ${fa(left)} قسط باقی‌مانده` : `🎉 همه اقساط «${ref.title}» تسویه شد`) : `پرداخت «${ref.title}» ثبت شد`);
-      if (done) done();
-    },
-  });
-}
-
-function undoPayment(ref, key) {
-  const entry = ref.paid[key];
-  if (!entry) return;
-  confirmBox('لغو این پرداخت؟', entry.txId ? 'تراکنش هزینه مربوط هم حذف می‌شود.' : 'وضعیت به «پرداخت‌نشده» برمی‌گردد.', 'لغو پرداخت', () => {
-    fin.cancelPayment(ref, key);
-    commit();
-    toast('پرداخت لغو شد');
-  });
-}
-
-const payLoan = (l, n) => payDialog({ kind: 'loan', ref: l, n, due: fin.loanDue(l, n), amount: l.amount });
-const payBill = (b) => { const nx = fin.billNext(b); payDialog({ kind: 'bill', ref: b, due: nx.due, amount: Math.round(fin.billAvg(b) * 100) / 100 }); };
-
-/* ---------- loans ---------- */
-function loanSheet(id) {
-  const l = id ? S.loans.find((x) => x.id === id) : null;
-  const fields = [
-    { name: 'title', label: 'عنوان', value: l ? l.title : '', placeholder: 'مثلاً وام خودرو، اقساط گوشی' },
-    { name: 'lender', label: 'وام‌دهنده / فروشنده', value: l ? l.lender : '', placeholder: 'اختیاری' },
-    { name: 'amount', label: 'مبلغ هر قسط', type: 'number', value: l ? l.amount : '', row: 'a' },
-    { name: 'count', label: 'تعداد اقساط', type: 'number', value: l ? l.count : 12, row: 'a' },
-    { name: 'start', label: 'سررسید قسط اول', type: 'date', value: l ? l.start : addMonthsIso(today(), 1) },
-    { name: 'every', label: 'فاصله اقساط', type: 'chips', value: String(l ? l.every || 1 : 1), options: [{ value: '1', label: 'ماهانه' }, { value: '2', label: 'دوماهه' }, { value: '3', label: 'سه‌ماهه' }] },
-    { name: 'paidBefore', label: 'تعداد اقساطی که قبلاً پرداخت شده', type: 'number', value: l ? '' : 0, placeholder: l ? 'بدون تغییر' : '0' },
-  ];
-  if (S.accounts.length > 1) fields.push({ name: 'acc', label: 'پرداخت معمولاً از حساب', type: 'chips', value: l ? l.accountId || fin.defAcc() : fin.defAcc(), options: accOptions() });
-  fields.push({ name: 'remind', label: 'یادآوری سررسید (یک روز قبل)', type: 'switch', value: l ? l.remind !== false : true });
-  form({
-    title: l ? 'ویرایش قسط' : 'ثبت قسط / وام جدید',
-    sub: `روز سررسید هر ماه بر اساس تقویم ${useJ() ? 'شمسی' : 'میلادی'} تکرار می‌شود.`,
-    fields, focus: !l,
-    extra: l ? [{ label: 'حذف', cls: 'danger', run: () => confirmDeleteLoan(l) }] : [],
-    onSubmit(v) {
-      const title = (v.title || '').trim();
-      const amount = num(v.amount);
-      const count = Math.round(num(v.count));
-      if (!title) { toast('عنوان را وارد کنید'); return false; }
-      if (amount <= 0) { toast('مبلغ قسط را وارد کنید'); return false; }
-      if (count < 1 || count > 600) { toast('تعداد اقساط معتبر نیست'); return false; }
-      fin.saveLoan(l, { title, lender: (v.lender || '').trim(), amount, count, start: v.start || today(), every: +v.every || 1, accountId: v.acc, remind: !!v.remind, paidBefore: Math.round(num(v.paidBefore)) });
-      commit();
-      toast(l ? 'قسط ویرایش شد' : `قسط «${title}» ثبت شد`);
-    },
-  });
-}
-
-function confirmDeleteLoan(l) {
-  const linked = S.tx.filter((t) => t.loanId === l.id).length;
-  confirmBox(`حذف «${l.title}»؟`, linked ? `${fa(linked)} تراکنش پرداخت‌شده در دفتر باقی می‌ماند.` : 'برنامه اقساط حذف می‌شود.', 'حذف', () => {
-    fin.deleteLoan(l);
-    commit();
-    toast('حذف شد');
-  });
-}
-
-function loanSchedule(l) {
-  const tile = (label, value, cls = '') => `<div><small>${label}</small><b class="${cls}">${value}</b></div>`;
-  let html = `<div class="stat-grid">${tile('پرداخت‌شده', `${fa(fin.loanPaidCount(l))} از ${fa(l.count)}`)}${tile('مانده بدهی', M(fin.loanRemaining(l)), 'neg')}${tile('مبلغ کل', M(l.amount * l.count))}${tile('آخرین سررسید', monthYear(fin.loanDue(l, l.count)))}</div><div class="list">`;
-  for (let n = 1; n <= l.count; n++) {
-    const due = fin.loanDue(l, n);
-    const p = l.paid[n];
-    const over = !p && due < today();
-    const state = p ? `پرداخت شد${p.before ? ' (قبل از ثبت)' : ` • ${faDayMonth(parseIso(p.date))}`}` : over ? `معوق — ${relDay(due)}` : relDay(due);
-    html += `<div class="item" data-pick="${n}" role="button"><span class="item-icon num">${fa(n)}</span>
-      <span class="grow"><span class="item-title">${fullDate(due)}</span><span class="item-sub${over ? ' neg' : ''}">${state}</span></span>
-      <b class="amt${p ? ' pos' : ''}">${p ? (p.settled ? 'تسویه ✓' : `✓ ${M(p.amount)}`) : M(l.amount)}</b></div>`;
-  }
-  infoSheet(l.title, `${html}</div>`, [{ label: 'ویرایش', run: () => loanSheet(l.id) }], (el, close) => {
-    const n = +el.dataset.pick;
-    close();
-    later(() => (l.paid[n] ? undoPayment(l, n) : payLoan(l, n)));
-  });
-}
-
-function loanMenu(l) {
-  const nx = fin.loanNextN(l);
-  menu(l.title, [
-    nx && { icon: 'payments', label: `پرداخت قسط ${fa(nx)} (${fullDate(fin.loanDue(l, nx))})`, run: () => payLoan(l, nx) },
-    { icon: 'calendar_month', label: 'جدول کامل اقساط', run: () => loanSchedule(l) },
-    nx && { icon: 'done_all', label: 'تسویه کامل (پرداخت همه اقساط باقی‌مانده)', run: () => settleSheet(l) },
-    { icon: 'edit', label: 'ویرایش', run: () => loanSheet(l.id) },
-    { icon: 'delete', label: 'حذف', danger: true, run: () => confirmDeleteLoan(l) },
-  ], `${l.lender ? `${l.lender} • ` : ''}مانده: ${M(fin.loanRemaining(l))}`);
-}
-
-function settleSheet(l) {
-  const rem = fin.loanRemaining(l);
-  form({
-    title: `تسویه کامل ${l.title}`,
-    sub: `${fa(l.count - fin.loanPaidCount(l))} قسط باقی‌مانده به مبلغ ${M(rem)}. اگر تخفیف تسویه گرفته‌اید مبلغ را اصلاح کنید.`,
-    fields: [{ name: 'amount', label: 'مبلغ پرداختی', type: 'number', value: rem }, { name: 'date', label: 'تاریخ', type: 'date', value: today() }],
-    submit: 'تسویه',
-    onSubmit(v) {
-      const amount = num(v.amount);
-      if (amount <= 0) { toast('مبلغ را وارد کنید'); return false; }
-      fin.settleLoan(l, amount, v.date);
-      commit();
-      toast(`🎉 «${l.title}» تسویه شد`);
-    },
-  });
-}
-
-/* ---------- bills ---------- */
-function billSheet(id) {
-  const b = id ? S.bills.find((x) => x.id === id) : null;
-  const autoTitle = (kind) => `قبض ${fin.BILL_KINDS[kind].label}`;
-  const fields = [
-    {
-      name: 'kind', label: 'نوع', type: 'chips', value: b ? b.kind : 'electricity',
-      options: Object.entries(fin.BILL_KINDS).map(([k, v]) => ({ value: k, label: v.label, icon: v.icon })),
-      onChange(kind, f) {
-        const input = f.querySelector('input[name=title]');
-        const isAuto = Object.keys(fin.BILL_KINDS).some((k) => input && input.value === autoTitle(k));
-        if (input && (!input.value || isAuto)) { input.value = autoTitle(kind); input.dispatchEvent(new Event('input')); }
-      },
-    },
-    { name: 'title', label: 'عنوان', value: b ? b.title : 'قبض برق' },
-    { name: 'amount', label: 'مبلغ تقریبی هر دوره', type: 'number', value: b ? b.amount : '', row: 'a' },
-    { name: 'start', label: 'سررسید بعدی', type: 'date', value: b ? b.start : addMonthsIso(today(), 0), row: 'a' },
-    { name: 'every', label: 'دوره پرداخت', type: 'chips', value: String(b ? b.every || 1 : 1), options: Object.entries(fin.EVERY).map(([k, label]) => ({ value: k, label })) },
-  ];
-  if (S.accounts.length > 1) fields.push({ name: 'acc', label: 'پرداخت معمولاً از حساب', type: 'chips', value: b ? b.accountId || fin.defAcc() : fin.defAcc(), options: accOptions() });
-  fields.push({ name: 'remind', label: 'یادآوری سررسید (یک روز قبل)', type: 'switch', value: b ? b.remind !== false : true });
-  form({
-    title: b ? 'ویرایش قبض' : 'قبض یا پرداخت دوره‌ای جدید',
-    sub: 'مثل برق، گاز، اینترنت، اجاره، بیمه یا اشتراک‌ها.', fields, focus: false,
-    extra: b ? [{ label: 'حذف', cls: 'danger', run: () => confirmDeleteBill(b) }] : [],
-    onSubmit(v) {
-      const title = (v.title || '').trim();
-      if (!title) { toast('عنوان را وارد کنید'); return false; }
-      fin.saveBill(b, { kind: v.kind, title, amount: num(v.amount), every: +v.every || 1, start: v.start || today(), accountId: v.acc, remind: !!v.remind });
-      commit();
-      toast(b ? 'قبض ویرایش شد' : `«${title}» ثبت شد`);
-    },
-  });
-}
-
-function confirmDeleteBill(b) {
-  confirmBox(`حذف «${b.title}»؟`, 'تراکنش‌های پرداخت‌شده در دفتر باقی می‌مانند.', 'حذف', () => { fin.deleteBill(b); commit(); toast('حذف شد'); });
-}
-
-function billMenu(b) {
-  const nx = fin.billNext(b);
-  menu(b.title, [
-    nx && { icon: 'payments', label: `پرداخت دوره ${monthName(nx.due)} (${relDay(nx.due)})`, run: () => payBill(b) },
-    { icon: 'history', label: 'سابقه پرداخت‌ها', run: () => billHistory(b) },
-    { icon: b.paused ? 'play_circle' : 'pause_circle', label: b.paused ? 'فعال‌سازی دوباره' : 'توقف موقت (مثلاً قطع اشتراک)', run: () => { b.paused = !b.paused; commit(); } },
-    { icon: 'edit', label: 'ویرایش', run: () => billSheet(b.id) },
-  ], `${fin.billKind(b).label} • ${fin.EVERY[b.every || 1]} • میانگین ${M(fin.billAvg(b))}`);
-}
-
-function billHistory(b) {
-  const keys = Object.keys(b.paid).sort().reverse();
-  const html = keys.length
-    ? `<p class="sheet-sub">برای لغو یک پرداخت، روی آن بزنید.</p><div class="list">${keys.map((k) => {
-      const e = b.paid[k];
-      return `<div class="item" data-pick="${k}" role="button"><span class="grow"><span class="item-title">دوره ${monthYear(k)}</span><span class="item-sub">پرداخت: ${fullDate(e.date)}${e.txId ? '' : ' • بدون ثبت هزینه'}</span></span><b class="amt">${M(e.amount)}</b></div>`;
-    }).join('')}</div>`
-    : '<div class="empty">هنوز پرداختی ثبت نشده</div>';
-  infoSheet(`سابقه ${b.title}`, html, [], (el, close) => { close(); later(() => undoPayment(b, el.dataset.pick)); });
-}
-
-/* ---------- accounts ---------- */
-function accountSheet(id) {
-  const a = id ? fin.findAccount(id) : null;
-  form({
-    title: a ? 'ویرایش حساب' : 'حساب یا کارت جدید',
-    fields: [
-      { name: 'name', label: 'نام', value: a ? a.name : '', placeholder: 'مثلاً کارت ملت، حساب Erste' },
-      { name: 'type', label: 'نوع', type: 'chips', value: a ? a.type : 'bank', options: Object.entries(fin.ACC_TYPES).map(([k, v]) => ({ value: k, label: v.label, icon: v.icon })) },
-      { name: 'opening', label: `موجودی اولیه (${S.profile.currency})`, type: 'number', value: a ? a.opening : 0 },
-    ],
-    extra: a && S.accounts.length > 1 ? [{ label: 'حذف', cls: 'danger', run: () => deleteAccountFlow(a) }] : [],
-    onSubmit(v) {
-      const name = (v.name || '').trim();
-      if (!name) { toast('نام حساب را وارد کنید'); return false; }
-      fin.saveAccount(a, { name, type: v.type, opening: num(v.opening) });
-      commit();
-      toast(a ? 'حساب ویرایش شد' : `حساب «${name}» اضافه شد`);
-    },
-  });
-}
-
-function deleteAccountFlow(a) {
-  if (fin.accountInUse(a)) { toast('این حساب تراکنش دارد؛ اول تراکنش‌ها را به حساب دیگری منتقل یا حذف کنید'); return; }
-  confirmBox(`حذف «${a.name}»؟`, 'این حساب تراکنشی ندارد.', 'حذف', () => { S.accounts.splice(S.accounts.indexOf(a), 1); commit(); });
-}
-
-function accountMenu(a) {
-  menu(a.name, [
-    { icon: 'receipt_long', label: 'تراکنش‌های این حساب', run: () => historySheet((t) => fin.txAccount(t) === a.id || t.toAccountId === a.id, `تراکنش‌های ${a.name}`) },
-    { icon: 'swap_horiz', label: 'انتقال از این حساب', run: () => transferSheet() },
-    { icon: 'tune', label: 'اصلاح موجودی (تطبیق با بانک)', run: () => reconcileSheet(a) },
-    { icon: 'edit', label: 'ویرایش', run: () => accountSheet(a.id) },
-  ], `${fin.accType(a).label} • موجودی: ${M(fin.accBalance(a.id))}`);
-}
-
-function reconcileSheet(a) {
-  const cur = fin.accBalance(a.id);
-  form({
-    title: `تطبیق موجودی ${a.name}`,
-    sub: `موجودی فعلی در برنامه: ${M(cur)}. موجودی واقعی حساب را وارد کنید؛ اختلاف به‌صورت تراکنش «اصلاح موجودی» ثبت می‌شود.`,
-    fields: [{ name: 'real', label: 'موجودی واقعی', type: 'number', value: Math.round(cur * 100) / 100 }],
-    submit: 'تطبیق',
-    onSubmit(v) {
-      if (!fin.reconcileAccount(a, num(v.real))) { toast('موجودی از قبل درست است'); return; }
-      commit();
-      toast('موجودی تطبیق داده شد');
-    },
-  });
-}
-
-/* ---------- one-tap payment (used by the "due soon" list) ---------- */
-/** Pay a due item at its usual amount today and record the expense; the toast offers undo. */
-function payNow(it) {
-  fin.payObligation(it, { amount: it.amount, date: today(), accountId: it.ref.accountId, record: true });
-  const key = it.kind === 'loan' ? it.n : it.due;
-  commit();
-  toast(`«${it.title}» پرداخت شد`, { label: 'واگرد', run: () => { fin.cancelPayment(it.ref, key); commit(); } });
-}
-
-/* ---------- management lives behind one entry ---------- */
-function listSheet(title, rows, addLabel, onAdd, onPick) {
-  const html = rows.length
-    ? `<div class="list">${rows.map((r) => `<div class="item" data-pick="${r.id}" role="button"><span class="grow"><span class="item-title">${esc(r.title)}</span><span class="item-sub">${r.sub}</span></span><b class="amt">${r.amount}</b></div>`).join('')}</div>`
-    : '<div class="empty">هنوز چیزی ثبت نشده</div>';
-  infoSheet(title, html, [{ label: addLabel, cls: 'primary', run: onAdd }], (el, close) => { close(); later(() => onPick(el.dataset.pick)); });
-}
-
-function manageMenu() {
-  menu('قسط، قبض و حساب‌ها', [
-    {
-      icon: 'event_repeat', label: 'اقساط و وام‌ها',
-      run: () => listSheet('اقساط و وام‌ها', S.loans.map((l) => ({ id: l.id, title: l.title, sub: `${fa(fin.loanPaidCount(l))} از ${fa(l.count)} پرداخت شد`, amount: M(fin.loanRemaining(l)) })), 'قسط جدید', () => loanSheet(), (id) => loanMenu(S.loans.find((l) => l.id === id))),
-    },
-    {
-      icon: 'receipt_long', label: 'قبض‌ها و پرداخت‌های دوره‌ای',
-      run: () => listSheet('قبض‌ها', S.bills.map((b) => ({ id: b.id, title: b.title, sub: `${fin.billKind(b).label} • ${fin.EVERY[b.every || 1]}${b.paused ? ' • متوقف' : ''}`, amount: M(fin.billAvg(b)) })), 'قبض جدید', () => billSheet(), (id) => billMenu(S.bills.find((b) => b.id === id))),
-    },
-    {
-      icon: 'account_balance', label: 'حساب‌ها و کارت‌ها',
-      run: () => listSheet('حساب‌ها', S.accounts.map((a) => ({ id: a.id, title: a.name, sub: fin.accType(a).label, amount: M(fin.accBalance(a.id)) })), 'حساب جدید', () => accountSheet(), (id) => accountMenu(fin.findAccount(id))),
-    },
-    { icon: 'swap_horiz', label: 'انتقال بین حساب‌ها', run: () => transferSheet() },
-    { icon: 'monitoring', label: 'گزارش ماهانه', run: reportSheet },
-  ]);
 }
 
 /* ---------- budgets ---------- */
 function budgetSheet() {
   form({
-    title: 'بودجه ماهانه',
-    sub: `خرج این ماه: ${M(fin.monthSum('expense'))}`,
+    title: 'بودجه ماهانه', sub: `خرج این ماه: ${M(fin.monthSum('expense'))}`,
     fields: [{ name: 'b', label: `سقف ماهانه (${S.profile.currency})`, type: 'number', value: fin.monthBudget() || '' }],
     onSubmit(v) {
       const b = num(v.b);
@@ -3544,8 +3043,7 @@ function budgetSheet() {
 function catBudgetSheet(key) {
   const c = fin.catOf(key);
   form({
-    title: `بودجه ${c.label}`,
-    sub: 'خالی بگذارید تا بودجه‌ی این دسته حذف شود.',
+    title: `بودجه ${c.label}`, sub: 'خالی بگذارید تا بودجه‌ی این دسته حذف شود.',
     fields: [{ name: 'b', label: `سقف ماهانه (${S.profile.currency})`, type: 'number', value: fin.catBudgets()[key] || '' }],
     onSubmit(v) {
       const b = num(v.b);
@@ -3555,36 +3053,44 @@ function catBudgetSheet(key) {
   });
 }
 
-/** Choose a category to give a budget to. */
 function addCatBudget() {
   menu('بودجه‌ی دسته', fin.EXP_CATS.filter((k) => !fin.catBudgets()[k]).map((k) => ({ icon: fin.catOf(k).icon, label: fin.catOf(k).label, run: () => catBudgetSheet(k) })));
 }
 
+/* ---------- monthly payments ---------- */
+function monthlySheet(id) {
+  const m = id ? MO.findMonthly(id) : null;
+  form({
+    title: m ? 'ویرایش قسط' : 'قسط جدید',
+    fields: [
+      { name: 'title', label: 'نام (مثلاً برق)', value: m ? m.title : '' },
+      { name: 'amount', label: `مبلغ هر ماه (${S.profile.currency})`, type: 'number', value: m ? m.amount : '' },
+    ],
+    focus: !m,
+    extra: m ? [{
+      label: 'حذف', cls: 'danger',
+      run: () => { const r = MO.removeMonthly(m.id); commit(); toast('حذف شد', { label: 'واگرد', run: () => { S.monthly.splice(r.index, 0, r.item); commit(); } }); },
+    }] : [],
+    onSubmit(v) {
+      const title = (v.title || '').trim();
+      const amount = Math.abs(num(v.amount));
+      if (!title || !amount) { toast('نام و مبلغ را وارد کنید'); return false; }
+      MO.saveMonthly(m, { title, amount });
+      commit();
+    },
+  });
+}
+
 __exports.txSheet = txSheet;
-__exports.transferSheet = transferSheet;
 __exports.removeTx = removeTx;
 __exports.txRowsHtml = txRowsHtml;
 __exports.historySheet = historySheet;
-__exports.reportSheet = reportSheet;
 __exports.exportCsv = exportCsv;
-__exports.payDialog = payDialog;
-__exports.undoPayment = undoPayment;
-__exports.payLoan = payLoan;
-__exports.payBill = payBill;
-__exports.loanSheet = loanSheet;
-__exports.confirmDeleteLoan = confirmDeleteLoan;
-__exports.loanSchedule = loanSchedule;
-__exports.loanMenu = loanMenu;
-__exports.billSheet = billSheet;
-__exports.billMenu = billMenu;
-__exports.billHistory = billHistory;
-__exports.accountSheet = accountSheet;
-__exports.accountMenu = accountMenu;
-__exports.payNow = payNow;
-__exports.manageMenu = manageMenu;
+__exports.reportSheet = reportSheet;
 __exports.budgetSheet = budgetSheet;
 __exports.catBudgetSheet = catBudgetSheet;
 __exports.addCatBudget = addCatBudget;
+__exports.monthlySheet = monthlySheet;
 };
 __defs["src/pages/money.js"] = function (__exports) {
 let __default;
@@ -3592,16 +3098,17 @@ let __default;
 const { S, commit, refresh } = __r("src/core/store.js");
 const { parseIso, today } = __r("src/core/dates.js");
 const { fa, esc, money } = __r("src/core/format.js");
-const { faDayMonth, fullDate, relDay, monthLabel, currentMonthKey } = __r("src/core/calendar.js");
+const { faDayMonth, monthLabel, currentMonthKey } = __r("src/core/calendar.js");
 const { toast } = __r("src/ui/toast.js");
-const { parseMoneyLine } = __r("src/domain/quick.js");
 const { icon } = __r("src/ui/widgets.js");
-const { pageHead, addLine, takeLine, putBack, drawers, toggleDrawer, pills, row, empty, section, bar, bars, tabOf, setTab } = __r("src/ui/kit.js");
+const { pageHead, addLine, takeLine, putBack, drawers, toggleDrawer, pills, row, check, empty, section, bar, bars, tabOf, setTab } = __r("src/ui/kit.js");
 const fin = __r("src/domain/finance.js");
-const { txSheet, historySheet, payLoan, loanSheet, loanMenu, budgetSheet, catBudgetSheet, addCatBudget, exportCsv } = __r("src/features/finance-sheets.js");
+const MO = __r("src/domain/monthly.js");
+const { parseMoneyLine, splitAmount } = __r("src/domain/quick.js");
+const { txSheet, historySheet, monthlySheet, budgetSheet, catBudgetSheet, addCatBudget, exportCsv } = __r("src/features/finance-sheets.js");
 
-const ORDER = ['tx', 'loans', 'budget', 'report'];
-const LABELS = { tx: 'تراکنش‌ها', loans: 'قسط‌ها', budget: 'بودجه', report: 'گزارش' };
+const ORDER = ['tx', 'monthly', 'budget', 'report'];
+const LABELS = { tx: 'تراکنش‌ها', monthly: 'قسط‌ها', budget: 'بودجه', report: 'گزارش' };
 let filter = 'all';
 let q = '';
 const M = (v) => money(v);
@@ -3612,7 +3119,6 @@ function summary() {
   const bal = fin.balance();
   const left = fin.budgetLeft();
   const used = fin.monthBudget() ? (fin.monthSum('expense') / fin.monthBudget()) * 100 : 0;
-  const near = fin.nearestInstallment();
   const cur = S.profile.currency === 'تومان' ? 'ت' : S.profile.currency;
   const amount = hide ? '••••••' : `${bal < 0 ? '-' : ''}${Math.abs(bal).toLocaleString('en-US', { maximumFractionDigits: 2 })}`;
   return `<section class="balance-card">
@@ -3623,7 +3129,7 @@ function summary() {
     </section>
     <div class="duo">
       <button class="mini" data-act="to-budget"><small>بودجه‌ی باقی‌مانده</small><b class="ltr ${left < 0 ? 'neg' : ''}">${money(Math.max(0, left), hide)}</b>${bar(used, used >= 100)}</button>
-      <button class="mini" data-act="to-loans"><small>نزدیک‌ترین قسط</small><b class="truncate">${near ? esc(near.title) : 'قسطی نیست'}</b>${near ? `<small class="${near.due < today() ? 'neg' : ''}">${relDay(near.due)} · ${money(near.amount, hide)}</small>` : '<small>—</small>'}</button>
+      <button class="mini" data-act="to-monthly"><small>قسط‌های باقی‌مانده این ماه</small><b class="ltr">${money(MO.remainingTotal(), hide)}</b><small>${MO.remainingCount() ? `${fa(MO.remainingCount())} مورد` : 'همه پرداخت شد ✓'}</small></button>
     </div>`;
 }
 
@@ -3643,20 +3149,11 @@ function txTab() {
     <button class="link center" data-act="all">همه‌ی تراکنش‌ها</button>`;
 }
 
-const STATUS = { done: ['پرداخت‌شده', 'ok'], overdue: ['معوق', 'bad'], soon: ['نزدیک', 'warn'], open: ['در انتظار', ''] };
-
-function loansTab() {
-  const rows = S.loans.map((l) => {
-    const n = fin.loanNextN(l);
-    const st = fin.loanStatus(l);
-    const left = l.count - fin.loanPaidCount(l);
-    return row({ ic: 'event_repeat', title: esc(l.title), act: 'loan', attrs: `data-id="${l.id}"`,
-      sub: `${M(l.amount)} · ${n ? `سررسید ${fullDate(fin.loanDue(l, n))}` : 'تسویه شد'} · ${fa(left)} قسط مانده<span class="badge ${STATUS[st][1]}">${STATUS[st][0]}</span>`,
-      trailing: `<button class="icon-btn sm${l.remind !== false ? ' on' : ''}" data-act="remind" data-id="${l.id}" aria-label="یادآور">${icon(l.remind !== false ? 'notifications_active' : 'notifications_off')}</button>${n ? `<button class="btn-sm" data-act="pay-loan" data-id="${l.id}">پرداخت</button>` : ''}` });
-  }).join('');
-  return `<section class="card row-between"><span><small>مانده‌ی کل اقساط</small><b class="big ltr block">${M(fin.loansRemaining())}</b></span></section>
-    <div class="list">${rows || empty('قسطی ثبت نشده')}</div>
-    <button class="link center" data-act="new-loan">+ قسط جدید</button>`;
+function monthlyTab() {
+  const rows = MO.list().map((m) => row({ ic: '', title: esc(m.title), cls: MO.isPaid(m) ? 'is-done' : '', sub: M(m.amount), act: 'monthly-edit', attrs: `data-id="${m.id}"`, trailing: check('monthly-pay', m.id, MO.isPaid(m)) })).join('');
+  return `<section class="card row-between"><span><small>${monthLabel(currentMonthKey())}</small><b class="big ltr block">${M(MO.remainingTotal())}</b><small>باقی‌مانده از ${M(MO.total())}</small></span><span class="end"><small>پرداخت‌شده</small><b class="ltr block pos">${M(MO.paidTotal())}</b></span></section>
+    <div class="list">${rows || empty('هنوز چیزی ثبت نشده — مثلاً «برق ۵۰» بنویسید')}</div>
+    <small class="center block">با تیک زدن، هزینه‌ی همین ماه ثبت می‌شود؛ ماه بعد خودکار از اول شروع می‌شود.</small>`;
 }
 
 function budgetTab() {
@@ -3683,7 +3180,7 @@ function reportTab() {
   const cols = flow.map((r, i) => ({ v: r.expense, label: monthLabel(r.key).split(' ')[0], on: i === flow.length - 1 }));
   const tile = (label, value, cls = '') => `<div class="mini static"><small>${label}</small><b class="ltr ${cls}">${value}</b></div>`;
   return `<div class="duo">${tile('خرج این ماه', M(fin.monthSum('expense')), 'neg')}${tile('درآمد این ماه', M(fin.monthSum('income')), 'pos')}</div>
-    <div class="duo">${tile('قسط‌های پرداخت‌شده', M(fin.installmentsPaidThisMonth()))}${tile('بیشترین هزینه', top ? `${fin.catOf(top.key).label}` : '—')}</div>
+    <div class="duo">${tile('قسط‌های پرداخت‌شده', M(MO.paidTotal()))}${tile('بیشترین هزینه', top ? `${fin.catOf(top.key).label}` : '—')}</div>
     ${section('خرج ۶ ماه اخیر', `<div class="card">${bars(cols)}</div>`)}
     <button class="link center" data-act="csv">خروجی اکسل (CSV)</button>`;
 }
@@ -3693,34 +3190,43 @@ __default = {
   title: 'مالی',
   mount() { filter = 'all'; q = ''; },
   render() {
-    const bodies = { tx: txTab, loans: loansTab, budget: budgetTab, report: reportTab };
+    const bodies = { tx: txTab, monthly: monthlyTab, budget: budgetTab, report: reportTab };
     const items = ORDER.map((key) => ({ key, label: LABELS[key], body: () => `<div class="stack">${bodies[key]()}</div>` }));
-    const open = tabOf('money', 'tx');
-    return `${pageHead('مالی', 'موجودی، خرج و قسط‌ها')}${summary()}${open === 'tx' ? addLine('مثلاً نهار ۱۲۰ — برای درآمد: +حقوق ۱۵۰۰') : ''}${drawers(items, open)}`;
+    const stored = tabOf('money', 'tx');
+    const open = ORDER.includes(stored) || stored === '' ? stored : 'tx';
+    return `${pageHead('مالی', 'موجودی، خرج و قسط‌ها')}${summary()}${open === 'tx' ? addLine('مثلاً نهار ۱۲۰ — برای درآمد: +حقوق ۱۵۰۰') : open === 'monthly' ? addLine('مثلاً برق ۵۰ — و Enter') : ''}${drawers(items, open)}`;
   },
   act: {
     tab: toggleDrawer('money'),
     privacy() { S.privacy = !S.privacy; commit(); },
     'to-budget': () => setTab('money', 'budget'),
-    'to-loans': () => setTab('money', 'loans'),
+    'to-monthly': () => setTab('money', 'monthly'),
     filter(el) { filter = el.dataset.v; refresh(); },
     noop() {},
     tx: (el) => txSheet(null, {}, el.dataset.id),
     all: () => historySheet(),
-    loan(el) { const l = S.loans.find((x) => x.id === el.dataset.id); if (l) loanMenu(l); },
-    'pay-loan'(el) { const l = S.loans.find((x) => x.id === el.dataset.id); payLoan(l, fin.loanNextN(l)); },
-    remind(el) { const l = S.loans.find((x) => x.id === el.dataset.id); l.remind = l.remind === false; commit(); toast(l.remind ? 'یادآور روشن شد' : 'یادآور خاموش شد'); },
+    'monthly-pay'(el) {
+      const m = MO.findMonthly(el.dataset.id);
+      if (MO.isPaid(m)) MO.unpay(m); else MO.pay(m);
+      commit();
+    },
+    'monthly-edit': (el) => monthlySheet(el.dataset.id),
     'set-budget': budgetSheet,
-    'new-loan': () => loanSheet(),
     'new-cat': addCatBudget,
     'cat-budget': (el) => catBudgetSheet(el.dataset.k),
     csv: () => exportCsv(S.tx, 'all'),
     quick(el) {
       const line = takeLine(el);
       if (!line) return;
-      const { type, title, amount } = parseMoneyLine(line);
-      if (!amount) { toast('مبلغ را هم بنویسید، مثلاً نهار ۱۲۰'); putBack(el, line); return; }
-      fin.saveTx(null, { type, amount, category: type === 'income' ? 'salary' : 'other', note: title, date: today(), accountId: fin.defAcc() });
+      if (tabOf('money', 'tx') === 'monthly') {
+        const { title, amount } = splitAmount(line);
+        if (!title || !amount) { toast('نام و مبلغ را بنویسید، مثلاً برق ۵۰'); putBack(el, line); return; }
+        MO.saveMonthly(null, { title, amount });
+      } else {
+        const { type, title, amount } = parseMoneyLine(line);
+        if (!amount) { toast('مبلغ را هم بنویسید، مثلاً نهار ۱۲۰'); putBack(el, line); return; }
+        fin.saveTx(null, { type, amount, category: type === 'income' ? 'salary' : 'other', note: title, date: today(), accountId: fin.defAcc() });
+      }
       commit();
     },
   },
