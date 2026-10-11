@@ -21,7 +21,7 @@ const dayLabel = (d) => (d === today() ? 'امروز' : relDay(d) === 'فردا'
 
 /* ---------- rows ---------- */
 const taskRow = (t) => row({
-  ic: t.repeat && t.repeat !== 'none' ? 'repeat' : 'task_alt', title: esc(t.title), cls: t.done ? 'is-done' : '',
+  ic: '', title: esc(t.title), cls: t.done ? 'is-done' : '',
   sub: [t.time ? fa(t.time) : '', t.repeat && t.repeat !== 'none' ? T.REPEAT[t.repeat] : ''].filter(Boolean).join(' · '),
   act: 'task-edit', attrs: `data-id="${t.id}"`, trailing: check('task-check', t.id, t.done),
 });
@@ -67,7 +67,7 @@ function dailyTab() {
   const pct = list.length ? Math.round((done / list.length) * 100) : 0;
   return `<section class="card day-card">
       <button class="icon-btn" data-act="step" data-d="-1" aria-label="روز قبل">${icon('chevron_right')}</button>
-      <div class="grow center">${ring(pct, `${fa(done)}/${fa(list.length)}`, 'انجام شد', 96)}<b class="block">${dayLabel(day)}</b></div>
+      <div class="grow center">${ring(pct, `${fa(done)}/${fa(list.length)}`, 'انجام شد', 72)}<b class="block">${dayLabel(day)}</b></div>
       <button class="icon-btn" data-act="step" data-d="1" aria-label="روز بعد">${icon('chevron_left')}</button>
     </section>
     <form class="add-line" data-submit="quick-task">${icon('add_task', 'muted')}<input data-key="qt" name="qt" autocomplete="off" placeholder="کار تازه برای ${dayLabel(day)}…"><button class="btn-sm" type="submit">افزودن</button></form>
@@ -80,7 +80,7 @@ function shopTab() {
   return `<section class="card row-between"><span><b class="big">${fa(SH.remaining())}</b> <small>مورد باقی‌مانده</small></span>
       ${bought ? `<button class="link" data-act="clear-bought">پاک کردن خریده‌شده‌ها (${fa(bought)})</button>` : ''}</section>
     <form class="add-line" data-submit="quick-shop">${icon('add_shopping_cart', 'muted')}<input data-key="qs" name="qs" autocomplete="off" placeholder="چه چیزی بخریم؟"><button class="btn-sm" type="submit">افزودن</button></form>
-    ${groups.map((g) => section(SH.CATS[g.cat].label, `<div class="list">${g.items.map((i) => row({ ic: SH.catOf(i).icon, title: esc(i.title), cls: i.done ? 'is-done' : '', act: 'shop-edit', attrs: `data-id="${i.id}"`, trailing: check('shop-check', i.id, i.done) })).join('')}</div>`)).join('') || empty('فهرست خرید خالی است')}`;
+    ${groups.map((g) => section(SH.CATS[g.cat].label, `<div class="list">${g.items.map((i) => row({ ic: '', title: esc(i.title), cls: i.done ? 'is-done' : '', act: 'shop-edit', attrs: `data-id="${i.id}"`, trailing: check('shop-check', i.id, i.done) })).join('')}</div>`)).join('') || empty('فهرست خرید خالی است')}`;
 }
 
 export default {

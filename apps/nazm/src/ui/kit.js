@@ -30,7 +30,7 @@ export const pills = (items, current, act) =>
 
 /** A simple list row (bone card). */
 export function row({ ic, title, sub = '', trailing = '', act = '', attrs = '', cls = '', tint = '' }) {
-  const body = `<span class="row-ic ${tint}">${icon(ic)}</span><span class="grow col"><b class="truncate">${title}</b>${sub ? `<small>${sub}</small>` : ''}</span>`;
+  const body = `${ic ? `<span class="row-ic ${tint}">${icon(ic)}</span>` : ''}<span class="grow col"><b class="truncate">${title}</b>${sub ? `<small>${sub}</small>` : ''}</span>`;
   const main = act ? `<button class="row-main" data-act="${act}" ${attrs}>${body}</button>` : `<div class="row-main">${body}</div>`;
   return `<div class="row ${cls}">${main}${trailing}</div>`;
 }

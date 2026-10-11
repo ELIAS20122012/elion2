@@ -201,3 +201,44 @@ textarea.input { min-height: 110px; resize: vertical; line-height: 1.8; }
 .fchip.day { flex: 1; width: auto; }
 .card .col small { display: block; }
 .card .sets { display: flex; }
+
+/* ---- compact sizing: small rows, small controls ---- */
+.row { gap: 10px; padding: 8px 12px; border-radius: 12px; }
+.row-main { gap: 10px; }
+.row .col b { font-size: 13.5px; font-weight: 600; }
+.row .col small { font-size: 11px; line-height: 1.5; }
+.row-ic { width: 32px; height: 32px; border-radius: 10px; }
+.row-ic .material-symbols-outlined { font-size: 18px; }
+.list { gap: 8px; }
+.chk { width: 24px; height: 24px; }
+.chk .material-symbols-outlined { font-size: 15px; }
+.mini-photo { width: 32px; height: 32px; border-radius: 8px; }
+.amt { font-size: 13px; }
+.set { min-width: 34px; height: 28px; font-size: 12px; }
+.card { padding: 12px 14px; border-radius: 20px; }
+.add-line { padding: 3px 6px 3px 4px; padding-inline-start: 14px; }
+.add-line input { font-size: 13.5px; padding: 7px 0; }
+.btn-sm { padding: 6px 14px; font-size: 12px; }
+.icon-btn { width: 32px; height: 32px; }
+.icon-btn .material-symbols-outlined { font-size: 20px; }
+.icon-btn.sm { width: 30px; height: 30px; }
+.fab { width: 48px; height: 48px; bottom: 82px; }
+.fab .material-symbols-outlined { font-size: 26px; }
+.drawer-head { padding: 12px 2px; font-size: 14px; }
+.drawer-body { padding-bottom: 14px; }
+.stack { gap: 12px; }
+.big { font-size: 20px; }
+.balance-card { padding: 14px 16px; gap: 8px; }
+.big-num { font-size: 32px; }
+.mini { padding: 10px 12px; }
+.mini b { font-size: 15px; }
+.stat { padding: 10px 6px; }
+.stat b { font-size: 14px; }
+.focus { padding: 18px 16px; min-height: 160px; }
+.focus h2 { font-size: 19px; }
+.btn-accent { padding: 10px 20px; font-size: 13px; }
+.wd { padding: 6px 0 4px; }
+.wd b { font-size: 14px; }
+.plan-card { gap: 12px; }
+.view { gap: 14px; }
+.page-head h1, .greet h1 { font-size: 21px; }
