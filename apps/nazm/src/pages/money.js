@@ -80,11 +80,11 @@ function budgetTab() {
     const c = fin.catOf(r.key);
     return row({ ic: '', title: c.label,
       sub: `${M(r.spent)}${r.budget ? ` از ${M(r.budget)}` : ' · بدون بودجه'}${r.budget ? bar((r.spent / r.budget) * 100, r.spent > r.budget) : ''}`,
-      trailing: `<span class="gym-tools"><button class="link" data-act="cat-budget" data-k="${r.key}">${r.budget ? 'ویرایش' : 'تعیین'}</button>${r.budget ? `<button class="link bad" data-act="cat-remove" data-k="${r.key}">حذف</button>` : ''}</span>` });
+      trailing: `<span class="gym-tools"><button class="act-btn" data-act="cat-budget" data-k="${r.key}" aria-label="ویرایش">${icon('edit')}</button>${r.budget ? `<button class="act-btn bad" data-act="cat-remove" data-k="${r.key}" aria-label="حذف">${icon('delete')}</button>` : ''}</span>` });
   }).join('');
   const main = budget
     ? `<section class="card stack-s">
-      <div class="row-between"><b>بودجه‌ی ${monthLabel(currentMonthKey())}</b><span class="gym-tools"><button class="link" data-act="set-budget">ویرایش</button><button class="link bad" data-act="budget-remove">حذف</button></span></div>
+      <div class="row-between"><b>بودجه‌ی ${monthLabel(currentMonthKey())}</b><span class="gym-tools"><button class="act-btn" data-act="set-budget" aria-label="ویرایش">${icon('edit')}</button><button class="act-btn bad" data-act="budget-remove" aria-label="حذف">${icon('delete')}</button></span></div>
       <div class="lines-plain"><div><span>بودجه</span><b class="ltr">${M(budget)}</b></div><div><span>قسط‌های ثابت</span><b class="ltr">− ${M(fixed)}</b></div><div><span>خرج‌شده</span><b class="ltr">− ${M(spent)}</b></div></div>
       <div class="row-between"><small>باقی‌مانده</small><b class="big ltr ${left < 0 ? 'neg' : ''}">${M(left)}</b></div>
       ${bar(fin.budgetUsedPct(), left < 0)}

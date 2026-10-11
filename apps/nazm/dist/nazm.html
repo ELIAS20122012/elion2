@@ -459,6 +459,11 @@ textarea.input { min-height: 72px; line-height: 1.6; }
 .sub-head h2 { font-size: 16px; font-weight: 800; color: var(--ink); margin: 0; }
 .link.bad { color: var(--danger); }
 
+.act-btn { width: 32px; height: 32px; display: grid; place-items: center; border-radius: 50%; color: var(--primary); flex: none; }
+.act-btn .material-symbols-outlined { font-size: 20px; }
+.act-btn.bad { color: var(--danger); }
+.act-btn:active { background: color-mix(in srgb, var(--primary) 12%, transparent); }
+
 /* Everything is shared in components.css; screen-specific rules would go here. */
 
   </style>
@@ -3392,11 +3397,11 @@ function budgetTab() {
     const c = fin.catOf(r.key);
     return row({ ic: '', title: c.label,
       sub: `${M(r.spent)}${r.budget ? ` از ${M(r.budget)}` : ' · بدون بودجه'}${r.budget ? bar((r.spent / r.budget) * 100, r.spent > r.budget) : ''}`,
-      trailing: `<span class="gym-tools"><button class="link" data-act="cat-budget" data-k="${r.key}">${r.budget ? 'ویرایش' : 'تعیین'}</button>${r.budget ? `<button class="link bad" data-act="cat-remove" data-k="${r.key}">حذف</button>` : ''}</span>` });
+      trailing: `<span class="gym-tools"><button class="act-btn" data-act="cat-budget" data-k="${r.key}" aria-label="ویرایش">${icon('edit')}</button>${r.budget ? `<button class="act-btn bad" data-act="cat-remove" data-k="${r.key}" aria-label="حذف">${icon('delete')}</button>` : ''}</span>` });
   }).join('');
   const main = budget
     ? `<section class="card stack-s">
-      <div class="row-between"><b>بودجه‌ی ${monthLabel(currentMonthKey())}</b><span class="gym-tools"><button class="link" data-act="set-budget">ویرایش</button><button class="link bad" data-act="budget-remove">حذف</button></span></div>
+      <div class="row-between"><b>بودجه‌ی ${monthLabel(currentMonthKey())}</b><span class="gym-tools"><button class="act-btn" data-act="set-budget" aria-label="ویرایش">${icon('edit')}</button><button class="act-btn bad" data-act="budget-remove" aria-label="حذف">${icon('delete')}</button></span></div>
       <div class="lines-plain"><div><span>بودجه</span><b class="ltr">${M(budget)}</b></div><div><span>قسط‌های ثابت</span><b class="ltr">− ${M(fixed)}</b></div><div><span>خرج‌شده</span><b class="ltr">− ${M(spent)}</b></div></div>
       <div class="row-between"><small>باقی‌مانده</small><b class="big ltr ${left < 0 ? 'neg' : ''}">${M(left)}</b></div>
       ${bar(fin.budgetUsedPct(), left < 0)}

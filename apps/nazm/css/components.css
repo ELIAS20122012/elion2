@@ -354,3 +354,8 @@ textarea.input { min-height: 72px; line-height: 1.6; }
 .sub-head { display: flex; align-items: center; gap: 4px; margin-top: -4px; }
 .sub-head h2 { font-size: 16px; font-weight: 800; color: var(--ink); margin: 0; }
 .link.bad { color: var(--danger); }
+
+.act-btn { width: 32px; height: 32px; display: grid; place-items: center; border-radius: 50%; color: var(--primary); flex: none; }
+.act-btn .material-symbols-outlined { font-size: 20px; }
+.act-btn.bad { color: var(--danger); }
+.act-btn:active { background: color-mix(in srgb, var(--primary) 12%, transparent); }
