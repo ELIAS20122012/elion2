@@ -10,6 +10,7 @@ import fs from "node:fs";
 import path from "node:path";
 import type { Transcriber } from "../voice/whisper.ts";
 import { Appointments, isAppointmentQuestion, parseAppointment } from "../plugins/appointments.ts";
+import { notebookIntent } from "../plugins/notebook.ts";
 import { isSafeAction } from "./actions.ts";
 import { AGENT_PROVIDER, NEEDS_APPROVAL } from "../plugins/agent.ts";
 import { sendableFile } from "../plugins/remote.ts";
@@ -260,6 +261,19 @@ export class TelegramInterface {
     if (chatId !== owner) {
       this.kernel.log("telegram.stranger", "Ignored message from unknown chat", { level: "warn", data: { chatId } });
       return;
+    }
+
+    // Notebook: forwarded posts and "#یادداشت …" / "#خام …" are saved, not answered.
+    const forwarded = !!(msg.forward_origin || msg.forward_from || msg.forward_from_chat || msg.forward_sender_name);
+    const hidden = (Array.isArray(msg.entities) ? msg.entities : []).filter((e: { type?: string; url?: string }) => e.type === "text_link" && e.url).map((e: { url: string }) => e.url);
+    const nbIntent = notebookIntent(hidden.length ? `${text}\n\n${hidden.join("\n")}` : text, forwarded);
+    const nb = nbIntent && this.kernel.getCommand("nb");
+    if (nbIntent && nb) {
+      try {
+        return this.send(await nb.run(`${nbIntent.mode} ${nbIntent.text}`));
+      } catch (e) {
+        return this.send(`خطا در ذخیره: ${errMsg(e)}`);
+      }
     }
 
     await this.handleOwnerText(text);
@@ -515,7 +529,7 @@ ${ask ? `His request: ${ask}` : "No caption: describe or summarize it usefully. 
     const title = prompt.length > 60 ? prompt.slice(0, 57) + "…" : prompt;
     // memory, today's date, saved appointments and the last few messages (so follow-ups make sense)
     const have = new Set(this.kernel.listContextSources().map((c) => c.name));
-    const context = ["time:now", "memory:notes", "appointments:upcoming", "chat:recent"].filter((n) => have.has(n));
+    const context = ["time:now", "memory:notes", "appointments:upcoming", "notebook:index", "chat:recent"].filter((n) => have.has(n));
     const t = this.kernel.createTask({
       title,
       prompt,

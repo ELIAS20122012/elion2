@@ -9,7 +9,7 @@ type N = GNode & { x: number; y: number; vx: number; vy: number; r: number; deg:
 
 export const GROUP_COLOR: Record<string, string> = {
   core: "#f5d0fe", agents: "#38bdf8", tasks: "#a78bfa", calendar: "#f59e0b", memory: "#c084fc",
-  skills: "#22d3ee", lab: "#f472b6", schedules: "#34d399", approvals: "#fb7185",
+  skills: "#22d3ee", lab: "#f472b6", schedules: "#34d399", approvals: "#fb7185", notebook: "#fde68a",
 };
 
 /** Live knowledge graph of Elion (Obsidian-style): force layout, hover shows a node and its links, drag to move, click a hub to open it. */

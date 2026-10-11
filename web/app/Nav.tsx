@@ -7,6 +7,7 @@ const LINKS = [
   { href: "/", icon: "◈", label: "داشبورد" },
   { href: "/tasks", icon: "☰", label: "کارها" },
   { href: "/calendar", icon: "▦", label: "ترمین‌ها" },
+  { href: "/notebook", icon: "✎", label: "دفترچه" },
   { href: "/memory", icon: "◎", label: "حافظه" },
   { href: "/lab", icon: "⚗", label: "آزمایشگاه" },
   { href: "/system", icon: "⚙", label: "سیستم" },

@@ -15,9 +15,10 @@ export default function Home() {
   const appts = usePoll<{ upcoming: Appointment[] }>("/api/panel/appointments", 30000).data;
   const memory = usePoll<{ notes: string[] }>("/api/panel/memory", 30000).data;
   const lab = usePoll<Lab>("/api/panel/lab", 30000).data;
+  const notebook = usePoll<{ notes: { id: string; title: string; topic: string }[] }>("/api/panel/notebook", 30000).data;
   const [text, setText] = useState("");
   const [asked, setAsked] = useState<{ id: string; q: string } | null>(null);
-  const graph = useMemo(() => buildGraph(data, appts?.upcoming ?? [], memory?.notes ?? [], lab), [data, appts, memory, lab]);
+  const graph = useMemo(() => buildGraph(data, appts?.upcoming ?? [], memory?.notes ?? [], lab, notebook?.notes ?? []), [data, appts, memory, lab, notebook]);
 
   if (down && !data) return <Offline />;
   const s = data?.stats ?? {};
@@ -125,7 +126,7 @@ function Answer({ id, q, data, onClose }: { id: string; q: string; data: Overvie
 }
 
 /** Everything Elion knows, as one graph: core → modules → their items. */
-function buildGraph(d: Overview | null, appts: Appointment[], notes: string[], lab: Lab | null): { nodes: GNode[]; links: GLink[] } {
+function buildGraph(d: Overview | null, appts: Appointment[], notes: string[], lab: Lab | null, book: { id: string; title: string; topic: string }[] = []): { nodes: GNode[]; links: GLink[] } {
   const nodes: GNode[] = [{ id: "core", label: "ELION", group: "core" }];
   const links: GLink[] = [];
   const hub = (group: string, label: string, href: string, items: { id: string; label: string }[]) => {
@@ -146,6 +147,7 @@ function buildGraph(d: Overview | null, appts: Appointment[], notes: string[], l
   hub("skills", "اسکیل‌ها", "/system", [...d.commands, ...d.skills.filter((x) => !cmds.has(x.name))].map((c) => ({ id: c.name, label: `/${c.name}` })));
   hub("lab", "آزمایشگاه", "/lab", (lab?.models ?? []).map((m) => ({ id: m.name, label: m.label })));
   hub("schedules", "زمان‌بندی", "/system", d.schedules.filter((x) => x.enabled).map((x) => ({ id: x.name, label: x.name })));
+  if (book.length) hub("notebook", "دفترچه", "/notebook", book.slice(0, 40).map((n) => ({ id: n.id, label: n.title })));
   if (d.approvals.length) hub("approvals", "تأییدها", "/", d.approvals.map((a) => ({ id: a.id, label: a.task })));
   // cross links: lab models are also agents
   for (const m of lab?.models ?? []) if (d.providers.some((p) => p.name === m.name)) links.push({ a: `lab:${m.name}`, b: `agents:${m.name}` });

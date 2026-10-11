@@ -5,6 +5,16 @@ Format: date · agent · what was done · state (finished / half-done + how to c
 
 ---
 
+## 2026-10-11 (3) · Claude (Cowork)
+- Notebook (src/plugins/notebook.ts): every text Elias forwards in Telegram (or "#یادداشت …", "#خام …" = no AI) is
+  saved as one Markdown note in C:\Elion\notebook (plugins.options.notebook.dir), local git keeps every version.
+  AI classifies type (links/writing/idea/article), title, topic, tags, summary and extracts links with group and
+  Persian description; original text stays verbatim. /nb · /nb <words> · /nb read|links|edit|set|del. Panel page
+  /notebook (list, filters, reader, editor, all links). Chat context "notebook:index" lets the AI pick note ids.
+- Motion studio (C:\Elion\motion-studio, not in git): 88 motion/video skills + HyperFrames, Remotion, GSAP,
+  Motion, lottie-web. Run Claude Code there for videos.
+- State: finished, tests green.
+
 ## 2026-10-11 (2) · Claude (Cowork)
 - Morning briefing ran at boot (09:41) before the network was up; `npx @playwright/mcp@latest` could not download, so
   the agent had no browser. Fix: Playwright MCP is installed pinned in data/agent (node_modules) and started with node

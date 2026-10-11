@@ -19,3 +19,5 @@ site-draft/
 .env
 .env.*
 __pycache__/
+
+graphify-out/

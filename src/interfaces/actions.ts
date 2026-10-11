@@ -12,6 +12,7 @@ const SAFE: Record<string, (args: string) => boolean> = {
   note: () => true, // appends to today's Obsidian note
   find: () => true,
   vault: () => true,
+  nb: (a) => !/^(del|write|set|edit)\b/i.test(a.trim()), // list/search/read/links/save run; changes need a tap
   research: (a) => !/^off\b/i.test(a.trim()),
   team: () => true,
   health: () => true,
