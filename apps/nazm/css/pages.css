@@ -1,2 +1,1 @@
-/* Page-specific tweaks live here; most styling is shared in components.css. */
-.page-money .balance b { font-size: 38px; }
+/* Everything is shared in components.css; screen-specific rules would go here. */

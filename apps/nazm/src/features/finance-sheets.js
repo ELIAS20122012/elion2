@@ -424,3 +424,37 @@ export function manageMenu() {
     { icon: 'monitoring', label: 'گزارش ماهانه', run: reportSheet },
   ]);
 }
+
+/* ---------- budgets ---------- */
+export function budgetSheet() {
+  form({
+    title: 'بودجه ماهانه',
+    sub: `خرج این ماه: ${M(fin.monthSum('expense'))}`,
+    fields: [{ name: 'b', label: `سقف ماهانه (${S.profile.currency})`, type: 'number', value: fin.monthBudget() || '' }],
+    onSubmit(v) {
+      const b = num(v.b);
+      if (b <= 0) { toast('مبلغ معتبر وارد کنید'); return false; }
+      S.wallet.budget = b;
+      commit();
+    },
+  });
+}
+
+export function catBudgetSheet(key) {
+  const c = fin.catOf(key);
+  form({
+    title: `بودجه ${c.label}`,
+    sub: 'خالی بگذارید تا بودجه‌ی این دسته حذف شود.',
+    fields: [{ name: 'b', label: `سقف ماهانه (${S.profile.currency})`, type: 'number', value: fin.catBudgets()[key] || '' }],
+    onSubmit(v) {
+      const b = num(v.b);
+      if (b > 0) fin.catBudgets()[key] = b; else delete fin.catBudgets()[key];
+      commit();
+    },
+  });
+}
+
+/** Choose a category to give a budget to. */
+export function addCatBudget() {
+  menu('بودجه‌ی دسته', fin.EXP_CATS.filter((k) => !fin.catBudgets()[k]).map((k) => ({ icon: fin.catOf(k).icon, label: fin.catOf(k).label, run: () => catBudgetSheet(k) })));
+}

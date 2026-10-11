@@ -51,7 +51,8 @@ export function mealSheet(m, date = today()) {
   form({
     title: editing ? 'ویرایش وعده' : 'وعده جدید',
     fields: [
-      { name: 'kcal', label: 'کالری (kcal)', type: 'number', value: (m && m.kcal) || '' },
+      { name: 'kcal', label: 'کالری (kcal)', type: 'number', value: (m && m.kcal) || '', row: 'a' },
+      { name: 'p', label: 'پروتئین g (اختیاری)', type: 'number', value: (m && m.p) || '', row: 'a' },
       { name: 'name', label: 'غذا (اختیاری)', value: m ? m.name : '' },
     ],
     extra: editing ? [{
@@ -61,8 +62,8 @@ export function mealSheet(m, date = today()) {
     onSubmit(v) {
       const kcal = Math.round(num(v.kcal));
       if (!kcal) { toast('کالری را وارد کنید'); return false; }
-      const o = { name: (v.name || '').trim() || 'وعده', kcal };
-      if (editing) Object.assign(m, o); else G.addMeal({ ...o, p: 0, c: 0, f: 0 }, date);
+      const o = { name: (v.name || '').trim() || 'وعده', kcal, p: Math.round(num(v.p)) };
+      if (editing) Object.assign(m, o); else G.addMeal({ ...o, c: 0, f: 0 }, date);
       commit();
     },
   });
@@ -70,10 +71,25 @@ export function mealSheet(m, date = today()) {
 
 export function goalSheet() {
   form({
-    title: 'هدف کالری روزانه',
-    fields: [{ name: 'kcal', label: 'کالری (kcal)', type: 'number', value: S.gym.goals.kcal }],
-    onSubmit(v) { S.gym.goals.kcal = Math.max(500, num(v.kcal)) || S.gym.goals.kcal; commit(); },
+    title: 'اهداف روزانه',
+    fields: [
+      { name: 'kcal', label: 'کالری (kcal)', type: 'number', value: S.gym.goals.kcal, row: 'a' },
+      { name: 'p', label: 'پروتئین (g)', type: 'number', value: S.gym.goals.p, row: 'a' },
+    ],
+    onSubmit(v) {
+      S.gym.goals.kcal = Math.max(500, num(v.kcal)) || S.gym.goals.kcal;
+      S.gym.goals.p = Math.max(10, num(v.p)) || S.gym.goals.p;
+      commit();
+    },
   });
+}
+
+/** Start / stop the workout timer on today's session. */
+export function toggleTimer() {
+  const s = G.session(today(), true);
+  if (S.gym.timerStart) { G.stopTimer(s); toast(`زمان تمرین: ${fa(Math.round(s.minutes))} دقیقه`); }
+  else { S.gym.timerStart = Date.now(); s.finished = false; toast('زمان‌سنج شروع شد'); }
+  commit();
 }
 
 export function weightSheet() {
@@ -144,14 +160,15 @@ function confirmFood(date, guess, thumb, reason) {
     title: guess ? 'تأیید غذا' : 'ثبت غذا',
     sub: guess ? 'عدد تخمینی است؛ در صورت نیاز اصلاح کنید.' : reason,
     fields: [
-      { name: 'kcal', label: 'کالری (kcal)', type: 'number', value: guess ? guess.kcal || '' : '' },
+      { name: 'kcal', label: 'کالری (kcal)', type: 'number', value: guess ? guess.kcal || '' : '', row: 'a' },
+      { name: 'p', label: 'پروتئین g', type: 'number', value: guess && guess.protein ? guess.protein : '', row: 'a' },
       { name: 'name', label: 'غذا', value: guess ? guess.name : '' },
     ],
     submit: 'ذخیره در این روز',
     onSubmit(v) {
       const kcal = Math.round(num(v.kcal));
       if (!kcal) { toast('کالری را وارد کنید'); return false; }
-      G.addMeal({ name: (v.name || '').trim() || 'وعده', kcal, p: 0, c: 0, f: 0, photo: thumb || null }, date);
+      G.addMeal({ name: (v.name || '').trim() || 'وعده', kcal, p: Math.round(num(v.p)), c: 0, f: 0, photo: thumb || null }, date);
       commit();
       toast(`${fa(kcal)} کالری ثبت شد`);
     },

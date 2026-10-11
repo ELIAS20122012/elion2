@@ -1,6 +1,6 @@
-/* Hash routing: "#/home", "#/gym", "#/money", "#/me". Unknown hashes go to Home. */
-export const ROUTES = ['home', 'gym', 'money', 'me'];
-export const DEFAULT_ROUTE = 'home';
+/* Hash routing: the four bottom-bar sections. Unknown hashes (including old ones) go to Today. */
+export const ROUTES = ['today', 'tasks', 'gym', 'money'];
+export const DEFAULT_ROUTE = 'today';
 
 export function currentRoute() {
   const id = location.hash.replace(/^#\/?/, '').split('?')[0];

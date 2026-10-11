@@ -7,22 +7,24 @@ import { toast } from '../ui/toast.js';
 import { form, menu } from '../ui/sheet.js';
 import * as T from '../domain/tasks.js';
 
-export function taskSheet(id, presetTitle = '') {
+export function taskSheet(id, date = today()) {
   const t = id ? T.findTask(id) : null;
+  const fields = [
+    { name: 'title', label: 'عنوان', value: t ? t.title : '' },
+    { name: 'time', label: 'ساعت (اختیاری)', type: 'time', value: t ? t.time : '' },
+    { name: 'repeat', label: 'تکرار', type: 'chips', value: t ? t.repeat || 'none' : 'none', options: Object.entries(T.REPEAT).map(([value, label]) => ({ value, label })) },
+  ];
+  if (t) fields.splice(1, 0, { name: 'date', label: 'تاریخ', type: 'date', value: t.date });
   form({
     title: t ? 'ویرایش کار' : 'کار جدید',
-    fields: [
-      { name: 'title', label: 'عنوان', value: t ? t.title : presetTitle },
-      { name: 'date', label: 'تاریخ', type: 'date', value: t ? t.date : today(), row: 'a' },
-      { name: 'time', label: 'ساعت (اختیاری)', type: 'time', value: t ? t.time : '', row: 'a' },
-    ],
-    focus: !t,
+    fields, focus: !t,
     extra: t ? [{ label: 'حذف', cls: 'danger', run: () => deleteTask(t.id) }] : [],
     onSubmit(v) {
       const title = (v.title || '').trim();
       if (!title) { toast('عنوان را وارد کنید'); return false; }
-      if (t) Object.assign(t, { title, date: v.date || today(), time: v.time || '' });
-      else S.tasks.push(T.newTask({ title, date: v.date || today(), time: v.time || '' }));
+      const f = { title, time: v.time || '', repeat: v.repeat || 'none' };
+      if (t) Object.assign(t, f, { date: v.date || t.date });
+      else S.tasks.push(T.newTask({ ...f, date }));
       commit();
     },
   });
@@ -38,15 +40,16 @@ export function deleteTask(id) {
 export function toggleTask(id) {
   const t = T.findTask(id);
   if (!t) return;
-  T.toggleDone(t);
+  const next = T.toggleDone(t);
   commit();
+  if (next) toast(`تکرار بعدی: ${next.date}`);
 }
 
 /** Quick add from the input line; "!!" or "فوری" is accepted and ignored (kept for old muscle memory). */
-export function quickAddTask(raw) {
+export function quickAddTask(raw, date = today()) {
   const title = raw.replace(/!!/g, '').trim();
   if (!title) return false;
-  S.tasks.push(T.newTask({ title }));
+  S.tasks.push(T.newTask({ title, date }));
   commit();
   return true;
 }

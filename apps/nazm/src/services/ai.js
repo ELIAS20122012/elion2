@@ -7,8 +7,8 @@ const KEY_STORAGE = 'daily-order-gemini-key'; // kept out of the app document so
 const GEMINI_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent';
 
 export const FOOD_PROMPT = 'You are a nutrition assistant. Look at this photo of a meal and estimate the total calories of the visible portion. '
-  + 'Reply with only JSON: {"name": string (dish name in Persian/Farsi), "kcal": number}. '
-  + 'If the image is not food, reply {"name": "غذا تشخیص داده نشد", "kcal": 0}.';
+  + 'Reply with only JSON: {"name": string (dish name in Persian/Farsi), "kcal": number, "protein": number (grams)}. '
+  + 'If the image is not food, reply {"name": "غذا تشخیص داده نشد", "kcal": 0, "protein": 0}.';
 
 export function getGeminiKey() {
   try { return localStorage.getItem(KEY_STORAGE) || ''; } catch { return ''; }
@@ -37,7 +37,7 @@ export function parseFood(raw) {
     r = JSON.parse(m[0]);
   }
   if (!r || typeof r !== 'object') throw { code: 'bad_response' };
-  return { name: String(r.name || 'غذا').trim() || 'غذا', kcal: Math.max(0, Math.round(num(r.kcal))) };
+  return { name: String(r.name || 'غذا').trim() || 'غذا', kcal: Math.max(0, Math.round(num(r.kcal))), protein: Math.max(0, Math.round(num(r.protein))) };
 }
 
 async function viaHost(file) {

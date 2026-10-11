@@ -10,7 +10,7 @@ export function emptyState() {
   return {
     v: STATE_VERSION, privacy: false,
     profile: { name: '', currency: '€', calendar: 'jalali' },
-    tasks: [], habits: [], blocks: [], plannerHideDone: false,
+    tasks: [], habits: [], blocks: [], plannerHideDone: false, appointments: [], shopping: [],
     wallet: { startBalance: 0, budget: 1500, alerts: true, quickSet: 0 },
     accounts: [{ id: 'main', name: 'حساب اصلی', type: 'bank', opening: 0 }],
     loans: [], bills: [], tx: [],
@@ -97,7 +97,18 @@ export function seed() {
       { id: uid(), date: d(1), title: 'برنامه‌ریزی هفته', start: '10:00', end: '11:00', color: 'slate', icon: 'event_note', done: false, notify: false },
     ],
     plannerHideDone: false,
-    wallet: { startBalance: 0, budget: 1500, alerts: true, quickSet: 0 },
+    appointments: [
+      { id: uid(), title: 'دندان‌پزشکی', kind: 'visit', date: d(1), time: '10:30', place: 'کلینیک مرکزی' },
+      { id: uid(), title: 'جلسه‌ی تیم طراحی', kind: 'meeting', date: d(0), time: '17:00', place: 'آنلاین' },
+      { id: uid(), title: 'ملاقات با دوست', kind: 'meet', date: d(3), time: '19:30', place: 'کافه' },
+    ],
+    shopping: [
+      { id: uid(), title: 'سیب', cat: 'produce', done: false },
+      { id: uid(), title: 'ماست', cat: 'dairy', done: false },
+      { id: uid(), title: 'نان سنگک', cat: 'bakery', done: true },
+      { id: uid(), title: 'مرغ', cat: 'meat', done: false },
+    ],
+    wallet: { startBalance: 0, budget: 1500, alerts: true, quickSet: 0, catBudgets: { food: 300, shopping: 200, transport: 100 } },
     accounts: [
       { id: 'main', name: 'حساب بانکی', type: 'bank', opening: 0 },
       { id: 'cash', name: 'کیف پول نقد', type: 'cash', opening: 0 },

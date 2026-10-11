@@ -305,3 +305,39 @@ export function ledgerRows({ month, type = 'all', acc = 'all', q = '' }) {
     return true;
   }));
 }
+
+/* ---------- budgets & reporting ---------- */
+export const catBudgets = () => S.wallet.catBudgets || (S.wallet.catBudgets = {});
+export const monthBudget = () => S.wallet.budget || 0;
+export const budgetLeft = () => monthBudget() - monthSum('expense');
+
+/** Spending per expense category this month, with its optional budget. */
+export function categoryBudgetRows(mk = currentMonthKey()) {
+  const spent = expenseByCategory(mk);
+  const budgets = catBudgets();
+  return EXP_CATS.filter((k) => spent[k] || budgets[k]).map((k) => ({ key: k, spent: spent[k] || 0, budget: budgets[k] || 0 }));
+}
+
+/** The category with the highest spending this month, or null. */
+export function topExpenseCategory(mk = currentMonthKey()) {
+  const spent = expenseByCategory(mk);
+  const top = Object.keys(spent).sort((a, b) => spent[b] - spent[a])[0];
+  return top ? { key: top, amount: spent[top] } : null;
+}
+
+/** Paid / due-soon / overdue / open — for the installment badge. */
+export function loanStatus(l) {
+  const n = loanNextN(l);
+  if (!n) return 'done';
+  const due = loanDue(l, n);
+  if (due < today()) return 'overdue';
+  return daysBetween(today(), due) <= 7 ? 'soon' : 'open';
+}
+
+export const installmentsPaidThisMonth = () =>
+  sum(S.tx.filter((t) => t.loanId && monthKey(t.date) === currentMonthKey()), (t) => t.amount);
+
+export function nearestInstallment() {
+  const items = dueItems(60).filter((d) => d.kind === 'loan');
+  return items[0] || null;
+}

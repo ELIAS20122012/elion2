@@ -40,6 +40,9 @@ export function migrate(state) {
   state.loans = state.loans || [];
   state.bills = state.bills || [];
   state.weekly = state.weekly || {};
+  state.appointments = state.appointments || [];
+  state.shopping = state.shopping || [];
+  state.wallet.catBudgets = state.wallet.catBudgets || {};
   if (!state.accounts) {
     state.accounts = [
       { id: 'main', name: 'حساب بانکی', type: 'bank', opening: state.wallet.startBalance || 0 },

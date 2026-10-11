@@ -1,7 +1,7 @@
 /* Tasks and habits. Pure data logic — no DOM. */
 import { S } from '../core/store.js';
 import { uid } from '../core/util.js';
-import { iso, addDays, today } from '../core/dates.js';
+import { iso, addDays, parseIso, today } from '../core/dates.js';
 
 export const HABIT_ICONS = ['local_drink', 'menu_book', 'self_improvement', 'directions_walk', 'bedtime', 'nutrition', 'fitness_center', 'edit_note'];
 
@@ -10,7 +10,7 @@ export const findTask = (id) => S.tasks.find((t) => t.id === id);
 export const activeTasks = () => S.tasks.filter((t) => !t.archived);
 
 export function newTask(f = {}) {
-  return { id: uid(), title: '', date: today(), time: '', priority: 'med', starred: false, done: false, archived: false, note: '', createdAt: today(), ...f };
+  return { id: uid(), title: '', date: today(), time: '', repeat: 'none', priority: 'med', starred: false, done: false, archived: false, note: '', createdAt: today(), ...f };
 }
 
 /** Open first, then by date, then time. */
@@ -20,10 +20,28 @@ export function sortTasks(a, b) {
   return (a.time || '99') < (b.time || '99') ? -1 : 1;
 }
 
+export const REPEAT = { none: 'یک‌بار', daily: 'هر روز', weekly: 'هر هفته' };
+
+export function nextRepeatDate(t) {
+  const d = t.date || today();
+  if (t.repeat === 'daily') return iso(addDays(parseIso(d), 1));
+  if (t.repeat === 'weekly') return iso(addDays(parseIso(d), 7));
+  return null;
+}
+
+/** Toggle done. Completing a repeating task creates its next occurrence once (returned). */
 export function toggleDone(t) {
   t.done = !t.done;
   t.doneAt = t.done ? today() : null;
+  if (!(t.done && (t.repeat === 'daily' || t.repeat === 'weekly') && !t.spawnedNext)) return null;
+  const next = { ...t, id: uid(), done: false, doneAt: null, spawnedNext: false, date: nextRepeatDate(t) };
+  S.tasks.push(next);
+  t.spawnedNext = next.id;
+  return next;
 }
+
+/** Tasks (not archived) planned for one day: open first, then done. */
+export const tasksOn = (date) => activeTasks().filter((t) => t.date === date).sort(sortTasks);
 
 export function removeTask(id) {
   const i = S.tasks.findIndex((t) => t.id === id);

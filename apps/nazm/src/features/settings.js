@@ -2,7 +2,8 @@
 import { S, commit, replaceState, resetToSample, clearAll } from '../core/store.js';
 import { today } from '../core/dates.js';
 import { toast } from '../ui/toast.js';
-import { form, confirmBox } from '../ui/sheet.js';
+import { form, menu, confirmBox } from '../ui/sheet.js';
+import { weightSheet, goalSheet } from './gym-sheets.js';
 import { saveFile, pickFile } from '../services/files.js';
 import { getGeminiKey, setGeminiKey } from '../services/ai.js';
 
@@ -43,4 +44,16 @@ export function openSettings() {
       commit();
     },
   });
+}
+
+/** Profile menu: body numbers and data (opened from the avatar at the top). */
+export function openProfile() {
+  menu(S.profile.name ? `سلام ${S.profile.name}` : 'پروفایل', [
+    { icon: 'monitor_weight', label: 'ثبت وزن', run: weightSheet },
+    { icon: 'local_fire_department', label: 'اهداف کالری و پروتئین', run: goalSheet },
+    { icon: 'download', label: 'گرفتن نسخه پشتیبان', run: exportData },
+    { icon: 'upload', label: 'بازیابی از نسخه پشتیبان', run: importData },
+    { icon: 'restart_alt', label: 'بازگشت به داده‌های نمونه', run: confirmSample },
+    { icon: 'delete', label: 'پاک کردن همه اطلاعات', danger: true, run: confirmClear },
+  ]);
 }

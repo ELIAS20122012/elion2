@@ -245,3 +245,86 @@ test('meals are stored per day', () => {
   assert.equal(G.sumMeals(G.mealsOn(other)).kcal, 400);
   assert.equal(G.mealsOn(other)[0].photo, 'data:');
 });
+
+/* ---------- new sections: repeat, appointments, shopping, budgets ---------- */
+import * as A from '../src/domain/appointments.js';
+import * as SH from '../src/domain/shopping.js';
+
+test('completing a daily/weekly task creates the next one exactly once', () => {
+  const t = T.newTask({ title: 'ورزش صبحگاهی', repeat: 'daily' });
+  S.tasks.push(t);
+  const next = T.toggleDone(t);
+  assert.equal(next.date, iso(addDays(new Date(), 1)));
+  assert.equal(next.done, false);
+  T.toggleDone(t); // reopen
+  assert.equal(T.toggleDone(t), null, 'no duplicate on second completion');
+  const w = T.newTask({ title: 'هفتگی', repeat: 'weekly' }); S.tasks.push(w);
+  assert.equal(T.toggleDone(w).date, iso(addDays(new Date(), 7)));
+  const once = T.newTask({ title: 'یک‌بار' }); S.tasks.push(once);
+  assert.equal(T.toggleDone(once), null);
+  assert.ok(T.tasksOn(next.date).some((x) => x.id === next.id));
+});
+
+test('appointments are sorted and the next one skips the past', () => {
+  S.appointments = [];
+  const past = A.saveAppt(null, { title: 'گذشته', kind: 'visit', date: iso(addDays(new Date(), -1)), time: '10:00' });
+  const later = A.saveAppt(null, { title: 'بعدتر', kind: 'meet', date: iso(addDays(new Date(), 2)), time: '09:00', place: 'کافه' });
+  const sooner = A.saveAppt(null, { title: 'زودتر', kind: 'meeting', date: iso(addDays(new Date(), 1)), time: '18:00' });
+  assert.equal(A.nextAppointment().id, sooner.id);
+  assert.deepEqual(A.upcoming().map((a) => a.id), [sooner.id, later.id]);
+  assert.deepEqual(A.on(past.date).map((a) => a.id), [past.id]);
+  assert.equal(A.kindOf(later).label, 'ملاقات');
+  const r = A.removeAppt(later.id);
+  assert.equal(S.appointments.includes(r.appt), false);
+  S.appointments.splice(r.index, 0, r.appt);
+  assert.equal(A.findAppt(later.id).place, 'کافه');
+});
+
+test('shopping list groups by category, counts and clears bought items', () => {
+  S.shopping = [];
+  SH.addItem('سیب', 'produce');
+  const milk = SH.addItem('شیر', 'dairy');
+  SH.addItem('چیز عجیب', 'nope');
+  assert.equal(SH.remaining(), 3);
+  milk.done = true;
+  assert.equal(SH.remaining(), 2);
+  assert.deepEqual(SH.grouped().map((g) => g.cat), ['produce', 'dairy', 'other']);
+  assert.equal(SH.clearBought(), 1);
+  assert.equal(S.shopping.length, 2);
+});
+
+test('budgets: remaining, per-category rows and top category', () => {
+  S.wallet.budget = 1000;
+  S.wallet.catBudgets = { food: 100 };
+  S.tx = [
+    { id: 'a', type: 'expense', amount: 150, category: 'food', date: today() },
+    { id: 'b', type: 'expense', amount: 400, category: 'shopping', date: today() },
+    { id: 'c', type: 'income', amount: 900, category: 'salary', date: today() },
+  ];
+  assert.equal(fin.budgetLeft(), 450);
+  const rows = fin.categoryBudgetRows();
+  assert.deepEqual(rows.map((r) => [r.key, r.spent, r.budget]), [['shopping', 400, 0], ['food', 150, 100]].sort((x, y) => fin.EXP_CATS.indexOf(x[0]) - fin.EXP_CATS.indexOf(y[0])));
+  assert.deepEqual(fin.topExpenseCategory(), { key: 'shopping', amount: 400 });
+  S.tx = [];
+  assert.equal(fin.topExpenseCategory(), null);
+});
+
+test('installment status: done / overdue / soon / open', () => {
+  const l = { id: 'l', title: 'x', amount: 10, count: 3, start: iso(addDays(new Date(), -5)), every: 1, paid: {} };
+  S.loans = [l];
+  assert.equal(fin.loanStatus(l), 'overdue');
+  l.start = iso(addDays(new Date(), 3));
+  assert.equal(fin.loanStatus(l), 'soon');
+  l.start = iso(addDays(new Date(), 20));
+  assert.equal(fin.loanStatus(l), 'open');
+  l.paid = { 1: {}, 2: {}, 3: {} };
+  assert.equal(fin.loanStatus(l), 'done');
+  assert.equal(fin.nearestInstallment(), null);
+});
+
+test('migrate gives old documents the new collections', () => {
+  const old = emptyState();
+  delete old.appointments; delete old.shopping; delete old.wallet.catBudgets;
+  const m = migrate(old);
+  assert.deepEqual([m.appointments, m.shopping, m.wallet.catBudgets], [[], [], {}]);
+});
