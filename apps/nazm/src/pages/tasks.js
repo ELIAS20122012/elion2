@@ -5,10 +5,10 @@ import { fa, esc } from '../core/format.js';
 import { faDate, faDayNum, relDay } from '../core/calendar.js';
 import { menu } from '../ui/sheet.js';
 import { icon } from '../ui/widgets.js';
-import { pageHead, drawers, toggleDrawer, row, check, fab, empty, section, ring, tabOf, openOr } from '../ui/kit.js';
+import { pageHead, drawers, toggleDrawer, row, check, empty, section, ring, tabOf, openOr } from '../ui/kit.js';
 import * as T from '../domain/tasks.js';
 import * as A from '../domain/appointments.js';
-import { taskSheet, toggleTask, quickAddTask } from '../features/task-sheets.js';
+import { taskSheet, toggleTask } from '../features/task-sheets.js';
 import { apptSheet } from '../features/plan-sheets.js';
 
 const ORDER = ['calendar', 'appts', 'daily'];
@@ -68,7 +68,6 @@ function dailyTab() {
       <div class="grow center">${ring(pct, `${fa(done)}/${fa(list.length)}`, 'انجام شد', 72)}<b class="block">${dayLabel(day)}</b></div>
       <button class="icon-btn" data-act="step" data-d="1" aria-label="روز بعد">${icon('chevron_left')}</button>
     </section>
-    <form class="add-line" data-submit="quick-task">${icon('add_task', 'muted')}<input data-key="qt" name="qt" autocomplete="off" placeholder="کار تازه برای ${dayLabel(day)}…"><button class="btn-sm" type="submit">افزودن</button></form>
     <div class="list">${list.map(taskRow).join('') || empty('کاری برای این روز نیست')}</div>`;
 }
 
@@ -79,7 +78,7 @@ export default {
   render() {
     const bodies = { calendar: calendarTab, appts: apptsTab, daily: dailyTab };
     const items = ORDER.map((key) => ({ key, label: LABELS[key], body: () => `<div class="stack">${bodies[key]()}</div>` }));
-    return `${pageHead('کارها', 'برنامه‌ی روز و هفته')}${drawers(items, tabOf('tasks', 'daily'))}${fab('add')}`;
+    return `${pageHead('کارها', 'برنامه‌ی روز و هفته', 'add')}${drawers(items, tabOf('tasks', 'daily'))}`;
   },
   act: {
     tab: toggleDrawer('tasks'),
@@ -89,7 +88,6 @@ export default {
     'task-check': (el) => toggleTask(el.dataset.id),
     'task-edit': (el) => taskSheet(el.dataset.id),
     'appt-edit': (el) => apptSheet(el.dataset.id),
-    'quick-task'(el) { const input = el.querySelector('input'); if (quickAddTask(input.value, day)) input.value = ''; },
     add() {
       const tab = openOr('tasks', 'daily');
       if (tab === 'appts') apptSheet(null, day);

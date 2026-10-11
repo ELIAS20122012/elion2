@@ -167,9 +167,6 @@ small { font-size: 11.5px; color: var(--muted); }
 .btn-primary { background: var(--primary); color: var(--on-primary); }
 .btn-ghost { background: var(--card); color: var(--primary); box-shadow: inset 0 0 0 1.5px var(--primary); }
 .btns { display: flex; gap: 10px; }
-.fab { position: fixed; bottom: 88px; inset-inline-end: max(20px, calc(50% - 215px + 20px)); z-index: 25; width: 56px; height: 56px; border-radius: 50%; display: grid; place-items: center; background: var(--accent); color: #fff; box-shadow: 0 10px 22px rgba(217, 128, 95, .45); }
-.fab .material-symbols-outlined { font-size: 30px; }
-.fab:active { transform: scale(.94); }
 
 /* ---- forms on pages ---- */
 .add-line { display: flex; align-items: center; gap: 10px; padding: 6px 8px 6px 6px; padding-inline-start: 16px; background: var(--card); border-radius: 999px; box-shadow: var(--shadow-sm); }
@@ -326,8 +323,6 @@ textarea.input { min-height: 110px; resize: vertical; line-height: 1.8; }
 .icon-btn { width: 32px; height: 32px; }
 .icon-btn .material-symbols-outlined { font-size: 20px; }
 .icon-btn.sm { width: 30px; height: 30px; }
-.fab { width: 48px; height: 48px; bottom: 82px; }
-.fab .material-symbols-outlined { font-size: 26px; }
 .drawer-head { padding: 12px 2px; font-size: 14px; }
 .drawer-body { padding-bottom: 14px; }
 .stack { gap: 12px; }
@@ -387,6 +382,12 @@ textarea.input { min-height: 72px; line-height: 1.6; }
 .shop-item.done span:first-child { text-decoration: line-through; }
 .shop-item.done .tick { background: var(--primary); border-color: var(--primary); color: var(--on-primary); }
 #nav a small { font-size: 10px; }
+
+/* ---- single "+" icon in the page corner (replaces add lines and the floating button) ---- */
+.page-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.add-ic { width: 34px; height: 34px; flex: none; border-radius: 50%; display: grid; place-items: center; background: var(--accent); color: #fff; box-shadow: 0 4px 10px rgba(217, 128, 95, .35); }
+.add-ic .material-symbols-outlined { font-size: 22px; }
+.add-ic:active { transform: scale(.92); }
 
 /* Everything is shared in components.css; screen-specific rules would go here. */
 
@@ -2398,7 +2399,9 @@ const openOr = (page, def) => tabOf(page, def) || def;
 function setTab(page, key) { S.ui.tabs = S.ui.tabs || {}; S.ui.tabs[page] = key; commit(); }
 function goTab(page, key) { S.ui.tabs = S.ui.tabs || {}; S.ui.tabs[page] = key; go(page); }
 
-const pageHead = (title, desc = '') => `<header class="page-head"><h1>${title}</h1>${desc ? `<p>${desc}</p>` : ''}</header>`;
+/** Page title; `add` (an act name) puts a single small + icon in the top corner. */
+const pageHead = (title, desc = '', add = '') =>
+  `<header class="page-head"><div><h1>${title}</h1>${desc ? `<p>${desc}</p>` : ''}</div>${add ? `<button class="add-ic" data-act="${add}" aria-label="افزودن">${icon('add')}</button>` : ''}</header>`;
 
 /** Text-only drawers (one open at a time): items [{ key, label, body() }]. Tap a header to open / close it. */
 const drawers = (items, current, act = 'tab') =>
@@ -2424,7 +2427,6 @@ function row({ ic, title, sub = '', trailing = '', act = '', attrs = '', cls = '
 }
 
 const check = (act, id, on) => `<button class="chk${on ? ' on' : ''}" data-act="${act}" data-id="${id}" aria-label="انجام شد">${icon('check')}</button>`;
-const fab = (act, label = 'افزودن') => `<button class="fab" data-act="${act}" aria-label="${label}">${icon('add')}</button>`;
 const empty = (text) => `<p class="empty">${text}</p>`;
 const section = (title, inner, extra = '') => `<section class="sec"><div class="sec-head"><h3>${title}</h3>${extra}</div>${inner}</section>`;
 
@@ -2453,7 +2455,6 @@ __exports.toggleDrawer = toggleDrawer;
 __exports.pills = pills;
 __exports.row = row;
 __exports.check = check;
-__exports.fab = fab;
 __exports.empty = empty;
 __exports.section = section;
 __exports.ring = ring;
@@ -2604,13 +2605,11 @@ __exports.saveAppt = saveAppt;
 __exports.removeAppt = removeAppt;
 };
 __defs["src/features/task-sheets.js"] = function (__exports) {
-/* One small sheet for tasks, plus habit actions. */
+/* One small sheet for tasks. */
 const { S, commit } = __r("src/core/store.js");
-const { uid } = __r("src/core/util.js");
 const { today } = __r("src/core/dates.js");
-const { fa, num } = __r("src/core/format.js");
 const { toast } = __r("src/ui/toast.js");
-const { form, menu } = __r("src/ui/sheet.js");
+const { form } = __r("src/ui/sheet.js");
 const T = __r("src/domain/tasks.js");
 
 function taskSheet(id, date = today()) {
@@ -2651,63 +2650,9 @@ function toggleTask(id) {
   if (next) toast(`تکرار بعدی: ${next.date}`);
 }
 
-/** Quick add from the input line; "!!" or "فوری" is accepted and ignored (kept for old muscle memory). */
-function quickAddTask(raw, date = today()) {
-  const title = raw.replace(/!!/g, '').trim();
-  if (!title) return false;
-  S.tasks.push(T.newTask({ title, date }));
-  commit();
-  return true;
-}
-
-/* ---------- habits ---------- */
-function habitSheet(id) {
-  const h = id ? T.findHabit(id) : null;
-  form({
-    title: h ? 'ویرایش عادت' : 'عادت جدید',
-    fields: [
-      { name: 'title', label: 'نام عادت', value: h ? h.title : '', placeholder: 'مثلاً نوشیدن آب' },
-      { name: 'icon', label: 'آیکون', type: 'chips', value: h ? h.icon : T.HABIT_ICONS[0], options: T.HABIT_ICONS.map((i) => ({ value: i, label: '', icon: i })) },
-      { name: 'target', label: 'هدف روزانه', type: 'number', value: h ? h.target : 1, row: 'a' },
-      { name: 'step', label: 'هر لمس', type: 'number', value: h ? h.step : 1, row: 'a' },
-    ],
-    extra: h ? [{
-      label: 'حذف', cls: 'danger',
-      run: () => { const i = S.habits.indexOf(h); S.habits.splice(i, 1); commit(); toast('عادت حذف شد', { label: 'واگرد', run: () => { S.habits.splice(i, 0, h); commit(); } }); },
-    }] : [],
-    onSubmit(v) {
-      const title = (v.title || '').trim();
-      if (!title) { toast('نام عادت را وارد کنید'); return false; }
-      const o = h || { id: uid(), log: {}, unit: '' };
-      Object.assign(o, { title, icon: v.icon, target: Math.max(1, num(v.target)), step: Math.max(1, num(v.step)) });
-      if (!h) S.habits.push(o);
-      commit();
-    },
-  });
-}
-
-/** Tap = +1 step; tapping a finished habit starts it over. */
-function tapHabit(h) {
-  const before = T.habitValue(h);
-  const finished = T.habitDone(h);
-  const step = h.step || 1;
-  const v = finished ? T.bumpHabit(h, -before) : T.bumpHabit(h, step);
-  commit();
-  toast(finished ? `${h.title}: از اول` : `${h.title}: ${fa(v)}/${fa(h.target)}${v >= h.target ? ' ✓' : ''}`,
-    { label: 'واگرد', run: () => { T.bumpHabit(h, before - v); commit(); } });
-}
-
-function habitMenu(h) {
-  menu(h.title, [{ icon: 'edit', label: 'ویرایش یا حذف', run: () => habitSheet(h.id) }]);
-}
-
 __exports.taskSheet = taskSheet;
 __exports.deleteTask = deleteTask;
 __exports.toggleTask = toggleTask;
-__exports.quickAddTask = quickAddTask;
-__exports.habitSheet = habitSheet;
-__exports.tapHabit = tapHabit;
-__exports.habitMenu = habitMenu;
 };
 __defs["src/pages/today.js"] = function (__exports) {
 let __default;
@@ -2850,18 +2795,8 @@ function shopSheet(id) {
   });
 }
 
-/** Add by typing a name on the quick line. */
-function quickShop(raw) {
-  const title = raw.trim();
-  if (!title) return false;
-  SH.addItem(title);
-  commit();
-  return true;
-}
-
 __exports.apptSheet = apptSheet;
 __exports.shopSheet = shopSheet;
-__exports.quickShop = quickShop;
 };
 __defs["src/pages/tasks.js"] = function (__exports) {
 let __default;
@@ -2872,10 +2807,10 @@ const { fa, esc } = __r("src/core/format.js");
 const { faDate, faDayNum, relDay } = __r("src/core/calendar.js");
 const { menu } = __r("src/ui/sheet.js");
 const { icon } = __r("src/ui/widgets.js");
-const { pageHead, drawers, toggleDrawer, row, check, fab, empty, section, ring, tabOf, openOr } = __r("src/ui/kit.js");
+const { pageHead, drawers, toggleDrawer, row, check, empty, section, ring, tabOf, openOr } = __r("src/ui/kit.js");
 const T = __r("src/domain/tasks.js");
 const A = __r("src/domain/appointments.js");
-const { taskSheet, toggleTask, quickAddTask } = __r("src/features/task-sheets.js");
+const { taskSheet, toggleTask } = __r("src/features/task-sheets.js");
 const { apptSheet } = __r("src/features/plan-sheets.js");
 
 const ORDER = ['calendar', 'appts', 'daily'];
@@ -2935,7 +2870,6 @@ function dailyTab() {
       <div class="grow center">${ring(pct, `${fa(done)}/${fa(list.length)}`, 'انجام شد', 72)}<b class="block">${dayLabel(day)}</b></div>
       <button class="icon-btn" data-act="step" data-d="1" aria-label="روز بعد">${icon('chevron_left')}</button>
     </section>
-    <form class="add-line" data-submit="quick-task">${icon('add_task', 'muted')}<input data-key="qt" name="qt" autocomplete="off" placeholder="کار تازه برای ${dayLabel(day)}…"><button class="btn-sm" type="submit">افزودن</button></form>
     <div class="list">${list.map(taskRow).join('') || empty('کاری برای این روز نیست')}</div>`;
 }
 
@@ -2946,7 +2880,7 @@ __default = {
   render() {
     const bodies = { calendar: calendarTab, appts: apptsTab, daily: dailyTab };
     const items = ORDER.map((key) => ({ key, label: LABELS[key], body: () => `<div class="stack">${bodies[key]()}</div>` }));
-    return `${pageHead('کارها', 'برنامه‌ی روز و هفته')}${drawers(items, tabOf('tasks', 'daily'))}${fab('add')}`;
+    return `${pageHead('کارها', 'برنامه‌ی روز و هفته', 'add')}${drawers(items, tabOf('tasks', 'daily'))}`;
   },
   act: {
     tab: toggleDrawer('tasks'),
@@ -2956,7 +2890,6 @@ __default = {
     'task-check': (el) => toggleTask(el.dataset.id),
     'task-edit': (el) => taskSheet(el.dataset.id),
     'appt-edit': (el) => apptSheet(el.dataset.id),
-    'quick-task'(el) { const input = el.querySelector('input'); if (quickAddTask(input.value, day)) input.value = ''; },
     add() {
       const tab = openOr('tasks', 'daily');
       if (tab === 'appts') apptSheet(null, day);
@@ -2979,7 +2912,7 @@ const { faDayMonth, faDate } = __r("src/core/calendar.js");
 const { toast } = __r("src/ui/toast.js");
 const { menu } = __r("src/ui/sheet.js");
 const { icon } = __r("src/ui/widgets.js");
-const { pageHead, drawers, toggleDrawer, row, fab, empty, section, ring, bar, bars, tabOf, openOr } = __r("src/ui/kit.js");
+const { pageHead, drawers, toggleDrawer, row, empty, section, ring, bar, bars, tabOf, openOr } = __r("src/ui/kit.js");
 const G = __r("src/domain/gym.js");
 const { exerciseSheet, finishOrReopen, mealSheet, goalSheet, planSheet, foodPhoto, toggleTimer } = __r("src/features/gym-sheets.js");
 
@@ -3072,7 +3005,7 @@ __default = {
   render() {
     const bodies = { program: programTab, calories: caloriesTab, photo: photoTab };
     const items = ORDER.map((key) => ({ key, label: LABELS[key], body: () => `<div class="stack">${bodies[key]()}</div>` }));
-    return `${pageHead('ورزش', 'تمرین، کالری و غذا')}${drawers(items, tabOf('gym', 'program'))}${fab('add')}`;
+    return `${pageHead('ورزش', 'تمرین، کالری و غذا', 'add')}${drawers(items, tabOf('gym', 'program'))}`;
   },
   act: {
     tab: toggleDrawer('gym'),
@@ -3603,7 +3536,7 @@ const { faDayMonth, fullDate, relDay, monthLabel, currentMonthKey } = __r("src/c
 const { toast } = __r("src/ui/toast.js");
 const { menu } = __r("src/ui/sheet.js");
 const { icon } = __r("src/ui/widgets.js");
-const { pageHead, drawers, toggleDrawer, pills, row, fab, empty, section, bar, bars, tabOf, openOr, setTab } = __r("src/ui/kit.js");
+const { pageHead, drawers, toggleDrawer, pills, row, empty, section, bar, bars, tabOf, openOr, setTab } = __r("src/ui/kit.js");
 const fin = __r("src/domain/finance.js");
 const { txSheet, historySheet, payLoan, loanSheet, loanMenu, budgetSheet, catBudgetSheet, addCatBudget, exportCsv } = __r("src/features/finance-sheets.js");
 
@@ -3701,7 +3634,7 @@ __default = {
     const bodies = { tx: txTab, loans: loansTab, budget: budgetTab, report: reportTab };
     const items = ORDER.map((key) => ({ key, label: LABELS[key], body: () => `<div class="stack">${bodies[key]()}</div>` }));
     const open = tabOf('money', 'tx');
-    return `${pageHead('مالی', 'موجودی، خرج و قسط‌ها')}${summary()}${drawers(items, open)}${open === 'report' ? '' : fab('add')}`;
+    return `${pageHead('مالی', 'موجودی، خرج و قسط‌ها', open === 'report' ? '' : 'add')}${summary()}${drawers(items, open)}`;
   },
   act: {
     tab: toggleDrawer('money'),
@@ -3733,14 +3666,14 @@ __exports.default = __default;
 };
 __defs["src/pages/shop.js"] = function (__exports) {
 let __default;
-/* Weekly shopping: a two-column grid of names, each with a small tick. */
+/* Weekly shopping: a two-column grid of names, each with a small tick. "+" in the corner adds one. */
 const { commit } = __r("src/core/store.js");
 const { fa, esc } = __r("src/core/format.js");
 const { toast } = __r("src/ui/toast.js");
 const { icon } = __r("src/ui/widgets.js");
 const { pageHead, empty } = __r("src/ui/kit.js");
 const SH = __r("src/domain/shopping.js");
-const { shopSheet, quickShop } = __r("src/features/plan-sheets.js");
+const { shopSheet } = __r("src/features/plan-sheets.js");
 
 __default = {
   id: 'shop',
@@ -3748,13 +3681,12 @@ __default = {
   render() {
     const items = SH.ordered();
     const bought = SH.boughtCount();
-    return `${pageHead('خرید هفتگی', `${fa(SH.remaining())} مورد باقی‌مانده`)}
-      <form class="add-line" data-submit="add">${icon('add_shopping_cart', 'muted')}<input data-key="qs" name="qs" autocomplete="off" placeholder="مثلاً ماست…"><button class="btn-sm" type="submit">افزودن</button></form>
+    return `${pageHead('خرید هفتگی', `${fa(SH.remaining())} مورد باقی‌مانده`, 'add')}
       ${items.length ? `<div class="shop-grid">${items.map((i) => `<button class="shop-item${i.done ? ' done' : ''}" data-act="toggle" data-hold="item" data-id="${i.id}"><span class="truncate">${esc(i.title)}</span><i class="tick">${icon('check')}</i></button>`).join('')}</div>
         <div class="row-between"><small>نگه‌داشتن روی یک مورد: ویرایش یا حذف</small>${bought ? `<button class="link" data-act="clear">پاک کردن خریده‌شده‌ها (${fa(bought)})</button>` : ''}</div>` : empty('فهرست خرید خالی است')}`;
   },
   act: {
-    add(el) { const input = el.querySelector('input'); if (quickShop(input.value)) input.value = ''; },
+    add: () => shopSheet(),
     toggle(el) { const i = SH.findItem(el.dataset.id); if (i) { i.done = !i.done; commit(); } },
     clear() { const n = SH.clearBought(); commit(); toast(`${fa(n)} مورد پاک شد`); },
   },

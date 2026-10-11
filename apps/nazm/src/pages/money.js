@@ -6,7 +6,7 @@ import { faDayMonth, fullDate, relDay, monthLabel, currentMonthKey } from '../co
 import { toast } from '../ui/toast.js';
 import { menu } from '../ui/sheet.js';
 import { icon } from '../ui/widgets.js';
-import { pageHead, drawers, toggleDrawer, pills, row, fab, empty, section, bar, bars, tabOf, openOr, setTab } from '../ui/kit.js';
+import { pageHead, drawers, toggleDrawer, pills, row, empty, section, bar, bars, tabOf, openOr, setTab } from '../ui/kit.js';
 import * as fin from '../domain/finance.js';
 import { txSheet, historySheet, payLoan, loanSheet, loanMenu, budgetSheet, catBudgetSheet, addCatBudget, exportCsv } from '../features/finance-sheets.js';
 
@@ -104,7 +104,7 @@ export default {
     const bodies = { tx: txTab, loans: loansTab, budget: budgetTab, report: reportTab };
     const items = ORDER.map((key) => ({ key, label: LABELS[key], body: () => `<div class="stack">${bodies[key]()}</div>` }));
     const open = tabOf('money', 'tx');
-    return `${pageHead('مالی', 'موجودی، خرج و قسط‌ها')}${summary()}${drawers(items, open)}${open === 'report' ? '' : fab('add')}`;
+    return `${pageHead('مالی', 'موجودی، خرج و قسط‌ها', open === 'report' ? '' : 'add')}${summary()}${drawers(items, open)}`;
   },
   act: {
     tab: toggleDrawer('money'),

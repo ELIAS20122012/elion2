@@ -46,12 +46,3 @@ export function shopSheet(id) {
     },
   });
 }
-
-/** Add by typing a name on the quick line. */
-export function quickShop(raw) {
-  const title = raw.trim();
-  if (!title) return false;
-  SH.addItem(title);
-  commit();
-  return true;
-}

@@ -6,7 +6,7 @@ import { faDayMonth, faDate } from '../core/calendar.js';
 import { toast } from '../ui/toast.js';
 import { menu } from '../ui/sheet.js';
 import { icon } from '../ui/widgets.js';
-import { pageHead, drawers, toggleDrawer, row, fab, empty, section, ring, bar, bars, tabOf, openOr } from '../ui/kit.js';
+import { pageHead, drawers, toggleDrawer, row, empty, section, ring, bar, bars, tabOf, openOr } from '../ui/kit.js';
 import * as G from '../domain/gym.js';
 import { exerciseSheet, finishOrReopen, mealSheet, goalSheet, planSheet, foodPhoto, toggleTimer } from '../features/gym-sheets.js';
 
@@ -99,7 +99,7 @@ export default {
   render() {
     const bodies = { program: programTab, calories: caloriesTab, photo: photoTab };
     const items = ORDER.map((key) => ({ key, label: LABELS[key], body: () => `<div class="stack">${bodies[key]()}</div>` }));
-    return `${pageHead('ورزش', 'تمرین، کالری و غذا')}${drawers(items, tabOf('gym', 'program'))}${fab('add')}`;
+    return `${pageHead('ورزش', 'تمرین، کالری و غذا', 'add')}${drawers(items, tabOf('gym', 'program'))}`;
   },
   act: {
     tab: toggleDrawer('gym'),

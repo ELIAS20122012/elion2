@@ -63,9 +63,6 @@
 .btn-primary { background: var(--primary); color: var(--on-primary); }
 .btn-ghost { background: var(--card); color: var(--primary); box-shadow: inset 0 0 0 1.5px var(--primary); }
 .btns { display: flex; gap: 10px; }
-.fab { position: fixed; bottom: 88px; inset-inline-end: max(20px, calc(50% - 215px + 20px)); z-index: 25; width: 56px; height: 56px; border-radius: 50%; display: grid; place-items: center; background: var(--accent); color: #fff; box-shadow: 0 10px 22px rgba(217, 128, 95, .45); }
-.fab .material-symbols-outlined { font-size: 30px; }
-.fab:active { transform: scale(.94); }
 
 /* ---- forms on pages ---- */
 .add-line { display: flex; align-items: center; gap: 10px; padding: 6px 8px 6px 6px; padding-inline-start: 16px; background: var(--card); border-radius: 999px; box-shadow: var(--shadow-sm); }
@@ -222,8 +219,6 @@ textarea.input { min-height: 110px; resize: vertical; line-height: 1.8; }
 .icon-btn { width: 32px; height: 32px; }
 .icon-btn .material-symbols-outlined { font-size: 20px; }
 .icon-btn.sm { width: 30px; height: 30px; }
-.fab { width: 48px; height: 48px; bottom: 82px; }
-.fab .material-symbols-outlined { font-size: 26px; }
 .drawer-head { padding: 12px 2px; font-size: 14px; }
 .drawer-body { padding-bottom: 14px; }
 .stack { gap: 12px; }
@@ -283,3 +278,9 @@ textarea.input { min-height: 72px; line-height: 1.6; }
 .shop-item.done span:first-child { text-decoration: line-through; }
 .shop-item.done .tick { background: var(--primary); border-color: var(--primary); color: var(--on-primary); }
 #nav a small { font-size: 10px; }
+
+/* ---- single "+" icon in the page corner (replaces add lines and the floating button) ---- */
+.page-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.add-ic { width: 34px; height: 34px; flex: none; border-radius: 50%; display: grid; place-items: center; background: var(--accent); color: #fff; box-shadow: 0 4px 10px rgba(217, 128, 95, .35); }
+.add-ic .material-symbols-outlined { font-size: 22px; }
+.add-ic:active { transform: scale(.92); }

@@ -10,7 +10,9 @@ export const openOr = (page, def) => tabOf(page, def) || def;
 export function setTab(page, key) { S.ui.tabs = S.ui.tabs || {}; S.ui.tabs[page] = key; commit(); }
 export function goTab(page, key) { S.ui.tabs = S.ui.tabs || {}; S.ui.tabs[page] = key; go(page); }
 
-export const pageHead = (title, desc = '') => `<header class="page-head"><h1>${title}</h1>${desc ? `<p>${desc}</p>` : ''}</header>`;
+/** Page title; `add` (an act name) puts a single small + icon in the top corner. */
+export const pageHead = (title, desc = '', add = '') =>
+  `<header class="page-head"><div><h1>${title}</h1>${desc ? `<p>${desc}</p>` : ''}</div>${add ? `<button class="add-ic" data-act="${add}" aria-label="افزودن">${icon('add')}</button>` : ''}</header>`;
 
 /** Text-only drawers (one open at a time): items [{ key, label, body() }]. Tap a header to open / close it. */
 export const drawers = (items, current, act = 'tab') =>
@@ -36,7 +38,6 @@ export function row({ ic, title, sub = '', trailing = '', act = '', attrs = '', 
 }
 
 export const check = (act, id, on) => `<button class="chk${on ? ' on' : ''}" data-act="${act}" data-id="${id}" aria-label="انجام شد">${icon('check')}</button>`;
-export const fab = (act, label = 'افزودن') => `<button class="fab" data-act="${act}" aria-label="${label}">${icon('add')}</button>`;
 export const empty = (text) => `<p class="empty">${text}</p>`;
 export const section = (title, inner, extra = '') => `<section class="sec"><div class="sec-head"><h3>${title}</h3>${extra}</div>${inner}</section>`;
 
