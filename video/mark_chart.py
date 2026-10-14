@@ -30,13 +30,23 @@ def shape(t):
 
 for lv in spec.get("levels", [])[:8]:
     y = int(max(0, min(H - 1, float(lv["y"]))))
+    y2 = int(max(0, min(H - 1, float(lv.get("y2", y)))))
+    y, y2 = sorted((y, y2))
+    x1 = int(max(0, min(W - 1, float(lv.get("x1", 0)))))
+    x2 = int(max(0, min(W - 1, float(lv.get("x2", W - 1)))))
+    x1, x2 = sorted((x1, x2))
     c = COL.get(lv.get("type", "other"), COL["other"])
-    d.line([(0, y), (W, y)], fill=c + (230,), width=max(2, H // 300))
+    if y2 > y:
+        d.rectangle((x1, y, x2, y2), fill=c + (45,), outline=c + (220,), width=max(2, H // 300))
+    else:
+        d.line([(x1, y), (x2, y)], fill=c + (230,), width=max(2, H // 300))
     label = shape(str(lv.get("label", ""))[:40])
     kw = {"direction": "rtl"} if RAQM else {}
     tw = d.textlength(label, font=font, **kw) if label else 0
-    x = W - tw - 16
-    d.rounded_rectangle((x - 8, y - size - 8, W - 6, y - 2), 6, fill=(15, 23, 42, 200))
-    d.text((x, y - size - 6), label, font=font, fill=c + (255,), **kw)
+    x = max(8, x2 - tw - 10)
+    label_y = max(2, min(H - size - 12, y - size - 8))
+    if label:
+        d.rounded_rectangle((x - 6, label_y, min(W - 1, x + tw + 6), label_y + size + 6), 6, fill=(15, 23, 42, 220))
+        d.text((x, label_y + 2), label, font=font, fill=c + (255,), **kw)
 Image.alpha_composite(img.convert("RGBA"), layer).convert("RGB").save(out, quality=92)
 print(out)

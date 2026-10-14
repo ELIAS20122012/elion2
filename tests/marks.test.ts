@@ -20,3 +20,13 @@ test("imageSize reads PNG and JPEG headers", { skip: process.platform === "win32
   assert.deepEqual(imageSize(path.join(dir, "a.png")), { w: 320, h: 200 });
   assert.deepEqual(imageSize(path.join(dir, "a.jpg")), { w: 320, h: 200 });
 });
+
+test("zones preserve their bounds and reject malformed model output", () => {
+  const r = extractMarks('Analysis\nMARKS: {"zones":[{"y":80,"y2":110,"x1":20,"x2":300,"label":"Support","type":"sup"},null,{"y":false},{"y":20,"y2":"bad","label":42,"type":"unknown"}]}');
+  assert.equal(r.text, "Analysis");
+  assert.deepEqual(r.levels, [
+    { y: 80, y2: 110, x1: 20, x2: 300, label: "Support", type: "sup" },
+    { y: 20, label: "" },
+  ]);
+  assert.deepEqual(extractMarks('MARKS: {"levels":{},"zones":null}').levels, []);
+});

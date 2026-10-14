@@ -3,6 +3,7 @@
 Legend: [x] done · [ ] open · (P) postponed by Elias — only start when he asks.
 
 ## Done
+- [x] Telegram chart screenshots: shaded support/resistance and liquidity zones, bounded to the candle plot, with labeled photo output.
 - [x] Kernel: tasks, retries, verification, approvals/permissions, scheduler, kv, event log
 - [x] Providers: Claude Code, Codex (ChatGPT), Gemini (CLI / API / Vertex), Ollama, "auto" fallback chain
 - [x] Telegram bot: commands, buttons, approvals, voice messages (faster-whisper), spoken replies, files/photos

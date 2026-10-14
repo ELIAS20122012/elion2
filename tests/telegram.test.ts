@@ -203,3 +203,36 @@ test("photo/document → saved to workspace inbox → AI task told to read it", 
   assert.match(t.prompt, /inbox\/\d+-chart_gold\.jpg/);
   assert.match(t.prompt, /تحلیل کن/);
 });
+
+test("chart zones are rendered and returned as a photo when analysis finishes", async () => {
+  const fs = await import("node:fs");
+  const os = await import("node:os");
+  const path = await import("node:path");
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "elias-zones-"));
+  const source = path.join(dir, "chart.png");
+  const output = path.join(dir, "marked.jpg");
+  const png = Buffer.alloc(32);
+  png.writeUInt32BE(0x89504e47, 0); png.writeUInt32BE(640, 16); png.writeUInt32BE(480, 20);
+  fs.writeFileSync(source, png);
+  const k = new Kernel({ dbPath: ":memory:", providers: [new EchoProvider()], defaultProvider: "echo" });
+  k.setKv("telegram.owner_chat_id", "42");
+  const sent: any[] = [];
+  let drawn: any[] = [];
+  const tg = new TelegramInterface(k, async (m, p) => { sent.push({ m, ...p }); return {}; }, null, {
+    inbox: dir, download: async () => png,
+    mark: async (_image, levels) => { drawn = levels; fs.writeFileSync(output, "rendered"); return output; },
+  });
+  const task = k.createTask({ title: "chart", source: "telegram", prompt: 'Analysis\nMARKS: {"zones":[{"y":50,"y2":80,"label":"Support","type":"sup"}]}' });
+  k.setKv(`telegram.marks.${task.id}`, source);
+  k.addEventSink((e) => tg.notify(e));
+  try {
+    await k.processNext();
+    await tg.flush();
+    await new Promise((r) => setTimeout(r, 20));
+    assert.equal(drawn[0].y2, 80);
+    assert.ok(sent.some((p) => p.m === "sendPhoto" && p.__file.path === output));
+    assert.ok(sent.some((p) => p.m === "sendMessage" && p.text.includes("Analysis") && !p.text.includes("MARKS:")));
+    assert.equal(k.getKv(`telegram.marks.${task.id}`), null);
+    assert.equal(fs.existsSync(output), false);
+  } finally { k.close(); fs.rmSync(dir, { recursive: true, force: true }); }
+});

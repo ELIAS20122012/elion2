@@ -6,6 +6,10 @@ import { execFile } from "node:child_process";
 
 export interface Level {
   y: number;
+  /** Optional lower pixel row: draws a shaded zone instead of a single line. */
+  y2?: number;
+  x1?: number;
+  x2?: number;
   label: string;
   type?: "res" | "sup" | "other";
 }
@@ -36,8 +40,17 @@ export function extractMarks(result: string): { text: string; levels: Level[] } 
       const m = line.trim().replace(/^`+|`+$/g, "").match(/^MARKS:\s*(\{.*\})\s*$/);
       if (!m) return true;
       try {
-        const j = JSON.parse(m[1]!) as { levels?: Level[] };
-        levels = (j.levels ?? []).filter((l) => Number.isFinite(Number(l.y))).slice(0, 8);
+        const j = JSON.parse(m[1]!) as { levels?: unknown; zones?: unknown };
+        const entries = [...(Array.isArray(j.levels) ? j.levels : []), ...(Array.isArray(j.zones) ? j.zones : [])];
+        levels = entries.filter((l) => l && typeof l === "object" && typeof l.y === "number" && Number.isFinite(l.y))
+          .slice(0, 8).map((l) => ({
+            y: l.y,
+            label: typeof l.label === "string" ? l.label.slice(0, 80) : "",
+            ...(["res", "sup", "other"].includes(l.type) ? { type: l.type } : {}),
+            ...(typeof l.y2 === "number" && Number.isFinite(l.y2) ? { y2: l.y2 } : {}),
+            ...(typeof l.x1 === "number" && Number.isFinite(l.x1) ? { x1: l.x1 } : {}),
+            ...(typeof l.x2 === "number" && Number.isFinite(l.x2) ? { x2: l.x2 } : {}),
+          }));
       } catch {
         /* ignore malformed marks */
       }

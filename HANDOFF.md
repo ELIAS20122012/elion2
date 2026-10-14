@@ -5,6 +5,12 @@ Format: date · agent · what was done · state (finished / half-done + how to c
 
 ---
 
+## 2026-10-14 - Codex chart zones
+- Extended marks.ts and mark_chart.py with shaded y/y2 zones and x1/x2 chart bounds, retaining horizontal-line compatibility.
+- Telegram image-analysis prompt requests 2-6 evidence-backed support/resistance/supply/demand/liquidity zones, Persian labels, original-image coordinates and no invented prices on illegible charts.
+- Tests: marks/Telegram 15 passed, 1 platform skip; typecheck passed; actual Pillow renderer executed and output visually checked.
+- Existing telegram.ts working changes were preserved; this file also contains the new zone prompt. Restart requested through data/restart.flag. Live AI coordinate accuracy/Telegram delivery still requires an actual chart from the owner.
+
 ## 2026-10-14 - Codex connection diagnosis
 - Production log shows daemon stopped cleanly at 16:10:25; this also stops Telegram and the shared Cloudflare tunnel.
 - Trading launcher pointed at a nonexistent LOCALAPPDATA cloudflared installation. Updated ../trading-robot/run-tunnel.bat to prefer the existing Elias OS shared tunnel supervisor; start-services.ps1 detects that binary and launches runners hidden.
