@@ -5,6 +5,14 @@ Format: date · agent · what was done · state (finished / half-done + how to c
 
 ---
 
+## 2026-10-14 - Codex connection diagnosis
+- Production log shows daemon stopped cleanly at 16:10:25; this also stops Telegram and the shared Cloudflare tunnel.
+- Trading launcher pointed at a nonexistent LOCALAPPDATA cloudflared installation. Updated ../trading-robot/run-tunnel.bat to prefer the existing Elias OS shared tunnel supervisor; start-services.ps1 detects that binary and launches runners hidden.
+- A sandbox-launched daemon served port 7420, but outbound sockets and microphone access were denied. Stopped that diagnostic daemon cleanly; do not restart production from an offline sandbox.
+- Existing unrelated working changes in telegram.ts, mt4.ts, notebook.ts and MT4 EA were preserved.
+- Typecheck passed. Full tests: 136 passed, 8 skipped, 1 failed (voice worker test cannot spawn python3: EACCES). Production remote connectivity is not verified.
+- Remaining action: user runs ../trading-robot/start-live.bat under their Windows account, then verify Telegram polling and Cloudflare registered connections. PC-agent logs also show Claude weekly quota exhausted; this is separate from connectivity.
+
 ## 2026-10-11 (3) · Claude (Cowork)
 - Notebook (src/plugins/notebook.ts): every text Elias forwards in Telegram (or "#یادداشت …", "#خام …" = no AI) is
   saved as one Markdown note in C:\Elion\notebook (plugins.options.notebook.dir), local git keeps every version.
