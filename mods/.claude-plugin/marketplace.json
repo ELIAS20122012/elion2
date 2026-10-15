@@ -1,0 +1,7 @@
+{
+  "name": "elias-mods",
+  "owner": { "name": "Elias" },
+  "plugins": [
+    { "name": "elias-guard", "source": "./elias-guard", "description": "Blocks agents from secret files; status line reminds to run tests after code edits" }
+  ]
+}

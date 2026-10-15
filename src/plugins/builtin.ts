@@ -24,6 +24,7 @@ import { researchPlugin } from "./research.ts";
 import { teamPlugin } from "./team.ts";
 import { websitePlugin } from "./website.ts";
 import { pcPlugin } from "./pc.ts";
+import { graphifyPlugin } from "./graphify.ts";
 
 export const corePlugin: Plugin = {
   name: "core",
@@ -81,4 +82,4 @@ export const skillsPlugin: Plugin = {
   },
 };
 
-export const BUILTIN_PLUGINS = [corePlugin, memoryPlugin, googlePlugin, briefingPlugin, tradingPlugin, youtubePlugin, videoPlugin, aiVideoPlugin, remindersPlugin, appointmentsPlugin, eveningPlugin, maintenancePlugin, vaultPlugin, notebookPlugin, mt4Plugin, healthPlugin, researchPlugin, teamPlugin, websitePlugin, pcPlugin(), remotePlugin(), agentPlugin(), labPlugin, skillsPlugin];
+export const BUILTIN_PLUGINS = [corePlugin, memoryPlugin, googlePlugin, briefingPlugin, tradingPlugin, youtubePlugin, videoPlugin, aiVideoPlugin, remindersPlugin, appointmentsPlugin, eveningPlugin, maintenancePlugin, vaultPlugin, notebookPlugin, mt4Plugin, healthPlugin, researchPlugin, teamPlugin, websitePlugin, pcPlugin(), remotePlugin(), agentPlugin(), labPlugin, graphifyPlugin, skillsPlugin];

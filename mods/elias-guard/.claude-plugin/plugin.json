@@ -1,0 +1,1 @@
+{ "name": "elias-guard", "version": "0.1.0", "description": "Elias OS safety rules for coding agents: never touch secrets, remind tests after code edits" }

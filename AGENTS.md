@@ -61,6 +61,12 @@ Start with using-agent-skills if unsure which one applies.
 6. **One agent at a time** on this folder. If `HANDOFF.md` says another agent is mid-task, finish/rollback that first.
 7. Don't touch `data/` (live DB, venvs, models) except through the code.
 
+## Save tokens: use the code graph first
+`graphify-out/GRAPH_REPORT.md` is a map of the whole code base (modules, god nodes, communities), rebuilt nightly.
+Before opening files, find the right ones with `data\graphify-venv\Scripts\graphify.exe query "<question>" --budget 800`
+(or `explain "<Symbol>"`, `affected "<Symbol>"`), then read only those files/lines. After your change:
+`data\graphify-venv\Scripts\graphify.exe update .` (local, free, no LLM). Never read graphify-out/graph.json raw.
+
 ## Workflow for every change
 1. Read `HANDOFF.md`, pick/confirm the task in `ROADMAP.md`.
 2. Make the change following existing patterns (look at a similar plugin first).

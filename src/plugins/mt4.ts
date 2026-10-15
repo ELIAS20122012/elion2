@@ -6,6 +6,7 @@ import type { Kernel } from "../kernel/kernel.ts";
 import type { ExecutionProvider } from "../providers/types.ts";
 import type { Plugin } from "./types.ts";
 import { execFile } from "node:child_process";
+import { fileMark } from "./remote.ts";
 
 /** Finds MT4 terminals that have EliasBridge.mq4 but no up-to-date .ex4 and compiles it with that terminal's MetaEditor. */
 export function compileBridges(k: Kernel, termRoot = path.join(process.env.APPDATA ?? "", "MetaQuotes", "Terminal")): void {
@@ -60,6 +61,7 @@ export interface Mt4Account {
   today_closed_pl: number;
   today_closed_count: number;
   server_time: string;
+  chart_symbol?: string;
   open: Mt4Order[];
 }
 
@@ -151,11 +153,34 @@ export function parseDraw(args: string): string[] | null {
   return lines.length ? lines : null;
 }
 
+export function findChartImage(dir: string, termRoot = path.join(process.env.APPDATA ?? "", "MetaQuotes", "Terminal")): string | null {
+  const candidates: Array<{ p: string; mtime: number }> = [];
+  const commonImg = path.join(dir, "chart.png");
+  if (fs.existsSync(commonImg)) {
+    try { candidates.push({ p: commonImg, mtime: fs.statSync(commonImg).mtimeMs }); } catch {}
+  }
+  if (fs.existsSync(termRoot)) {
+    try {
+      for (const id of fs.readdirSync(termRoot)) {
+        if (/^(common|community|help)$/i.test(id)) continue;
+        const localImg = path.join(termRoot, id, "MQL4", "Files", "chart.png");
+        if (fs.existsSync(localImg)) {
+          try { candidates.push({ p: localImg, mtime: fs.statSync(localImg).mtimeMs }); } catch {}
+        }
+      }
+    } catch {}
+  }
+  if (!candidates.length) return null;
+  candidates.sort((a, b) => b.mtime - a.mtime);
+  return candidates[0]!.p;
+}
+
 export const mt4Plugin: Plugin = {
   name: "mt4",
-  description: "MT4 read-only: /account /trades /draw, risk alerts, daily P&L",
+  description: "MT4 read-only: /account /trades /draw /chart, risk alerts, daily P&L",
   setup({ kernel, home, options }) {
     const dir = String(options.dir ?? defaultDir());
+    const termRoot = path.join(process.env.APPDATA ?? "", "MetaQuotes", "Terminal");
     const rules: RiskRules = {
       maxRiskPct: Number(options.maxRiskPct ?? 1),
       maxDailyLossPct: Number(options.maxDailyLossPct ?? 3),
@@ -229,6 +254,26 @@ export const mt4Plugin: Plugin = {
       run() {
         const a = account();
         return a && feedAgeMs(dir) < staleMs ? tradesToday(history(), a.server_time.slice(0, 10)) : offline();
+      },
+    });
+    kernel.registerCommand({
+      name: "chart",
+      description: "دیدن چارت زنده متاتریدر (طلا XAUUSD)",
+      plugin: "mt4",
+      run() {
+        const shot = findChartImage(dir, termRoot);
+        if (!shot) {
+          return (
+            "📊 چارت متاتریدر هنوز در دسترس نیست.\n" +
+            "۱. مطمئن شو متاتریدر باز است.\n" +
+            "۲. اکسپرت EliasBridge را روی چارت طلا بگذار.\n" +
+            "💡 همچنین می‌توانی از دستور /screen برای دیدن کل صفحه مانیتور استفاده کنی."
+          );
+        }
+        const a = account();
+        const sym = a?.chart_symbol ? a.chart_symbol : "XAUUSD";
+        const accInfo = a ? ` · ${a.company} #${a.login}` : "";
+        return `📈 چارت زنده ${sym}${accInfo}\n${fileMark("PHOTO", shot)}`;
       },
     });
     kernel.registerCommand({

@@ -29,7 +29,8 @@ Legend: [x] done · [ ] open · (P) postponed by Elias — only start when he as
 - [x] Antigravity CLI (agy) provider: free Gemini via Google login; in the auto chain after codex, first choice for /team gemini
 
 ## Open / next
-- [ ] Verify site/Telegram recovery under the owner's Windows account after 2026-10-14 launcher repair (offline sandbox cannot verify external connectivity).
+- [x] Telegram + Cloudflare tunnel recovery verified from logs 2026-10-15
+- [ ] Verify trade dashboard origin (:5173) and EA events (:8000) behind Cloudflare Access login
 - [ ] Instagram publishing (after Elias sets up the channel) — with approval
 - [ ] Mobile PWA for the panel
 - [ ] Personal finance tracker

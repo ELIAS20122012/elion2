@@ -15,13 +15,16 @@ string DIR = "EliasOS\\";
 int OnInit()
   {
    EventSetTimer(MathMax(1, UpdateSeconds));
+   CaptureChart();
    Export();
    return(INIT_SUCCEEDED);
   }
 
 void OnDeinit(const int reason) { EventKillTimer(); }
-void OnTimer() { Export(); Draw(); }
-void OnTick()  { Export(); Draw(); }  // also export on every price tick for low-latency feeds
+void OnTimer() { CaptureChart(); Export(); Draw(); }
+// Export and drawing use the timer. Do not write files on every tick.
+// This prevents repeated file access and reduces contention with Elias OS.
+void OnTick()  { }
 
 string Esc(string s)
   {
@@ -69,6 +72,22 @@ void WriteFile(string name, string content)
    FileWriteString(h, content);
    FileClose(h);
    FileMove(DIR + name + ".tmp", FILE_COMMON, DIR + name, FILE_COMMON | FILE_REWRITE);
+  }
+
+void CaptureChart()
+  {
+   if(FileIsExist("chart.png"))
+     {
+      FileCopy("chart.png", 0, DIR + "chart.png", FILE_COMMON | FILE_REWRITE);
+      FileCopy("chart.png", 0, DIR + "chart_" + Symbol() + ".png", FILE_COMMON | FILE_REWRITE);
+     }
+   ChartScreenShot(0, "chart.png", 1280, 720, ALIGN_RIGHT);
+   string cinfo = "{\"symbol\":\"" + Esc(Symbol()) + "\""
+                + ",\"period\":" + IntegerToString(Period())
+                + ",\"bid\":" + D(Bid, Digits)
+                + ",\"ask\":" + D(Ask, Digits)
+                + ",\"time\":\"" + TimeToString(TimeCurrent(), TIME_DATE | TIME_SECONDS) + "\"}";
+   WriteFile("chart.json", cinfo);
   }
 
 void Export()

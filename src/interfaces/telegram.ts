@@ -405,6 +405,13 @@ export class TelegramInterface {
             if (!reply.startsWith("استفاده")) return this.send(reply);
           }
         }
+        {
+          // Natural chart requests ("چارت طلا رو ببین", "چارت طلا", "چارت متاتریدر", "عکس چارت") → /chart
+          const isChartReq = /^\s*(?:چارت|نمودار|chart)\s*(?:طلا|gold|xauusd|متاتریدر|mt4)?(?:\s*(?:رو|را)?\s*(?:ببین|نشون\s*بده|بفرست|بده))?\s*[.!?؟]?$/i.test(text.trim()) ||
+            /^\s*(?:ببین|نشون\s*بده|بفرست|دیدن)\s*(?:چارت|نمودار)\s*(?:طلا|gold|xauusd)?\s*[.!?؟]?$/i.test(text.trim());
+          const chartCmd = isChartReq && this.kernel.getCommand("chart");
+          if (isChartReq && chartCmd) return this.sendResult(await chartCmd.run(""));
+        }
         return this.createTaskFromChat(text);
     }
   }
@@ -471,8 +478,10 @@ export class TelegramInterface {
     const dims = this.files.mark && /\.(jpe?g|png)$/i.test(name) ? imageSize(abs) : null;
     const markHint = dims
       ? `\nIf this is a price chart: after your answer add ONE last line exactly like
-MARKS: {"levels":[{"y":412,"label":"مقاومت 4188","type":"res"},{"y":630,"label":"حمایت 4122","type":"sup"}]}
-— y = the pixel row of that price level ON THIS IMAGE (${dims.w}×${dims.h}px, y=0 is the top; read it from the price axis), max 6 levels, type res|sup|other. Omit the line for non-charts.`
+MARKS: {"zones":[{"y":412,"y2":435,"x1":80,"x2":900,"label":"مقاومت / عرضه","type":"res"},{"y":610,"y2":630,"x1":80,"x2":900,"label":"حمایت / تقاضا","type":"sup"}]}
+- Analyze visible price action: repeated swing reactions, support/resistance, supply/demand and liquidity only where supported by the image. Choose 2-6 important zones, not every small swing.
+- Coordinates must refer to THIS ORIGINAL IMAGE (${dims.w}×${dims.h}px): y=0 at top; y and y2 bound the price range, x1/x2 stay within the candle plot (exclude toolbars, indicators and the price axis). The example coordinates are placeholders; never copy them.
+- Use type res (red), sup (green), other (yellow for liquidity). Label in Persian with a short reason; add prices only when the axis is legible. Single levels can use levels with y and no y2. If the chart is unreadable, explain instead of inventing coordinates. Omit MARKS for non-charts.`
       : "";
     const mem = this.kernel.listContextSources().some((c) => c.name === "memory:notes");
     const t = this.kernel.createTask({

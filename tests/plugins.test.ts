@@ -38,7 +38,7 @@ test("broken skill files are reported, not fatal", () => {
 test("built-in plugins register sources + brief skill; disabled ones are skipped", async () => {
   const k = mk();
   loadBuiltinPlugins(k, BUILTIN_PLUGINS, tmp(), { disabled: ["google"] });
-  assert.deepEqual(loadedPlugins(k).map((p) => p.name), ["core", "memory", "briefing", "trading", "youtube", "video", "aivideo", "reminders", "appointments", "evening", "maintenance", "vault", "notebook", "mt4", "health", "research", "team", "website", "pc", "remote", "agent", "lab", "skills"]);
+  assert.deepEqual(loadedPlugins(k).map((p) => p.name), ["core", "memory", "briefing", "trading", "youtube", "video", "aivideo", "reminders", "appointments", "evening", "maintenance", "vault", "notebook", "mt4", "health", "research", "team", "website", "pc", "remote", "agent", "lab", "graphify", "skills"]);
   assert.ok(k.listContextSources().some((c) => c.name === "tasks:open"));
   assert.ok(!k.listContextSources().some((c) => c.name === "gmail:recent"));
   const t = k.runSkill("brief", "", "cli");
@@ -151,4 +151,11 @@ test("claude skills: zip + folder import, unchanged zips skipped, '_' ignored", 
   assert.deepEqual(listClaudeSkills(ws), ["folder", "zipped"]);
   const r2 = importClaudeSkills(src, ws);
   assert.equal(r2.skipped, 1);
+});
+
+test("graphify: projects = Elias OS + sibling folders", async () => {
+  const { graphProjects } = await import("../src/plugins/graphify.ts");
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "elion-"));
+  for (const d of ["elias-os", "trading-robot", ".hidden"]) fs.mkdirSync(path.join(root, d));
+  assert.deepEqual(graphProjects(path.join(root, "elias-os")).map((p) => path.basename(p)).sort(), ["elias-os", "trading-robot"]);
 });

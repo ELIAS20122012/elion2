@@ -5,6 +5,15 @@ Format: date · agent · what was done · state (finished / half-done + how to c
 
 ---
 
+## 2026-10-15 · Claude (Cowork) — WAITING FOR DEPLOY (PC was not linked)
+Ready in the cloud copy, not yet on the PC:
+- graphify: src/plugins/graphify.ts (+builtin, tests, AGENTS.md section, .gitignore) and graphify-setup.cmd
+  (venv data\graphify-venv, `graphify update` for elias-os + trading-robot, skill install for claude/antigravity/codex).
+- mods/elias-guard: Claude Code mod (local marketplace mods/.claude-plugin/marketplace.json) — denies any tool call naming
+  secrets.json / google tokens / .env / .cloudflared; status line reminds `npm test` after code edits. `claude plugin test` green.
+  Install in Claude Code on the PC: `/plugin marketplace add C:\Elion\elias-os\mods` then `/plugin install elias-guard@elias-mods`.
+- Elias asked to install VoiceStudio (github.com/debpalash/VoiceStudio, Windows .exe from Releases; CPU-only PC → slow).
+
 ## 2026-10-14 - Codex chart zones
 - Extended marks.ts and mark_chart.py with shaded y/y2 zones and x1/x2 chart bounds, retaining horizontal-line compatibility.
 - Telegram image-analysis prompt requests 2-6 evidence-backed support/resistance/supply/demand/liquidity zones, Persian labels, original-image coordinates and no invented prices on illegible charts.
