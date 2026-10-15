@@ -11,6 +11,7 @@ import { antigravityProvider, codexProvider, geminiProvider } from "./providers/
 import { GeminiVertexProvider } from "./providers/gemini-vertex.ts";
 import { GoogleAuth } from "./connectors/google.ts";
 import { GeminiApiProvider } from "./providers/gemini-api.ts";
+import { FREE_APIS, OpenAICompatProvider } from "./providers/openai-compat.ts";
 import { OllamaProvider } from "./providers/ollama.ts";
 import { FallbackProvider } from "./providers/fallback.ts";
 import { loadBuiltinPlugins, loadLocalPlugins, type PluginsConfig } from "./plugins/host.ts";
@@ -60,6 +61,8 @@ export interface Secrets {
   telegram?: { botToken?: string };
   gemini?: { apiKey?: string };
   tunnel?: { token?: string };
+  /** free OpenAI-compatible APIs: { "groq": "gsk_…", "cerebras": "…", "openrouter": "…", "mistral": "…" } */
+  free?: Record<string, string>;
 }
 
 /** Secrets live in config/secrets.json (git-ignored) or env vars — never in elias.config.json. */
@@ -187,6 +190,13 @@ function vertexGemini(cfg: EliasConfig): GeminiVertexProvider {
   });
 }
 
+/** The free APIs join every fallback chain (before the slow local ollama) unless the chain lists them already. */
+export function withFreeApis(chain: string[]): string[] {
+  const free = FREE_APIS.map((a) => a.name).filter((n) => !chain.includes(n));
+  const at = chain.indexOf("ollama");
+  return at < 0 ? [...chain, ...free] : [...chain.slice(0, at), ...free, ...chain.slice(at)];
+}
+
 export function createKernel(cfg = loadConfig(), onEvent?: (e: Omit<KernelEvent, "id">) => void): Kernel {
   const policy: Policy = mergePolicy(DEFAULT_POLICY, cfg.policy);
   const kernel = new Kernel({
@@ -208,12 +218,23 @@ export function createKernel(cfg = loadConfig(), onEvent?: (e: Omit<KernelEvent,
         model: cfg.providers?.gemini?.model,
         system: personaText,
       }),
+      // Free APIs (Groq, Cerebras, OpenRouter, Mistral): keys via setup/free-ai-keys.cmd; without a key they just stay unavailable.
+      ...FREE_APIS.map(
+        (api) =>
+          new OpenAICompatProvider({
+            api,
+            key: () => loadSecrets().free?.[api.name]?.trim() || process.env[`${api.name.toUpperCase()}_API_KEY`] || null,
+            model: (cfg.providers as Record<string, { model?: string }> | undefined)?.[api.name]?.model,
+            system: personaText,
+          }),
+      ),
       new OllamaProvider({ ...(cfg.providers?.ollama ?? {}), system: personaText }),
     ],
     onEvent,
   });
   const byName = new Map(kernel.listProviders().map((p) => [p.name, p]));
-  const chain = (cfg.providers?.chain ?? ["claude-code", "codex", "antigravity", "gemini", "ollama"]).map((n) => byName.get(n)).filter((p) => !!p);
+  const names = withFreeApis(cfg.providers?.chain ?? ["claude-code", "codex", "antigravity", "gemini", "ollama"]);
+  const chain = names.map((n) => byName.get(n)).filter((p) => !!p);
   kernel.registerProvider(
     new FallbackProvider(chain, { get: (k) => kernel.getKv(k), set: (k, v) => kernel.setKv(k, v) }, {
       onSkip: (name, reason, until) =>

@@ -5,28 +5,12 @@ Format: date · agent · what was done · state (finished / half-done + how to c
 
 ---
 
-## 2026-10-15 · Claude (Cowork) — WAITING FOR DEPLOY (PC was not linked)
-Ready in the cloud copy, not yet on the PC:
-- graphify: src/plugins/graphify.ts (+builtin, tests, AGENTS.md section, .gitignore) and graphify-setup.cmd
-  (venv data\graphify-venv, `graphify update` for elias-os + trading-robot, skill install for claude/antigravity/codex).
-- mods/elias-guard: Claude Code mod (local marketplace mods/.claude-plugin/marketplace.json) — denies any tool call naming
-  secrets.json / google tokens / .env / .cloudflared; status line reminds `npm test` after code edits. `claude plugin test` green.
-  Install in Claude Code on the PC: `/plugin marketplace add C:\Elion\elias-os\mods` then `/plugin install elias-guard@elias-mods`.
-- Elias asked to install VoiceStudio (github.com/debpalash/VoiceStudio, Windows .exe from Releases; CPU-only PC → slow).
-
-## 2026-10-14 - Codex chart zones
-- Extended marks.ts and mark_chart.py with shaded y/y2 zones and x1/x2 chart bounds, retaining horizontal-line compatibility.
-- Telegram image-analysis prompt requests 2-6 evidence-backed support/resistance/supply/demand/liquidity zones, Persian labels, original-image coordinates and no invented prices on illegible charts.
-- Tests: marks/Telegram 15 passed, 1 platform skip; typecheck passed; actual Pillow renderer executed and output visually checked.
-- Existing telegram.ts working changes were preserved; this file also contains the new zone prompt. Restart requested through data/restart.flag. Live AI coordinate accuracy/Telegram delivery still requires an actual chart from the owner.
-
-## 2026-10-14 - Codex connection diagnosis
-- Production log shows daemon stopped cleanly at 16:10:25; this also stops Telegram and the shared Cloudflare tunnel.
-- Trading launcher pointed at a nonexistent LOCALAPPDATA cloudflared installation. Updated ../trading-robot/run-tunnel.bat to prefer the existing Elias OS shared tunnel supervisor; start-services.ps1 detects that binary and launches runners hidden.
-- A sandbox-launched daemon served port 7420, but outbound sockets and microphone access were denied. Stopped that diagnostic daemon cleanly; do not restart production from an offline sandbox.
-- Existing unrelated working changes in telegram.ts, mt4.ts, notebook.ts and MT4 EA were preserved.
-- Typecheck passed. Full tests: 136 passed, 8 skipped, 1 failed (voice worker test cannot spawn python3: EACCES). Production remote connectivity is not verified.
-- Remaining action: user runs ../trading-robot/start-live.bat under their Windows account, then verify Telegram polling and Cloudflare registered connections. PC-agent logs also show Claude weekly quota exhausted; this is separate from connectivity.
+## 2026-10-15 · Claude (Cowork)
+- Free AI fallbacks: Groq, Cerebras, OpenRouter (":free" models), Mistral via one OpenAI-compatible provider
+  (src/providers/openai-compat.ts). Model is picked from each provider's /models list by preference (renames don't
+  break it; providers.<name>.model forces one). Keys: setup/free-ai-keys.cmd → secrets.json "free". They join every
+  fallback chain before ollama (withFreeApis) and the AI lab. No key = provider simply unavailable.
+- State: finished, tests green. Waiting on Elias to create the free keys.
 
 ## 2026-10-11 (3) · Claude (Cowork)
 - Notebook (src/plugins/notebook.ts): every text Elias forwards in Telegram (or "#یادداشت …", "#خام …" = no AI) is

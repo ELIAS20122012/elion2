@@ -85,7 +85,7 @@ export function overview(k: Kernel) {
   return {
     stats: k.stats(),
     heartbeat: k.getKv("daemon.heartbeat"),
-    providers: k.listProviders().filter((p) => ["claude-code", "codex", "antigravity", "gemini-vertex", "gemini", "ollama"].includes(p.name)).map((p) => {
+    providers: k.listProviders().filter((p) => ["claude-code", "codex", "antigravity", "gemini-vertex", "gemini", "groq", "cerebras", "openrouter", "mistral", "ollama"].includes(p.name)).map((p) => {
       const until = Number(k.getKv(`provider.cooldown.${p.name}`) ?? 0);
       return { name: p.name, coolingUntil: until > now ? new Date(until).toISOString() : null };
     }),
